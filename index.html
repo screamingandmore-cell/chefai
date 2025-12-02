@@ -6,13 +6,10 @@
     <meta name="theme-color" content="#10b981" />
     <title>Chef.ai - Cardápios Inteligentes</title>
     
-    <!-- Ícone da Aba do Navegador (Favicon) -->
+    <!-- Ícone da Aba -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     
-    <!-- Link para o Manifesto PWA (Instalação Android) -->
-    <link rel="manifest" href="/manifest.json" />
-    
-    <!-- Script do Google AdSense (Substitua SEU_ID_AQUI pelo seu ID real do painel AdSense) -->
+    <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-SEU_ID_AQUI" crossorigin="anonymous"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -42,15 +39,65 @@
       }
     </script>
     <style>
-      .no-scrollbar::-webkit-scrollbar {
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* --- ESTILOS DE IMPRESSÃO (PDF) --- */
+      
+      /* Elementos que só aparecem na impressão/PDF */
+      .print-only {
         display: none;
       }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
+
+      /* Quando estiver imprimindo... */
+      @media print {
+        /* Esconde elementos de navegação, botões e UI que tenham a classe 'no-print' */
+        header, nav, button, .no-print, iframe, .google-ad-placeholder {
+          display: none !important;
+        }
+
+        /* Mostra o conteúdo detalhado das receitas */
+        .print-only {
+          display: block !important;
+        }
+
+        /* Reseta o layout para usar toda a folha de papel */
+        body, #root, main {
+          background-color: white !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+          max-width: none !important;
+          overflow: visible !important;
+          box-shadow: none !important;
+        }
+
+        body {
+          color: black !important;
+          font-size: 12pt;
+        }
+
+        /* Força quebra de página entre os dias */
+        .page-break {
+          page-break-before: always;
+        }
+        
+        /* Cabeçalho bonito no PDF */
+        .print-header {
+          display: block !important;
+          text-align: center;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #10b981;
+          padding-bottom: 10px;
+        }
+      }
+      
+      /* Esconde o cabeçalho de impressão na tela normal */
+      .print-header {
+        display: none;
       }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.0",
@@ -59,15 +106,14 @@
     "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.86.0",
     "openai": "https://aistudiocdn.com/openai@^6.9.1",
     "vite": "https://aistudiocdn.com/vite@^7.2.6",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.2.0"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-gray-50 text-gray-900 antialiased">
     <div id="root"></div>
-    <!-- Ponto de entrada para o Vite rodar o React localmente -->
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
