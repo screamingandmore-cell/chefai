@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, AdBanner, GoogleAdPlaceholder } from './components/Layout';
+import { Layout, GoogleAdPlaceholder } from './components/Layout';
 import { 
   ViewState, 
   UserProfile, 
@@ -43,6 +43,7 @@ const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
         await SupabaseService.signIn(email, password);
       } else {
         await SupabaseService.signUp(email, password);
+        // Tenta logar automaticamente após cadastro
         try {
            await SupabaseService.signIn(email, password);
         } catch (ignore) {}
@@ -69,9 +70,14 @@ const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
             alt="Chef.ai Logo" 
             className="w-20 h-20 mx-auto mb-4 rounded-2xl shadow-md object-contain bg-gray-900"
             onError={(e) => {
-              e.currentTarget.src = '/favicon.svg';
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.onerror = null;
+              // Fallback para extensão dupla se necessário (caso Windows tenha duplicado)
+              if (e.currentTarget.src.endsWith('icon-192.png')) {
+                 e.currentTarget.src = '/icon-192.png.png';
+              } else {
+                 e.currentTarget.src = '/favicon.svg';
+                 e.currentTarget.style.backgroundColor = 'transparent';
+                 e.currentTarget.onerror = null;
+              }
             }}
           />
           <h1 className="text-2xl font-bold text-gray-800">Chef<span className="text-chef-green">.ai</span></h1>
@@ -209,11 +215,20 @@ export default function App() {
     setView(ViewState.HOME);
   };
 
+  // Funções de Ingredientes melhoradas para aceitar texto colado
+  const processIngredientInput = (input: string) => {
+    // Separa por vírgula, ponto e vírgula ou quebra de linha
+    return input.split(/[,;\n]+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+  };
+
   const handleAddIngredient = () => {
     if (!currentIngredient.trim()) return;
-    const newItems = currentIngredient.split(/[,;]+/).map(s => s.trim()).filter(s => s.length > 0);
+    const newItems = processIngredientInput(currentIngredient);
+    
     if (newItems.length > 0) {
-      setIngredients([...ingredients, ...newItems]);
+      setIngredients(prev => [...prev, ...newItems]);
       setCurrentIngredient('');
     }
   };
@@ -259,9 +274,11 @@ export default function App() {
     }
 
     let finalIngredients = [...ingredients];
+    // Se o usuário digitou algo mas não clicou no +, inclui o texto também
     if (currentIngredient.trim()) {
-       finalIngredients.push(currentIngredient.trim());
-       setIngredients(prev => [...prev, currentIngredient.trim()]);
+       const extra = processIngredientInput(currentIngredient);
+       finalIngredients = [...finalIngredients, ...extra];
+       setIngredients(prev => [...prev, ...extra]);
        setCurrentIngredient('');
     }
 
@@ -300,159 +317,144 @@ export default function App() {
     }
 
     let finalIngredients = [...ingredients];
+    // Se tem texto na caixa, adiciona automaticamente
     if (currentIngredient.trim()) {
-       finalIngredients.push(currentIngredient.trim());
-       setIngredients(prev => [...prev, currentIngredient.trim()]);
+       const extra = processIngredientInput(currentIngredient);
+       finalIngredients = [...finalIngredients, ...extra];
+       setIngredients(prev => [...prev, ...extra]);
        setCurrentIngredient('');
     }
 
-    const totalLength = finalIngredients.join(' ').length;
-    const isLongText = totalLength > 15;
-
+    // Validação Flexível
+    const isLongText = finalIngredients.length === 1 && finalIngredients[0].includes(' ');
+    
     if (finalIngredients.length < 2 && !isLongText) {
-      setError("Adicione mais ingredientes ou uma lista maior para criar um cardápio.");
+      setError("Adicione pelo menos 2 ingredientes principais (ou cole sua lista completa).");
       return;
     }
 
-    setView(ViewState.WEEKLY_PLAN);
     setIsLoading(true);
     setError(null);
     
     try {
       const menu = await OpenAIService.generateWeeklyMenu(
         finalIngredients, 
-        user.allergies, 
+        user.allergies,
         user.isPremium
       );
-      setWeeklyMenu(menu);
+      
       await SupabaseService.saveWeeklyMenu(session.user.id, menu);
       
-      // Atualiza lista local
-      const newHistory = [menu, ...allMenus];
-      setAllMenus(newHistory);
+      // Atualiza estado local e histórico
+      setWeeklyMenu(menu);
+      setAllMenus(prev => [menu, ...prev]);
       
       const updatedUser = await SupabaseService.incrementUsage(session.user.id, 'weeklyMenus');
       setUser(updatedUser);
+      
     } catch (err: any) {
-      console.error(err);
       setError(err.message || "Erro ao gerar cardápio.");
-      setView(ViewState.FRIDGE);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSubscribe = async (planId: string) => {
-    if (!session?.user) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const success = await StripeService.initiateCheckout(planId, session.user.email);
-      if (!success) setIsLoading(false);
-    } catch (e) {
-      setError("Ocorreu um erro na comunicação com o pagamento.");
-      setIsLoading(false);
-    }
-  };
-
-  const updateAllergies = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!session?.user) return;
-    const formData = new FormData(e.currentTarget);
-    const allergyText = formData.get('allergies') as string;
-    const allergyList = allergyText.split(',').map(s => s.trim()).filter(Boolean);
-    if (user) {
-      const updated = { ...user, allergies: allergyList };
-      await SupabaseService.updateUserProfile(session.user.id, updated);
-      setUser(updated);
-      alert("Alergias atualizadas com sucesso!");
-    }
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
   const handleShareList = () => {
     if (!weeklyMenu) return;
+    const text = `🛒 *Lista de Compras - Chef.ai*\n\n${weeklyMenu.shoppingList.map(i => `- ${i}`).join('\n')}`;
     
-    const title = "🛒 Lista de Compras - Chef.ai";
-    const items = weeklyMenu.shoppingList.map(item => `- ${item}`).join('\n');
-    const text = `${title}\n\n${items}`;
-    
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(whatsappUrl, '_blank');
+    if (navigator.share) {
+      navigator.share({
+        title: 'Lista de Compras Chef.ai',
+        text: text
+      }).catch(console.error);
+    } else {
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
   };
 
-  // Funções de Gerenciamento de Histórico
-  const handleDeleteSingle = async (menuId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Evita abrir o cardápio ao clicar na lixeira
-    if (!confirm("Deseja realmente apagar este cardápio?")) return;
+  const handleDeleteMenu = async (menuId: string) => {
+    if (!confirm("Tem certeza que deseja apagar este cardápio?")) return;
     
     try {
       await SupabaseService.deleteWeeklyMenu(menuId);
-      const newList = allMenus.filter(m => m.id !== menuId);
-      setAllMenus(newList);
       
-      // Se apagou o que estava sendo visto, carrega o primeiro da nova lista ou null
+      // Remove da lista local
+      const newHistory = allMenus.filter(m => m.id !== menuId);
+      setAllMenus(newHistory);
+      
+      // Se apagou o cardápio atual, tenta mostrar o próximo da lista (o mais recente)
       if (weeklyMenu?.id === menuId) {
-        setWeeklyMenu(newList.length > 0 ? newList[0] : null);
+        setWeeklyMenu(newHistory.length > 0 ? newHistory[0] : null);
       }
-    } catch (err) {
-      alert("Erro ao excluir. Verifique se rodou o script SQL no Supabase.");
+      
+    } catch (e: any) {
+      alert("Erro ao excluir: " + e.message);
     }
   };
 
-  const handleClearHistory = async () => {
+  const handleDeleteAllMenus = async () => {
     if (!session?.user) return;
-    if (!confirm("ATENÇÃO: Isso apagará TODOS os seus cardápios salvos permanentemente. Continuar?")) return;
+    if (!confirm("ATENÇÃO: Isso vai apagar TODO o seu histórico de cardápios para sempre.\n\nTem certeza?")) return;
 
     try {
       await SupabaseService.deleteAllUserMenus(session.user.id);
       setAllMenus([]);
       setWeeklyMenu(null);
       alert("Histórico limpo com sucesso.");
-    } catch (err) {
-      alert("Erro ao limpar histórico.");
+    } catch (e: any) {
+      alert("Erro ao limpar histórico: " + e.message);
     }
   };
 
+  if (!session) {
+    return <AuthScreen onLogin={() => {}} />;
+  }
+
+  // --- RENDERS ---
+
   const renderHome = () => (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-chef-green to-teal-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10">
-          <h2 className="text-2xl font-bold mb-2">O que vamos cozinhar hoje?</h2>
-          <p className="opacity-90 text-sm mb-4">Evite desperdícios e economize tempo.</p>
-          <button onClick={() => setView(ViewState.FRIDGE)} className="bg-white text-chef-green font-bold py-2 px-6 rounded-full shadow-sm hover:shadow-md transition-shadow">
-            Abrir Geladeira
-          </button>
-        </div>
-        <div className="absolute right-[-20px] bottom-[-20px] text-8xl opacity-20">🥗</div>
+      <div className="bg-gradient-to-r from-chef-green to-teal-500 rounded-2xl p-6 text-white shadow-lg transform hover:scale-[1.02] transition-transform">
+        <h2 className="text-2xl font-bold mb-2">O que vamos cozinhar hoje?</h2>
+        <p className="text-green-50 opacity-90 mb-6">Evite desperdícios e economize tempo.</p>
+        <button 
+          onClick={() => setView(ViewState.FRIDGE)}
+          className="bg-white text-chef-green px-6 py-3 rounded-xl font-bold shadow-md hover:bg-gray-50 transition-colors w-full sm:w-auto"
+        >
+          Abrir Geladeira
+        </button>
       </div>
+
       <div className="grid grid-cols-2 gap-4">
-        <div onClick={() => setView(ViewState.QUICK_RECIPE)} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-transform">
-          <span className="text-3xl bg-orange-100 w-12 h-12 flex items-center justify-center rounded-full">🍳</span>
-          <span className="font-semibold text-gray-700">Receita Rápida</span>
-        </div>
-        <div onClick={() => setView(ViewState.WEEKLY_PLAN)} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-transform">
-          <span className="text-3xl bg-blue-100 w-12 h-12 flex items-center justify-center rounded-full">📅</span>
-          <span className="font-semibold text-gray-700">Cardápio Semanal</span>
-        </div>
+        <button 
+          onClick={() => setView(ViewState.QUICK_RECIPE)}
+          className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-chef-green transition-colors flex flex-col items-center gap-3"
+        >
+          <span className="text-3xl bg-orange-50 p-3 rounded-full">🍳</span>
+          <span className="font-bold text-gray-700">Receita Rápida</span>
+        </button>
+        <button 
+          onClick={() => setView(ViewState.WEEKLY_PLAN)}
+          className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-chef-green transition-colors flex flex-col items-center gap-3"
+        >
+          <span className="text-3xl bg-blue-50 p-3 rounded-full">📅</span>
+          <span className="font-bold text-gray-700">Cardápio Semanal</span>
+        </button>
       </div>
+
       {!user?.isPremium && <GoogleAdPlaceholder label="Anúncio Google - Feed Principal" />}
-      {!user?.isPremium && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <h3 className="font-bold text-yellow-800 flex items-center gap-2"><span>👑</span> Premium</h3>
-          <p className="text-sm text-yellow-700 mt-1 mb-3">Receitas ilimitadas, análise por foto, tabela nutricional e zero anúncios.</p>
-          <button onClick={() => setView(ViewState.PREMIUM)} className="w-full bg-yellow-400 text-yellow-900 font-bold py-2 rounded-lg">Conhecer Planos</button>
-        </div>
-      )}
+
       {weeklyMenu && (
-        <div className="mt-6">
-          <h3 className="font-bold text-gray-800 mb-2">Seu Cardápio Atual</h3>
-          <div onClick={() => setView(ViewState.WEEKLY_PLAN)} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-pointer">
-             <p className="text-sm text-gray-500">Criado em: {new Date(weeklyMenu.createdAt).toLocaleDateString()}</p>
-             <p className="font-medium text-chef-green mt-1">Ver planejamento completo →</p>
+        <div className="mt-8">
+          <h3 className="font-bold text-gray-800 mb-4">Seu Cardápio Atual</h3>
+          <div 
+            onClick={() => setView(ViewState.WEEKLY_PLAN)}
+            className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50"
+          >
+            <p className="text-sm text-gray-500">Criado em: {new Date(weeklyMenu.createdAt).toLocaleDateString()}</p>
+            <p className="text-chef-green font-medium mt-1">Ver planejamento completo →</p>
           </div>
         </div>
       )}
@@ -461,407 +463,646 @@ export default function App() {
 
   const renderFridge = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">Minha Geladeira ❄️</h2>
-      <div className="flex gap-2">
-        <input type="text" value={currentIngredient} onChange={(e) => setCurrentIngredient(e.target.value)} placeholder="Ex: Frango, Batata... (pode colar lista)" className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-chef-green outline-none" onKeyDown={(e) => e.key === 'Enter' && handleAddIngredient()} />
-        <button onClick={handleAddIngredient} className="bg-chef-green text-white px-4 py-2 rounded-lg font-bold">+</button>
-      </div>
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-500">Ou use a câmera (Premium)</p>
-        <button onClick={() => fileInputRef.current?.click()} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm border ${user?.isPremium ? 'border-chef-green text-chef-green bg-green-50' : 'border-gray-300 text-gray-400 bg-gray-50'}`}>
-          <span>📸</span>{user?.isPremium ? 'Analisar Foto' : 'Foto (Bloqueado)'}
-        </button>
-        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleImageUpload} />
-      </div>
-      {isLoading && (<div className="text-center py-4"><LoadingSpinner /><p className="text-sm text-gray-500 mt-2">Analisando imagem com IA...</p></div>)}
-      <div className="flex flex-wrap gap-2">
-        {ingredients.map((ing, idx) => (
-          <span key={idx} className="bg-white border border-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm flex items-center gap-2">
-            {ing}
-            <button onClick={() => handleRemoveIngredient(idx)} className="text-red-400 hover:text-red-600 font-bold">×</button>
-          </span>
-        ))}
-        {ingredients.length === 0 && (<p className="text-gray-400 italic text-sm w-full text-center py-8">Sua geladeira está vazia no app. Adicione itens!</p>)}
-      </div>
-      <div className="fixed bottom-20 left-0 right-0 p-4 max-w-md mx-auto z-10">
-        <div className="grid grid-cols-2 gap-3">
-          <button onClick={() => { setView(ViewState.QUICK_RECIPE); }} className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg transition-colors" disabled={ingredients.length === 0 && !currentIngredient}>Receita Rápida</button>
-          <button onClick={handleGenerateWeeklyClick} className="bg-chef-green hover:bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg transition-colors" disabled={ingredients.length === 0 && !currentIngredient}>Gerar Semanal</button>
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          Minha Geladeira <span className="text-2xl">❄️</span>
+        </h2>
+        
+        <div className="flex gap-2 mb-4">
+          <input
+            value={currentIngredient}
+            onChange={(e) => setCurrentIngredient(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddIngredient()}
+            placeholder="Ex: Frango, Batata..."
+            className="flex-1 border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-chef-green"
+          />
+          <button 
+            onClick={handleAddIngredient}
+            className="bg-chef-green text-white px-4 rounded-xl hover:bg-green-600 transition-colors"
+          >
+            +
+          </button>
+        </div>
+
+        <div className="flex items-center gap-4 mb-6">
+          <span className="text-xs text-gray-400 uppercase font-bold">Ou use a câmera (Premium)</span>
+          <input 
+            type="file" 
+            accept="image/*" 
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className={`flex-1 py-2 rounded-lg border border-dashed flex items-center justify-center gap-2 text-sm ${
+              user?.isPremium 
+                ? 'border-chef-green text-chef-green bg-green-50 cursor-pointer' 
+                : 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50'
+            }`}
+          >
+            <span>📷</span>
+            {user?.isPremium ? 'Analisar Foto' : 'Foto (Bloqueado)'}
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2 min-h-[100px] content-start">
+          {ingredients.map((ing, i) => (
+            <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full text-sm flex items-center gap-2 animate-fadeIn">
+              {ing}
+              <button onClick={() => handleRemoveIngredient(i)} className="text-gray-400 hover:text-red-500">×</button>
+            </span>
+          ))}
+          {ingredients.length === 0 && (
+            <p className="text-gray-400 text-sm italic w-full text-center py-8">
+              Adicione ingredientes para começar a mágica...
+            </p>
+          )}
         </div>
       </div>
-    </div>
-  );
 
-  const renderQuickRecipeSetup = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Configurar Receita</h2>
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="font-semibold mb-3">Dificuldade</h3>
+      <div className="bg-white p-4 rounded-xl border border-gray-200">
+        <label className="block text-sm font-bold text-gray-700 mb-2">Dificuldade da Receita</label>
         <div className="flex gap-2">
-          {Object.values(Difficulty).map((diff) => (
-            <button key={diff} onClick={() => setSelectedDifficulty(diff)} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${selectedDifficulty === diff ? 'bg-chef-green text-white shadow-sm' : 'bg-gray-100 text-gray-600'}`}>
+          {[Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD].map((diff) => (
+            <button
+              key={diff}
+              onClick={() => setSelectedDifficulty(diff)}
+              className={`flex-1 py-2 rounded-lg text-sm font-bold border transition-colors ${
+                selectedDifficulty === diff
+                  ? 'bg-chef-green text-white border-chef-green shadow-sm'
+                  : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
               {diff}
             </button>
           ))}
         </div>
       </div>
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="font-semibold mb-3">Ingredientes Selecionados</h3>
-        <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-          {ingredients.length > 0 ? ingredients.join(', ') : 'Nenhum ingrediente selecionado'}
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="font-bold">×</button>
         </div>
-        <button onClick={() => setView(ViewState.FRIDGE)} className="text-chef-green text-sm font-medium mt-2">Editar ingredientes</button>
+      )}
+
+      <div className="grid grid-cols-2 gap-4 sticky bottom-4">
+        <button 
+          onClick={generateQuick}
+          disabled={isLoading}
+          className="bg-chef-orange text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-600 transition-all disabled:opacity-50"
+        >
+          {isLoading ? <LoadingSpinner /> : 'Receita Rápida'}
+        </button>
+        <button 
+          onClick={handleGenerateWeeklyClick}
+          disabled={isLoading}
+          className="bg-chef-green text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-600 transition-all disabled:opacity-50"
+        >
+          {isLoading ? <LoadingSpinner /> : 'Gerar Semanal'}
+        </button>
       </div>
-      <button onClick={generateQuick} disabled={isLoading || ingredients.length === 0} className="w-full bg-gradient-to-r from-chef-green to-teal-500 text-white font-bold py-4 rounded-xl shadow-lg disabled:opacity-50">
-        {isLoading ? <LoadingSpinner /> : 'Criar Receita Mágica ✨'}
-      </button>
-      {!user?.isPremium && <p className="text-xs text-center text-gray-400">Você tem {10 - (user?.usage.quickRecipes || 0)} receitas gratuitas restantes.</p>}
     </div>
   );
 
   const renderRecipeDetails = () => {
     if (!generatedRecipe) return null;
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center no-print">
-          <button onClick={() => setView(ViewState.HOME)} className="text-sm text-gray-500">← Voltar</button>
-          <button onClick={handlePrint} className="flex items-center gap-2 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-200"><span>🖨️</span> Baixar PDF</button>
-        </div>
-        <div className="print-header">
-           <h1 className="text-xl font-bold text-gray-800">Chef.ai - Receita Inteligente</h1>
-        </div>
-        <div className="relative h-48 bg-gray-200 rounded-2xl overflow-hidden mb-4 no-print">
-           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-100 to-yellow-100 text-4xl">🍲</div>
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">{generatedRecipe.title}</h2>
-          <div className="flex gap-4 mt-2 text-sm text-gray-600">
-            <span className="flex items-center gap-1">⏱️ {generatedRecipe.prepTime}</span>
-            <span className="flex items-center gap-1">📊 {generatedRecipe.difficulty}</span>
+      <div className="animate-slideUp space-y-6">
+        <button onClick={() => setView(ViewState.HOME)} className="text-gray-500 mb-2 no-print">← Voltar</button>
+        
+        <div className="bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100">
+          <div className="bg-chef-orange p-6 text-white relative">
+            <h2 className="text-2xl font-bold pr-12">{generatedRecipe.title}</h2>
+            <div className="flex gap-4 mt-4 text-sm font-medium opacity-90">
+              <span className="bg-white/20 px-3 py-1 rounded-full">⏱️ {generatedRecipe.prepTime}</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">📊 {generatedRecipe.difficulty}</span>
+            </div>
+            <button 
+               onClick={() => window.print()}
+               className="absolute top-6 right-6 bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors no-print"
+               title="Imprimir / Salvar PDF"
+            >
+               🖨️
+            </button>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            <p className="text-gray-600 italic border-l-4 border-chef-orange pl-4">
+              {generatedRecipe.description}
+            </p>
+
+            {/* Tabela Nutricional (Premium) */}
+            {user?.isPremium && generatedRecipe.calories && (
+              <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+                <h4 className="text-chef-green font-bold text-sm uppercase mb-3 flex items-center gap-2">
+                  <span>🥗</span> Informação Nutricional (Porção)
+                </h4>
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div className="bg-white p-2 rounded-lg shadow-sm">
+                    <div className="text-lg font-bold text-gray-800">{generatedRecipe.calories}</div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold">Kcal</div>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg shadow-sm">
+                    <div className="text-lg font-bold text-gray-800">{generatedRecipe.macros?.protein || '-'}</div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold">Prot</div>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg shadow-sm">
+                    <div className="text-lg font-bold text-gray-800">{generatedRecipe.macros?.carbs || '-'}</div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold">Carb</div>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg shadow-sm">
+                    <div className="text-lg font-bold text-gray-800">{generatedRecipe.macros?.fat || '-'}</div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold">Gord</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!user?.isPremium && <GoogleAdPlaceholder label="Anúncio - Detalhes da Receita" />}
+
+            <div>
+              <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <span className="text-chef-orange text-xl">•</span> Ingredientes
+              </h3>
+              <ul className="space-y-2">
+                {generatedRecipe.ingredients.map((ing, i) => (
+                  <li key={i} className="flex items-start gap-3 text-gray-600">
+                    <input type="checkbox" className="mt-1.5 accent-chef-orange" />
+                    <span>{ing}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <hr className="border-gray-100" />
+
+            <div>
+              <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <span className="text-chef-orange text-xl">•</span> Modo de Preparo
+              </h3>
+              <div className="space-y-4">
+                {generatedRecipe.instructions.map((step, i) => (
+                  <div key={i} className="flex gap-4">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-100 text-chef-orange font-bold text-sm flex items-center justify-center">
+                      {i + 1}
+                    </span>
+                    <p className="text-gray-600 text-sm leading-relaxed">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-        {user?.isPremium && generatedRecipe.calories ? (
-           <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl">
-             <h4 className="font-bold text-emerald-800 mb-2 flex items-center gap-1">📊 Tabela Nutricional <span className="text-[10px] bg-yellow-400 text-yellow-900 px-1 rounded no-print">PREMIUM</span></h4>
-             <div className="grid grid-cols-4 gap-2 text-center text-sm">
-                <div className="bg-white p-2 rounded-lg shadow-sm"><p className="text-xs text-gray-500 font-bold">CALORIAS</p><p className="text-emerald-600 font-bold">{generatedRecipe.calories}</p></div>
-                <div className="bg-white p-2 rounded-lg shadow-sm"><p className="text-xs text-gray-500 font-bold">PROT</p><p className="text-gray-800">{generatedRecipe.macros?.protein}</p></div>
-                <div className="bg-white p-2 rounded-lg shadow-sm"><p className="text-xs text-gray-500 font-bold">CARB</p><p className="text-gray-800">{generatedRecipe.macros?.carbs}</p></div>
-                <div className="bg-white p-2 rounded-lg shadow-sm"><p className="text-xs text-gray-500 font-bold">GORD</p><p className="text-gray-800">{generatedRecipe.macros?.fat}</p></div>
-             </div>
-           </div>
-        ) : user?.isPremium ? <div className="text-xs text-gray-400 text-center">Dados nutricionais indisponíveis para esta receita.</div> : null}
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-          <h3 className="font-bold mb-3 text-lg">Ingredientes</h3>
-          <ul className="space-y-2">
-            {generatedRecipe.ingredients.map((ing, i) => (<li key={i} className="flex items-start gap-2 text-gray-700"><span className="text-chef-green">•</span> {ing}</li>))}
-          </ul>
-        </div>
-        {!user?.isPremium && <div className="no-print"><GoogleAdPlaceholder label="Anúncio Google" /></div>}
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-          <h3 className="font-bold mb-3 text-lg">Modo de Preparo</h3>
-          <ol className="space-y-4">
-            {generatedRecipe.instructions.map((step, i) => (<li key={i} className="flex gap-3 text-gray-700"><span className="bg-gray-100 text-gray-600 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span><span className="leading-relaxed">{step}</span></li>))}
-          </ol>
-        </div>
-        {!user?.isPremium && <div className="no-print"><AdBanner type="interstitial" /></div>}
       </div>
     );
   };
 
   const renderWeeklyPlan = () => {
-    if (isLoading) return (<div className="h-full flex flex-col items-center justify-center pt-20"><LoadingSpinner /><h3 className="text-xl font-bold mt-4 text-gray-800">Planejando sua semana...</h3><p className="text-gray-500 text-center px-8 mt-2">A IA está combinando ingredientes.</p></div>);
-    if (!weeklyMenu) return (<div className="text-center py-10"><div className="text-6xl mb-4">📅</div><h2 className="text-xl font-bold text-gray-800">Nenhum cardápio ativo</h2><p className="text-gray-500 mb-6 px-4">Adicione ingredientes na geladeira e gere seu plano semanal.</p><button onClick={() => setView(ViewState.FRIDGE)} className="bg-chef-green text-white px-6 py-2 rounded-full font-bold">Criar Cardápio</button><div className="mt-8"><button onClick={() => setView(ViewState.MENU_HISTORY)} className="text-sm text-gray-500 underline">Ver Histórico de Cardápios</button></div></div>);
+    if (!weeklyMenu) {
+      return (
+        <div className="text-center py-12 px-4">
+          <div className="text-6xl mb-4">📅</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Nenhum plano ativo</h2>
+          <p className="text-gray-500 mb-8">Vá para a aba "Geladeira" para gerar seu primeiro cardápio semanal.</p>
+          <div className="flex justify-center gap-4">
+             <button onClick={() => setView(ViewState.FRIDGE)} className="text-chef-green font-bold hover:underline">Ir para Geladeira</button>
+             {allMenus.length > 0 && (
+               <button onClick={() => setView(ViewState.MENU_HISTORY)} className="text-gray-500 font-bold hover:underline">Ver Histórico</button>
+             )}
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-6">
-        <div className="print-header">
-           <h1 className="text-xl font-bold text-gray-800">Chef.ai - Cardápio Semanal</h1>
-           <p className="text-sm">Semana de {new Date(weeklyMenu.createdAt).toLocaleDateString()}</p>
-        </div>
-
-        <div className="flex flex-col gap-2 no-print">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-800">Cardápio Semanal</h2>
-            <div className="flex gap-2">
-              <button onClick={() => setView(ViewState.MENU_HISTORY)} className="bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors" title="Ver Histórico">📜 Histórico</button>
-              <button onClick={handlePrint} className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-full transition-colors" title="Baixar PDF / Imprimir">🖨️</button>
-            </div>
+        <div className="flex justify-between items-center mb-2 no-print">
+          <div>
+             <h2 className="text-2xl font-bold text-gray-800">Cardápio Semanal</h2>
+             <p className="text-xs text-gray-400">Semana de {new Date(weeklyMenu.createdAt).toLocaleDateString()}</p>
+          </div>
+          <div className="flex gap-2">
+            <button 
+               onClick={() => setView(ViewState.MENU_HISTORY)}
+               className="bg-gray-100 p-2 rounded-full hover:bg-gray-200 text-gray-600"
+               title="Ver Histórico"
+            >
+              📜
+            </button>
+            <button 
+               onClick={() => window.print()}
+               className="bg-blue-50 p-2 rounded-full hover:bg-blue-100 text-blue-600"
+               title="Imprimir / PDF"
+            >
+              🖨️
+            </button>
+            <button 
+               onClick={() => handleDeleteMenu(weeklyMenu.id)}
+               className="bg-red-50 p-2 rounded-full hover:bg-red-100 text-red-500"
+               title="Excluir este cardápio"
+            >
+              🗑️
+            </button>
           </div>
         </div>
+
+        <button 
+          onClick={() => setView(ViewState.SHOPPING_LIST)}
+          className="w-full bg-blue-50 text-blue-600 py-3 rounded-xl font-bold hover:bg-blue-100 transition-colors flex items-center justify-center gap-2 no-print"
+        >
+          <span>🛒</span> Ver Lista de Compras
+        </button>
         
-        <div className="no-print flex justify-end">
-           <button onClick={() => setView(ViewState.SHOPPING_LIST)} className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">Ver Lista de Compras</button>
-        </div>
+        {!user?.isPremium && <GoogleAdPlaceholder label="Anúncio - Topo do Cardápio" />}
 
-        {!user?.isPremium && <div className="no-print"><GoogleAdPlaceholder label="Anúncio Google" /></div>}
+        <div className="space-y-4">
+          {weeklyMenu.days.map((day, i) => {
+            // Somatório Diário (Premium)
+            const dailyCals = parseMacro(day.lunch.calories?.toString()) + parseMacro(day.dinner.calories?.toString());
+            const dailyProt = parseMacro(day.lunch.macros?.protein) + parseMacro(day.dinner.macros?.protein);
+            const dailyCarb = parseMacro(day.lunch.macros?.carbs) + parseMacro(day.dinner.macros?.carbs);
+            const dailyFat = parseMacro(day.lunch.macros?.fat) + parseMacro(day.dinner.macros?.fat);
 
-        <div className="space-y-4 no-print">
-          {weeklyMenu.days.map((day, idx) => {
-             const totalCals = (day.lunch.calories || 0) + (day.dinner.calories || 0);
-             const totalProt = parseMacro(day.lunch.macros?.protein) + parseMacro(day.dinner.macros?.protein);
-             const totalCarb = parseMacro(day.lunch.macros?.carbs) + parseMacro(day.dinner.macros?.carbs);
-             const totalFat = parseMacro(day.lunch.macros?.fat) + parseMacro(day.dinner.macros?.fat);
+            return (
+              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
+                  <h3 className="font-bold text-gray-700">{day.day}</h3>
+                  {user?.isPremium && dailyCals > 0 && (
+                     <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                       {dailyCals} kcal
+                     </span>
+                  )}
+                </div>
+                
+                <div className="p-4 space-y-4">
+                  {/* Almoço */}
+                  <div 
+                    onClick={() => { setGeneratedRecipe(day.lunch); setView(ViewState.RECIPE_DETAILS); }}
+                    className="cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                       <span className="text-xl">☀️</span>
+                       <span className="text-xs font-bold text-gray-400 uppercase">Almoço</span>
+                    </div>
+                    <p className="text-gray-800 font-medium pl-8">{day.lunch.title}</p>
+                  </div>
 
-             return (
-               <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden break-inside-avoid">
-                 <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 flex justify-between items-center">
-                   <span className="font-bold text-gray-700">{day.day}</span>
-                   {user?.isPremium && totalCals > 0 && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{totalCals} kcal</span>}
-                 </div>
-                 <div className="p-4 space-y-4">
-                   <div className="flex gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors" onClick={() => { setGeneratedRecipe(day.lunch); setView(ViewState.RECIPE_DETAILS); }}>
-                     <span className="text-2xl">☀️</span>
-                     <div className="flex-1">
-                       <p className="text-xs text-gray-400 font-bold uppercase">Almoço</p>
-                       <p className="text-gray-800 font-medium leading-tight">{day.lunch.title}</p>
-                     </div>
-                   </div>
-                   <div className="h-px bg-gray-100" />
-                   <div className="flex gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors" onClick={() => { setGeneratedRecipe(day.dinner); setView(ViewState.RECIPE_DETAILS); }}>
-                     <span className="text-2xl">🌙</span>
-                     <div className="flex-1">
-                       <p className="text-xs text-gray-400 font-bold uppercase">Jantar</p>
-                       <p className="text-gray-800 font-medium leading-tight">{day.dinner.title}</p>
-                     </div>
-                   </div>
-                 </div>
-                 {user?.isPremium && totalCals > 0 && (
-                   <div className="bg-emerald-50 px-4 py-2 text-xs flex justify-around text-emerald-800 font-medium border-t border-emerald-100">
-                     <span>P: {totalProt}g</span><span>C: {totalCarb}g</span><span>G: {totalFat}g</span>
-                   </div>
-                 )}
-               </div>
-             );
+                  <hr className="border-gray-100" />
+
+                  {/* Jantar */}
+                  <div 
+                    onClick={() => { setGeneratedRecipe(day.dinner); setView(ViewState.RECIPE_DETAILS); }}
+                    className="cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                       <span className="text-xl">🌙</span>
+                       <span className="text-xs font-bold text-gray-400 uppercase">Jantar</span>
+                    </div>
+                    <p className="text-gray-800 font-medium pl-8">{day.dinner.title}</p>
+                  </div>
+                </div>
+
+                {/* Barra de Macros Diária (Premium) */}
+                {user?.isPremium && dailyProt > 0 && (
+                  <div className="bg-green-50/50 px-4 py-1.5 border-t border-gray-100 flex justify-end gap-3 text-[10px] text-gray-500 font-medium">
+                     <span>P: {dailyProt}g</span>
+                     <span>C: {dailyCarb}g</span>
+                     <span>G: {dailyFat}g</span>
+                  </div>
+                )}
+              </div>
+            );
           })}
         </div>
 
-        {/* --- CONTEÚDO OCULTO QUE APARECE SÓ NO PDF --- */}
+        {/* --- IMPRESSÃO DETALHADA INVISÍVEL NA TELA --- */}
         <div className="print-only">
-          {weeklyMenu.days.map((day, idx) => (
-            <div key={idx} className="page-break mb-8">
-              <h2 className="text-2xl font-bold mb-4 border-b-2 border-gray-200 pb-2 mt-8 uppercase">{day.day}</h2>
-              
-              <div className="mb-8">
-                <h3 className="text-xl font-bold mb-2 flex items-center gap-2">☀️ Almoço: {day.lunch.title}</h3>
-                <div className="bg-gray-50 p-4 rounded mb-4">
-                  <p><strong>Ingredientes:</strong></p>
-                  <ul className="list-disc pl-5 mb-2">
-                    {day.lunch.ingredients.map((item, i) => <li key={i}>{item}</li>)}
-                  </ul>
-                  <p><strong>Modo de Preparo:</strong></p>
-                  <ol className="list-decimal pl-5">
-                    {day.lunch.instructions.map((step, i) => <li key={i}>{step}</li>)}
-                  </ol>
-                </div>
-              </div>
+           <div className="print-header">
+              <h1>Chef.ai - Cardápio Semanal</h1>
+              <p>Semana de {new Date(weeklyMenu.createdAt).toLocaleDateString()}</p>
+           </div>
+           
+           {weeklyMenu.days.map((day, i) => (
+             <div key={i} className="page-break mb-8">
+               <h2 className="text-xl font-bold border-b-2 border-gray-300 mb-4 mt-8 uppercase">{day.day}</h2>
+               
+               {/* Almoço Impresso */}
+               <div className="mb-6">
+                 <h3 className="text-lg font-bold text-gray-800 mb-2">☀️ ALMOÇO: {day.lunch.title}</h3>
+                 <p className="italic text-gray-600 mb-2">{day.lunch.description}</p>
+                 <div className="grid grid-cols-2 gap-4">
+                   <div>
+                     <h4 className="font-bold text-sm uppercase">Ingredientes:</h4>
+                     <ul className="text-sm list-disc pl-4">{day.lunch.ingredients.map(ing => <li key={ing}>{ing}</li>)}</ul>
+                   </div>
+                   <div>
+                     <h4 className="font-bold text-sm uppercase">Preparo:</h4>
+                     <ol className="text-sm list-decimal pl-4">{day.lunch.instructions.map((step, idx) => <li key={idx}>{step}</li>)}</ol>
+                   </div>
+                 </div>
+               </div>
 
-              <div>
-                <h3 className="text-xl font-bold mb-2 flex items-center gap-2">🌙 Jantar: {day.dinner.title}</h3>
-                <div className="bg-gray-50 p-4 rounded">
-                  <p><strong>Ingredientes:</strong></p>
-                  <ul className="list-disc pl-5 mb-2">
-                    {day.dinner.ingredients.map((item, i) => <li key={i}>{item}</li>)}
-                  </ul>
-                  <p><strong>Modo de Preparo:</strong></p>
-                  <ol className="list-decimal pl-5">
-                    {day.dinner.instructions.map((step, i) => <li key={i}>{step}</li>)}
-                  </ol>
-                </div>
-              </div>
-            </div>
-          ))}
+               {/* Jantar Impresso */}
+               <div>
+                 <h3 className="text-lg font-bold text-gray-800 mb-2">🌙 JANTAR: {day.dinner.title}</h3>
+                 <p className="italic text-gray-600 mb-2">{day.dinner.description}</p>
+                 <div className="grid grid-cols-2 gap-4">
+                   <div>
+                     <h4 className="font-bold text-sm uppercase">Ingredientes:</h4>
+                     <ul className="text-sm list-disc pl-4">{day.dinner.ingredients.map(ing => <li key={ing}>{ing}</li>)}</ul>
+                   </div>
+                   <div>
+                     <h4 className="font-bold text-sm uppercase">Preparo:</h4>
+                     <ol className="text-sm list-decimal pl-4">{day.dinner.instructions.map((step, idx) => <li key={idx}>{step}</li>)}</ol>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           ))}
+           
+           <div className="page-break">
+             <h2 className="text-xl font-bold border-b-2 border-gray-300 mb-4 mt-8 uppercase">🛒 Lista de Compras</h2>
+             <ul className="list-disc pl-5">
+               {weeklyMenu.shoppingList.map((item, i) => (
+                 <li key={i} className="mb-1">{item}</li>
+               ))}
+             </ul>
+           </div>
         </div>
+        {/* --- FIM IMPRESSÃO DETALHADA --- */}
       </div>
     );
   };
-
-  const renderMenuHistory = () => (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <button onClick={() => setView(ViewState.WEEKLY_PLAN)} className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full">←</button>
-        <h2 className="text-2xl font-bold text-gray-800">Histórico de Cardápios</h2>
-      </div>
-
-      {allMenus.length === 0 ? (
-        <div className="text-center py-10 text-gray-500">
-          <p>Nenhum cardápio salvo.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {allMenus.map((menu) => (
-            <div key={menu.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
-              <div>
-                <p className="font-bold text-gray-700">Semana de {new Date(menu.createdAt).toLocaleDateString()}</p>
-                <p className="text-xs text-gray-400">{menu.days.length} dias planejados</p>
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => { setWeeklyMenu(menu); setView(ViewState.WEEKLY_PLAN); }}
-                  className="bg-blue-50 text-blue-600 p-2 rounded-lg hover:bg-blue-100"
-                  title="Ver Cardápio"
-                >
-                  👁️
-                </button>
-                <button 
-                  onClick={(e) => handleDeleteSingle(menu.id, e)}
-                  className="bg-red-50 text-red-500 p-2 rounded-lg hover:bg-red-100"
-                  title="Excluir"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {allMenus.length > 0 && (
-        <button 
-          onClick={handleClearHistory}
-          className="w-full mt-8 border border-red-200 text-red-500 py-3 rounded-xl hover:bg-red-50 text-sm font-bold"
-        >
-          Limpar Todo o Histórico
-        </button>
-      )}
-    </div>
-  );
 
   const renderShoppingList = () => {
     if (!weeklyMenu) return null;
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center no-print">
-           <button onClick={() => setView(ViewState.WEEKLY_PLAN)} className="text-sm text-gray-500">← Voltar</button>
-           <button onClick={handlePrint} className="flex items-center gap-2 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-200"><span>🖨️</span> PDF</button>
-        </div>
-        <div className="print-header">
-           <h1 className="text-xl font-bold text-gray-800">Chef.ai - Lista de Compras</h1>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800">Lista de Compras 🛒</h2>
-        <p className="text-sm text-gray-500 no-print">Baseada no que você NÃO tem na geladeira.</p>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 divide-y divide-gray-100">
-          {weeklyMenu.shoppingList.map((item, i) => (
-            <div key={i} className="p-4 flex items-center gap-3">
-              <input type="checkbox" className="w-5 h-5 text-chef-green rounded focus:ring-chef-green no-print" />
-              <span className="text-gray-700">{item}</span>
-            </div>
-          ))}
-        </div>
-        <button 
-          onClick={handleShareList}
-          className="w-full text-center text-chef-green font-bold py-4 no-print hover:bg-green-50 rounded-xl transition-colors"
-        >
-          Compartilhar Lista (WhatsApp)
-        </button>
+         <button onClick={() => setView(ViewState.WEEKLY_PLAN)} className="text-gray-500 mb-2">← Voltar para o Cardápio</button>
+         
+         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <span className="text-3xl">🛒</span> Lista de Compras
+            </h2>
+
+            <ul className="space-y-3 mb-8">
+              {weeklyMenu.shoppingList.map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-gray-700 p-2 hover:bg-gray-50 rounded-lg transition-colors border-b border-gray-50">
+                   <input type="checkbox" className="mt-1.5 w-5 h-5 accent-chef-green rounded border-gray-300" />
+                   <span className="text-lg">{item}</span>
+                </li>
+              ))}
+            </ul>
+
+            <button 
+              onClick={handleShareList}
+              className="w-full bg-[#25D366] text-white py-3 rounded-xl font-bold hover:bg-[#128C7E] transition-colors flex items-center justify-center gap-2 shadow-sm"
+            >
+              <span>📲</span> Compartilhar no WhatsApp
+            </button>
+         </div>
       </div>
     );
   };
 
   const renderPremium = () => (
-    <div className="space-y-6 pb-10">
-      <div className="text-center space-y-2"><span className="text-5xl">👑</span><h2 className="text-3xl font-bold text-gray-900">Seja Chef.ai Premium</h2><p className="text-gray-500">Desbloqueie todo o potencial da sua cozinha.</p></div>
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
-        <ul className="space-y-3">
-          <li className="flex items-center gap-3"><span className="text-green-500 text-xl">✓</span><span>Cardápios semanais <strong>Ilimitados</strong></span></li>
-          <li className="flex items-center gap-3"><span className="text-green-500 text-xl">✓</span><span>Análise de geladeira por <strong>Foto</strong></span></li>
-          <li className="flex items-center gap-3"><span className="text-green-500 text-xl">✓</span><span>Sem anúncios</span></li>
-          <li className="flex items-center gap-3"><span className="text-green-500 text-xl">✓</span><span>Tabela Nutricional (Calorias/Macros)</span></li>
-        </ul>
+    <div className="space-y-6 animate-slideUp text-center">
+      <div className="bg-gradient-to-b from-yellow-50 to-white border border-yellow-200 rounded-3xl p-8 shadow-sm">
+        <div className="text-5xl mb-4">👑</div>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Seja Chef.ai Premium</h2>
+        <p className="text-gray-500 mb-8">Desbloqueie todo o potencial da sua cozinha.</p>
+
+        <div className="space-y-4 text-left bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+          <div className="flex items-center gap-3">
+             <span className="text-green-500 text-xl">✓</span>
+             <span className="text-gray-700">Cardápios semanais <b>ilimitados</b></span>
+          </div>
+          <div className="flex items-center gap-3">
+             <span className="text-green-500 text-xl">✓</span>
+             <span className="text-gray-700">Análise de geladeira por <b>Foto</b></span>
+          </div>
+          <div className="flex items-center gap-3">
+             <span className="text-green-500 text-xl">✓</span>
+             <span className="text-gray-700">Sem anúncios</span>
+          </div>
+          <div className="flex items-center gap-3">
+             <span className="text-green-500 text-xl">✓</span>
+             <span className="text-gray-700">Tabela Nutricional completa</span>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {StripeService.PLANS.map(plan => {
+             // Gera o link estático para usar na tag <a>
+             const paymentLink = StripeService.getPaymentLink(plan.id, session?.user?.email);
+             return (
+               <a 
+                 key={plan.id}
+                 href={paymentLink}
+                 className={`block border-2 rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.02] relative no-underline ${
+                   plan.id === 'annual' ? 'border-chef-green bg-green-50' : 'border-gray-200 hover:border-chef-green'
+                 }`}
+               >
+                 {plan.savings && (
+                   <span className="absolute -top-3 right-4 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
+                     ECO {plan.savings}
+                   </span>
+                 )}
+                 <div className="flex justify-between items-center">
+                   <div className="text-left">
+                     <h3 className="font-bold text-gray-800">{plan.name}</h3>
+                     <p className="text-xs text-gray-500">Cobrado por {plan.interval}</p>
+                   </div>
+                   <div className="text-right">
+                     <span className="text-xl font-bold text-chef-green">R$ {plan.price.toFixed(2).replace('.', ',')}</span>
+                     <span className="text-xs text-gray-400 block">/{plan.interval}</span>
+                   </div>
+                 </div>
+               </a>
+             );
+          })}
+        </div>
       </div>
-      <div className="space-y-4">
-        {StripeService.PLANS.map((plan) => (
-          <button key={plan.id} onClick={() => handleSubscribe(plan.id)} disabled={isLoading || user?.isPremium} className={`w-full relative p-4 rounded-xl border-2 transition-all ${plan.id === 'annual' ? 'border-chef-green bg-green-50' : 'border-gray-200 bg-white'}`}>
-            {plan.savings && (<span className="absolute -top-3 right-4 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">ECO {plan.savings}</span>)}
-            <div className="flex justify-between items-center"><div className="text-left"><p className="font-bold text-lg text-gray-800">{plan.name}</p><p className="text-sm text-gray-500">Cobrado por {plan.interval}</p></div><div className="text-right"><p className="font-bold text-xl text-chef-green">R$ {plan.price.toFixed(2).replace('.', ',')}</p><p className="text-xs text-gray-400">/{plan.interval}</p></div></div>
-          </button>
-        ))}
-      </div>
-      {user?.isPremium && (<div className="bg-green-100 p-4 rounded-lg text-green-800 text-center font-bold">Você já é assinante Premium!</div>)}
     </div>
   );
 
   const renderProfile = () => (
     <div className="space-y-6">
-      <div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Perfil</h2><button onClick={handleLogout} className="text-sm text-red-500 font-bold border border-red-200 px-3 py-1 rounded-lg hover:bg-red-50">Sair</button></div>
-      <div className="bg-gray-100 p-4 rounded-lg text-sm text-gray-600">Logado como: <strong>{session?.user?.email}</strong></div>
-      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="font-bold mb-4 text-red-500 flex items-center gap-2">🚫 Restrições Alimentares</h3><p className="text-sm text-gray-500 mb-4">A IA nunca sugerirá ingredientes listados aqui.</p>
-        <form onSubmit={updateAllergies} className="space-y-3">
-          <textarea name="allergies" defaultValue={user?.allergies.join(', ')} placeholder="Ex: Amendoim, Camarão, Glúten..." className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-200 outline-none" rows={3} />
-          <button className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold w-full">Salvar Alergias</button>
-        </form>
-      </div>
-      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="font-bold mb-2">Estatísticas</h3>
-        <div className="grid grid-cols-2 gap-4 text-center">
-          <div className="bg-gray-50 p-3 rounded-lg"><p className="text-2xl font-bold text-chef-green">{user?.usage.quickRecipes}</p><p className="text-xs text-gray-500">Receitas Geradas</p></div>
-          <div className="bg-gray-50 p-3 rounded-lg"><p className="text-2xl font-bold text-blue-500">{user?.usage.weeklyMenus}</p><p className="text-xs text-gray-500">Cardápios Criados</p></div>
-        </div>
-      </div>
+       <h2 className="text-2xl font-bold text-gray-800">Meu Perfil</h2>
+       
+       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+         <div className="flex items-center gap-4 mb-6">
+           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-2xl border border-gray-200">
+             👤
+           </div>
+           <div>
+             {/* Usa session.user.email em vez de user.email para evitar erro de TS */}
+             <p className="font-bold text-gray-800">{session?.user?.email}</p>
+             <p className={`text-sm ${user?.isPremium ? 'text-chef-green font-bold' : 'text-gray-500'}`}>
+               {user?.isPremium ? 'Membro Premium 👑' : 'Plano Gratuito'}
+             </p>
+           </div>
+         </div>
+
+         <div className="space-y-4">
+            <div>
+               <label className="block text-sm font-bold text-gray-700 mb-2">Minhas Alergias</label>
+               <input 
+                 placeholder="Ex: Amendoim, Lactose..."
+                 className="w-full border border-gray-300 rounded-lg p-3 text-sm"
+                 value={user?.allergies?.join(', ') || ''}
+                 onChange={(e) => {
+                    const allergies = e.target.value.split(',').map(s => s.trim());
+                    if (user && session?.user) {
+                       const updated = { ...user, allergies };
+                       setUser(updated);
+                       SupabaseService.updateUserProfile(session.user.id, updated);
+                    }
+                 }}
+               />
+               <p className="text-xs text-gray-400 mt-1">A IA nunca sugerirá receitas com estes itens.</p>
+            </div>
+         </div>
+       </div>
+
+       <div className="grid grid-cols-2 gap-4">
+         <button 
+           onClick={handleDeleteAllMenus}
+           className="bg-red-50 text-red-500 font-bold py-3 rounded-xl hover:bg-red-100 transition-colors border border-red-100"
+         >
+           Limpar Histórico
+         </button>
+         <button 
+           onClick={handleLogout}
+           className="bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors"
+         >
+           Sair da Conta
+         </button>
+       </div>
     </div>
   );
 
   const renderPrivacyPolicy = () => (
-    <div className="bg-white min-h-screen space-y-6 pb-8">
-      <div className="flex items-center gap-2 mb-6"><button onClick={() => setView(ViewState.HOME)} className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-bold text-gray-700">← Voltar ao Início</button></div>
-      <h2 className="text-3xl font-bold text-gray-900">Política de Privacidade</h2>
-      <p className="text-sm text-gray-500">Última atualização: Dezembro de 2024</p>
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-sm text-gray-700 leading-relaxed space-y-4">
-        <section><h3 className="font-bold text-gray-900 text-lg mb-2">1. Coleta de Informações</h3><p>Coletamos o endereço de e-mail fornecido no cadastro para autenticação. Informações sobre ingredientes e preferências alimentares são processadas apenas para gerar receitas personalizadas e não são vendidas a terceiros.</p></section>
-        <section><h3 className="font-bold text-gray-900 text-lg mb-2">2. Uso de Imagens</h3><p>O recurso de "Análise de Geladeira" envia sua foto temporariamente para nossos servidores de Inteligência Artificial para identificar ingredientes. A imagem é descartada logo após a análise e não é armazenada em nossos bancos de dados.</p></section>
-        <section><h3 className="font-bold text-gray-900 text-lg mb-2">3. Pagamentos</h3><p>Todas as transações financeiras são processadas pelo Stripe. Não temos acesso nem armazenamos os dados do seu cartão de crédito em nossos servidores.</p></section>
-        <section><h3 className="font-bold text-gray-900 text-lg mb-2">4. Publicidade</h3><p>Para usuários do plano gratuito, utilizamos serviços de publicidade como o Google AdSense, que podem coletar cookies anônimos para exibir anúncios relevantes.</p></section>
-        <section><h3 className="font-bold text-gray-900 text-lg mb-2">5. Contato e Exclusão</h3><p>Para solicitar a exclusão de sua conta e todos os dados associados, entre em contato através do e-mail de suporte disponível na loja de aplicativos.</p></section>
+    <div className="bg-white min-h-screen absolute inset-0 z-50 p-6 overflow-y-auto">
+      <div className="max-w-md mx-auto">
+        <button onClick={() => setView(ViewState.HOME)} className="mb-6 text-chef-green font-bold text-lg flex items-center gap-2">
+           <span>←</span> Voltar ao Início
+        </button>
+        <h1 className="text-2xl font-bold mb-6 text-gray-900">Política de Privacidade</h1>
+        <div className="space-y-4 text-gray-600 text-sm leading-relaxed">
+          <p><strong>Última atualização: Dezembro de 2024</strong></p>
+          <p>O Chef.ai ("nós") valoriza sua privacidade. Esta política descreve como coletamos e usamos seus dados.</p>
+          
+          <h3 className="font-bold text-gray-800 mt-4">1. Dados Coletados</h3>
+          <p>Coletamos seu endereço de e-mail para autenticação e criação de conta segura. Seus dados de cardápio, ingredientes e preferências (alergias) são armazenados em nosso banco de dados seguro (Supabase) para fornecer o serviço.</p>
+          
+          <h3 className="font-bold text-gray-800 mt-4">2. Uso de Inteligência Artificial</h3>
+          <p>Ao enviar fotos da geladeira ou solicitar receitas, os dados (texto/imagem) são processados pela OpenAI. Não utilizamos seus dados pessoais para treinar modelos públicos de IA.</p>
+          
+          <h3 className="font-bold text-gray-800 mt-4">3. Pagamentos</h3>
+          <p>Todos os pagamentos são processados externamente pelo Stripe. Nós não temos acesso nem armazenamos os dados do seu cartão de crédito.</p>
+          
+          <h3 className="font-bold text-gray-800 mt-4">4. Exclusão de Dados</h3>
+          <p>Você pode solicitar a exclusão completa da sua conta e dados a qualquer momento através do menu "Perfil" ou entrando em contato com nosso suporte.</p>
+        </div>
       </div>
     </div>
   );
 
   const renderTermsOfUse = () => (
-    <div className="bg-white min-h-screen space-y-6 pb-8">
-      <div className="flex items-center gap-2 mb-6"><button onClick={() => setView(ViewState.HOME)} className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-bold text-gray-700">← Voltar ao Início</button></div>
-      <h2 className="text-3xl font-bold text-gray-900">Termos de Uso</h2>
-      <p className="text-sm text-gray-500">Última atualização: Dezembro de 2024</p>
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-sm text-gray-700 leading-relaxed space-y-4">
-        <section><h3 className="font-bold text-gray-900 text-lg mb-2">1. Aceitação</h3><p>Ao criar uma conta no Chef.ai, você concorda integralmente com estes termos. O serviço é destinado a auxiliar no planejamento alimentar doméstico.</p></section>
-        <section><h3 className="font-bold text-gray-900 text-lg mb-2">2. Isenção de Responsabilidade (Saúde)</h3><p>As receitas e informações nutricionais são geradas por Inteligência Artificial. Embora nos esforcemos pela precisão, <strong>não substitui a orientação de um nutricionista ou médico</strong>. Verifique sempre os ingredientes caso possua alergias graves.</p></section>
-        <section><h3 className="font-bold text-gray-900 text-lg mb-2">3. Planos e Assinaturas</h3><p>O plano "Premium" oferece recursos extras mediante pagamento recorrente. Você pode cancelar a renovação a qualquer momento. Não realizamos reembolsos parciais de períodos já iniciados.</p></section>
-        <section><h3 className="font-bold text-gray-900 text-lg mb-2">4. Conduta do Usuário</h3><p>É proibido utilizar o aplicativo para fins ilícitos, tentar engenharia reversa ou sobrecarregar nossos servidores.</p></section>
-        <section><h3 className="font-bold text-gray-900 text-lg mb-2">5. Alterações</h3><p>Reservamo-nos o direito de modificar estes termos a qualquer momento. O uso contínuo do aplicativo após alterações constitui aceitação dos novos termos.</p></section>
+    <div className="bg-white min-h-screen absolute inset-0 z-50 p-6 overflow-y-auto">
+      <div className="max-w-md mx-auto">
+        <button onClick={() => setView(ViewState.HOME)} className="mb-6 text-chef-green font-bold text-lg flex items-center gap-2">
+           <span>←</span> Voltar ao Início
+        </button>
+        <h1 className="text-2xl font-bold mb-6 text-gray-900">Termos de Uso</h1>
+        <div className="space-y-4 text-gray-600 text-sm leading-relaxed">
+          <h3 className="font-bold text-gray-800 mt-4">1. Aceitação</h3>
+          <p>Ao utilizar o aplicativo Chef.ai, você concorda com estes termos. O serviço é fornecido "como está".</p>
+          
+          <h3 className="font-bold text-gray-800 mt-4">2. Natureza das Receitas (Isenção de Responsabilidade)</h3>
+          <p>As receitas e informações nutricionais são geradas por Inteligência Artificial. Embora nos esforcemos pela precisão, podem ocorrer erros. <strong>Este aplicativo não substitui aconselhamento médico ou nutricional profissional.</strong> Verifique sempre os ingredientes antes de consumir, especialmente em caso de alergias graves.</p>
+          
+          <h3 className="font-bold text-gray-800 mt-4">3. Assinatura Premium</h3>
+          <p>A assinatura Premium é renovada automaticamente conforme o período escolhido. O cancelamento pode ser feito a qualquer momento para evitar cobranças futuras.</p>
+        </div>
       </div>
     </div>
   );
 
+  const renderMenuHistory = () => (
+    <div className="space-y-6">
+      <button onClick={() => setView(ViewState.WEEKLY_PLAN)} className="text-gray-500 mb-2">← Voltar</button>
+      <h2 className="text-2xl font-bold text-gray-800">Histórico de Cardápios</h2>
+      
+      {allMenus.length === 0 ? (
+        <p className="text-gray-500 italic">Você ainda não tem cardápios salvos.</p>
+      ) : (
+        <div className="space-y-3">
+          {allMenus.map(menu => (
+             <div key={menu.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-gray-700">Semana de {new Date(menu.createdAt).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-400">{menu.days.length} dias planejados</p>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => { setWeeklyMenu(menu); setView(ViewState.WEEKLY_PLAN); }}
+                    className="p-2 bg-blue-50 text-blue-600 rounded-lg"
+                    title="Ver"
+                  >
+                    👁️
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteMenu(menu.id)}
+                    className="p-2 bg-red-50 text-red-500 rounded-lg"
+                    title="Apagar"
+                  >
+                    🗑️
+                  </button>
+                </div>
+             </div>
+          ))}
+        </div>
+      )}
+      
+      {allMenus.length > 0 && (
+         <button 
+           onClick={handleDeleteAllMenus}
+           className="w-full mt-8 bg-gray-100 text-red-500 py-3 rounded-xl font-bold border border-gray-200 hover:bg-red-50 transition-colors"
+         >
+           Limpar Todo o Histórico
+         </button>
+      )}
+    </div>
+  );
+
+  // Switch principal de renderização
   const renderCurrentView = () => {
-    switch (view) {
-      case ViewState.HOME: return renderHome();
-      case ViewState.FRIDGE: return renderFridge();
-      case ViewState.QUICK_RECIPE: return renderQuickRecipeSetup();
-      case ViewState.RECIPE_DETAILS: return renderRecipeDetails();
-      case ViewState.WEEKLY_PLAN: return renderWeeklyPlan();
-      case ViewState.MENU_HISTORY: return renderMenuHistory();
-      case ViewState.SHOPPING_LIST: return renderShoppingList();
-      case ViewState.PREMIUM: return renderPremium();
-      case ViewState.PROFILE: return renderProfile();
-      case ViewState.PRIVACY: return renderPrivacyPolicy();
-      case ViewState.TERMS: return renderTermsOfUse();
+    switch(view) {
+      case ViewState.HOME: return <div key="home" className="animate-fadeIn">{renderHome()}</div>;
+      case ViewState.FRIDGE: return <div key="fridge" className="animate-fadeIn">{renderFridge()}</div>;
+      case ViewState.WEEKLY_PLAN: return <div key="weekly" className="animate-fadeIn">{renderWeeklyPlan()}</div>;
+      case ViewState.RECIPE_DETAILS: return <div key="details">{renderRecipeDetails()}</div>;
+      case ViewState.SHOPPING_LIST: return <div key="shopping" className="animate-fadeIn">{renderShoppingList()}</div>;
+      case ViewState.PREMIUM: return <div key="premium" className="animate-fadeIn">{renderPremium()}</div>;
+      case ViewState.PROFILE: return <div key="profile" className="animate-fadeIn">{renderProfile()}</div>;
+      case ViewState.PRIVACY: return <div key="privacy">{renderPrivacyPolicy()}</div>;
+      case ViewState.TERMS: return <div key="terms">{renderTermsOfUse()}</div>;
+      case ViewState.MENU_HISTORY: return <div key="history" className="animate-fadeIn">{renderMenuHistory()}</div>;
       default: return renderHome();
     }
   };
 
-  if (!session) return <AuthScreen onLogin={() => {}} />;
-
   return (
-    <Layout activeView={view} onNavigate={setView} isPremium={user?.isPremium || false}>
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <span className="block sm:inline">{error}</span>
-          <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setError(null)}>
-            <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
-          </span>
-        </div>
-      )}
-      <div key={view} className="animate-fade-in printable">{renderCurrentView()}</div>
+    <Layout 
+      activeView={view} 
+      onNavigate={setView} 
+      isPremium={user?.isPremium || false}
+    >
+      {renderCurrentView()}
     </Layout>
   );
 }
