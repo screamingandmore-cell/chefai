@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Layout, GoogleAdPlaceholder, AdBanner } from './components/Layout';
 import { ViewState, UserProfile, Recipe, WeeklyMenu, Difficulty } from './types';
@@ -208,10 +207,7 @@ export default function App() {
       setAllMenus(prev => [menu, ...prev]);
       const updatedUser = await SupabaseService.incrementUsage(session.user.id, 'weeklyMenus');
       setUser(updatedUser);
-      
-      // FORÇA A TROCA DE TELA PARA O CARDÁPIO
       setView(ViewState.WEEKLY_PLAN);
-      
     } catch (err: any) { setError(err.message); } finally { setIsLoading(false); }
   };
 
@@ -299,7 +295,7 @@ export default function App() {
         <p className="text-xs font-bold text-gray-500 uppercase mb-3">Dificuldade</p>
         <div className="flex bg-gray-100 rounded-lg p-1">
           {[Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD].map((diff) => (
-            <button key={diff} onClick={() => setSelectedDifficulty(diff)} className={`flex-1 py-2 rounded-md text-xs font-bold ${selectedDifficulty === diff ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400'}`}>{diff}</button>
+            <button key={diff} onClick={() => setSelectedDifficulty(diff)} className={`flex-1 py-2 rounded-md text-xs font-bold transition-colors ${selectedDifficulty === diff ? 'bg-chef-green text-white shadow-md' : 'text-gray-400 hover:bg-gray-200'}`}>{diff}</button>
           ))}
         </div>
       </div>
@@ -314,7 +310,6 @@ export default function App() {
   const renderQuickRecipeView = () => (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-        {/* TITULO DIFERENTE PARA VOCE VER QUE MUDOU */}
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-chef-orange">Modo Expresso ⚡</h2>
         <p className="text-sm text-gray-500 mb-4">Adicione ingredientes para uma receita imediata.</p>
         {renderIngredientInput()}
@@ -323,7 +318,7 @@ export default function App() {
         <p className="text-xs font-bold text-gray-500 uppercase mb-3">Dificuldade</p>
         <div className="flex bg-gray-100 rounded-lg p-1">
           {[Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD].map((diff) => (
-            <button key={diff} onClick={() => setSelectedDifficulty(diff)} className={`flex-1 py-2 rounded-md text-xs font-bold ${selectedDifficulty === diff ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400'}`}>{diff}</button>
+            <button key={diff} onClick={() => setSelectedDifficulty(diff)} className={`flex-1 py-2 rounded-md text-xs font-bold transition-colors ${selectedDifficulty === diff ? 'bg-chef-green text-white shadow-md' : 'text-gray-400 hover:bg-gray-200'}`}>{diff}</button>
           ))}
         </div>
       </div>
@@ -431,13 +426,18 @@ export default function App() {
   const renderPremium = () => (
     <div className="space-y-6 text-center">
       <div className="bg-gradient-to-b from-yellow-50 to-white border border-yellow-200 rounded-3xl p-8 shadow-sm">
-        <h2 className="text-3xl font-bold mb-2">Premium 👑</h2>
-        <p className="text-gray-500 mb-8">Desbloqueie tudo.</p>
+        <h2 className="text-3xl font-bold mb-4">Premium 👑</h2>
+        {/* LISTA DE BENEFÍCIOS ADICIONADA */}
+        <div className="bg-white/50 rounded-xl p-4 mb-8 text-left space-y-3">
+           <p className="flex items-center gap-2"><span className="text-chef-green">✅</span> Cardápios Ilimitados</p>
+           <p className="flex items-center gap-2"><span className="text-chef-green">✅</span> Análise de Fotos (IA)</p>
+           <p className="flex items-center gap-2"><span className="text-chef-green">✅</span> Sem Anúncios</p>
+           <p className="flex items-center gap-2"><span className="text-chef-green">✅</span> Tabela Nutricional Completa</p>
+        </div>
         <div className="space-y-4">
           {StripeService.PLANS.map(plan => (
             <a key={plan.id} href={StripeService.getPaymentLink(plan.id, session?.user?.email)} className="block no-underline group relative overflow-visible">
               <div className="border-2 rounded-xl p-4 group-hover:border-chef-green flex justify-between items-center transition-all bg-white group-hover:shadow-md relative overflow-hidden">
-                {/* CORREÇÃO: TAG DE DESCONTO VERMELHA E MUITO VISÍVEL */}
                 {plan.savings && (
                   <span className="absolute top-0 right-0 bg-red-600 text-white text-[10px] px-2 py-1 rounded-bl-lg font-bold shadow-sm z-10">
                     {plan.savings} OFF
@@ -511,4 +511,3 @@ export default function App() {
     </Layout>
   );
 }
-    
