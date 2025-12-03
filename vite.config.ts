@@ -10,11 +10,12 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.js',
         registerType: 'autoUpdate',
-        injectRegister: null, // Desativa injeção automática para usarmos o script manual no index.html
-        strategies: 'generateSW', // O sistema gera o arquivo sozinho, sem precisar de src/sw.js
-        filename: 'sw.js', // Nome padrão universal
-        manifest: false, // Usa o arquivo public/manifest.json que já configuramos
+        injectRegister: null, // Registro manual no index.html
+        manifest: false, // Usa o public/manifest.json manual
         devOptions: {
           enabled: true,
           type: 'module',
