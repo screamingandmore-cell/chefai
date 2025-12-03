@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => {
                 cacheName: 'google-fonts-cache',
                 expiration: {
                   maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                  maxAgeSeconds: 60 * 60 * 24 * 365 // 365 dias
                 },
                 cacheableResponse: {
                   statuses: [0, 200]
@@ -56,7 +56,17 @@ export default defineConfig(({ mode }) => {
           launch_handler: {
             client_mode: "auto"
           },
+          edge_side_panel: {
+            preferred_width: 480
+          },
           prefer_related_applications: false,
+          related_applications: [
+            {
+              platform: "play",
+              url: "https://play.google.com/store/apps/details?id=com.chefai.app",
+              id: "com.chefai.app"
+            }
+          ],
           iarc_rating_id: "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
           icons: [
             {
