@@ -510,9 +510,7 @@ export default function App() {
   );
 
   const renderPrivacyPolicy = () => (
-    <div className="bg-white min-h-screen absolute inset-0 z-50 p-6 overflow-y-auto"><div className="max-w-md mx-auto"><button onClick={() => setView(ViewState.HOME)} className="mb-6 text-chef-green font-bold text-lg flex items-center gap-2"><span>←</span> Voltar</button><h1 className="text-2xl font-bold mb-6 text-gray-900">Política de Privacidade</h1><div className="space-y-4 text-gray-600 text-sm leading-relaxed"><p><strong>Última atualização: Dezembro de 2024</strong></p><p>Coletamos seu endereço de e-mail para autenticação.</p><p>Seus dados de ingredientes são processados pela OpenAI e armazenados no Supabase.</p></div>
-    </div>
-    </div>
+    <div className="bg-white min-h-screen absolute inset-0 z-50 p-6 overflow-y-auto"><div className="max-w-md mx-auto"><button onClick={() => setView(ViewState.HOME)} className="mb-6 text-chef-green font-bold text-lg flex items-center gap-2"><span>←</span> Voltar</button><h1 className="text-2xl font-bold mb-6 text-gray-900">Política de Privacidade</h1><div className="space-y-4 text-gray-600 text-sm leading-relaxed"><p><strong>Última atualização: Dezembro de 2024</strong></p><p>Coletamos seu endereço de e-mail para autenticação.</p><p>Seus dados de ingredientes são processados pela OpenAI e armazenados no Supabase.</p></div></div></div>
   );
 
   const renderTermsOfUse = () => (
