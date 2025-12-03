@@ -208,7 +208,10 @@ export default function App() {
       setAllMenus(prev => [menu, ...prev]);
       const updatedUser = await SupabaseService.incrementUsage(session.user.id, 'weeklyMenus');
       setUser(updatedUser);
+      
+      // FORÇA A TROCA DE TELA PARA O CARDÁPIO
       setView(ViewState.WEEKLY_PLAN);
+      
     } catch (err: any) { setError(err.message); } finally { setIsLoading(false); }
   };
 
@@ -311,8 +314,9 @@ export default function App() {
   const renderQuickRecipeView = () => (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-chef-orange">Receita Rápida 🍳</h2>
-        <p className="text-sm text-gray-500 mb-4">Adicione o que você tem agora para uma solução expressa.</p>
+        {/* TITULO DIFERENTE PARA VOCE VER QUE MUDOU */}
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-chef-orange">Modo Expresso ⚡</h2>
+        <p className="text-sm text-gray-500 mb-4">Adicione ingredientes para uma receita imediata.</p>
         {renderIngredientInput()}
       </div>
       <div className="bg-white p-4 rounded-xl border border-gray-200">
@@ -431,10 +435,11 @@ export default function App() {
         <p className="text-gray-500 mb-8">Desbloqueie tudo.</p>
         <div className="space-y-4">
           {StripeService.PLANS.map(plan => (
-            <a key={plan.id} href={StripeService.getPaymentLink(plan.id, session?.user?.email)} className="block no-underline group">
+            <a key={plan.id} href={StripeService.getPaymentLink(plan.id, session?.user?.email)} className="block no-underline group relative overflow-visible">
               <div className="border-2 rounded-xl p-4 group-hover:border-chef-green flex justify-between items-center transition-all bg-white group-hover:shadow-md relative overflow-hidden">
+                {/* CORREÇÃO: TAG DE DESCONTO VERMELHA E MUITO VISÍVEL */}
                 {plan.savings && (
-                  <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-2 py-1 rounded-bl-lg font-bold shadow-sm">
+                  <span className="absolute top-0 right-0 bg-red-600 text-white text-[10px] px-2 py-1 rounded-bl-lg font-bold shadow-sm z-10">
                     {plan.savings} OFF
                   </span>
                 )}
@@ -502,6 +507,8 @@ export default function App() {
   return (
     <Layout activeView={view} onNavigate={setView} isPremium={user?.isPremium || false}>
       <div className="animate-fade-in pb-safe">{renderCurrentView()}</div>
+      <div className="text-center text-[10px] text-gray-300 py-2">Versão 2.0</div>
     </Layout>
   );
 }
+    
