@@ -40,13 +40,13 @@ export default defineConfig(({ mode }) => {
           dir: 'ltr',
           icons: [
             {
-              src: 'icon-192.png',
+              src: '/icon-192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any maskable'
             },
             {
-              src: 'icon-512.png',
+              src: '/icon-512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any maskable'
@@ -54,42 +54,42 @@ export default defineConfig(({ mode }) => {
           ],
           screenshots: [
             {
-              src: 'screenshot-mobile-1.png',
+              src: '/screenshot-mobile-1.png',
               sizes: '1080x1920',
               type: 'image/png',
               form_factor: 'narrow',
               label: 'Tela Inicial'
             },
             {
-              src: 'screenshot-mobile-2.png',
+              src: '/screenshot-mobile-2.png',
               sizes: '1080x1920',
               type: 'image/png',
               form_factor: 'narrow',
               label: 'Geladeira Inteligente'
             },
             {
-              src: 'screenshot-mobile-3.png',
+              src: '/screenshot-mobile-3.png',
               sizes: '1080x1920',
               type: 'image/png',
               form_factor: 'narrow',
               label: 'Cardápio Semanal'
             },
             {
-              src: 'screenshot-desktop-1.png',
+              src: '/screenshot-desktop-1.png',
               sizes: '1920x1080',
               type: 'image/png',
               form_factor: 'wide',
               label: 'Visão Geral Desktop'
             },
             {
-              src: 'screenshot-desktop-2.png',
+              src: '/screenshot-desktop-2.png',
               sizes: '1920x1080',
               type: 'image/png',
               form_factor: 'wide',
               label: 'Planejamento Desktop'
             },
             {
-              src: 'screenshot-desktop-3.png',
+              src: '/screenshot-desktop-3.png',
               sizes: '1920x1080',
               type: 'image/png',
               form_factor: 'wide',
@@ -102,7 +102,7 @@ export default defineConfig(({ mode }) => {
               short_name: "Geladeira",
               description: "Adicionar ingredientes",
               url: "/",
-              icons: [{ src: "icon-192.png", sizes: "192x192" }]
+              icons: [{ src: "/icon-192.png", sizes: "192x192" }]
             }
           ]
         }

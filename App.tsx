@@ -46,10 +46,13 @@ const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm">
         <div className="text-center mb-6">
-          <img src="/icon-192.png" alt="Logo" className="w-20 h-20 mx-auto mb-4 rounded-2xl shadow-md object-contain bg-gray-900" 
+          <img 
+            src="/icon-192.png" 
+            alt="Logo" 
+            className="w-20 h-20 mx-auto mb-4 rounded-2xl shadow-md object-contain bg-gray-900" 
             onError={(e) => {
-              if (e.currentTarget.src.endsWith('icon-192.png')) e.currentTarget.src = '/icon-192.png.png';
-              else { e.currentTarget.src = '/favicon.svg'; e.currentTarget.style.backgroundColor = 'transparent'; }
+              e.currentTarget.src = '/favicon.svg';
+              e.currentTarget.style.backgroundColor = 'transparent';
             }}
           />
           <h1 className="text-2xl font-bold text-gray-800">Chef<span className="text-chef-green">.ai</span></h1>
@@ -473,6 +476,7 @@ export default function App() {
     <div className="space-y-6 text-center">
       <div className="bg-gradient-to-b from-yellow-50 to-white border border-yellow-200 rounded-3xl p-8 shadow-sm">
         <h2 className="text-3xl font-bold mb-4">Premium 👑</h2>
+        {/* LISTA DE BENEFÍCIOS ADICIONADA */}
         <div className="bg-white/50 rounded-xl p-4 mb-8 text-left space-y-3">
            <p className="flex items-center gap-2"><span className="text-chef-green">✅</span> Cardápios Ilimitados</p>
            <p className="flex items-center gap-2"><span className="text-chef-green">✅</span> Análise de Fotos (IA)</p>

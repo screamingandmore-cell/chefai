@@ -118,14 +118,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate
       
       {/* Header Minimalista */}
       <header className="bg-white px-6 pt-12 pb-4 flex justify-between items-center sticky top-0 z-30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.03)] no-print">
-        <div className="flex items-center gap-3" onClick={() => onNavigate(ViewState.HOME)}>
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate(ViewState.HOME)}>
           <img 
             src="/icon-192.png" 
             alt="Logo" 
             className="w-8 h-8 object-contain rounded-lg"
             onError={(e) => {
               e.currentTarget.src = '/favicon.svg';
-              e.currentTarget.onerror = null;
             }}
           />
           <h1 className="font-bold text-lg tracking-tight text-gray-800">Chef<span className="text-[#10b981]">.ai</span></h1>
