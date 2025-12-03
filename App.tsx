@@ -464,3 +464,54 @@ export default function App() {
     </Layout>
   );
 }
+// ... (código anterior mantido, focando nas mudanças)
+
+  const handleGenerateWeeklyClick = async () => {
+    // ... validações ...
+    try {
+      const menu = await OpenAIService.generateWeeklyMenu(finalIngredients, user.allergies, user.isPremium);
+      await SupabaseService.saveWeeklyMenu(session.user.id, menu);
+      setWeeklyMenu(menu);
+      setAllMenus(prev => [menu, ...prev]);
+      const updatedUser = await SupabaseService.incrementUsage(session.user.id, 'weeklyMenus');
+      setUser(updatedUser);
+      
+      // CORREÇÃO: Força a mudança de tela para o Cardápio imediatamente após gerar
+      setView(ViewState.WEEKLY_PLAN); 
+      
+    } catch (err: any) { setError(err.message); } finally { setIsLoading(false); }
+  };
+
+// ...
+
+  const renderPremium = () => (
+    <div className="space-y-6 text-center">
+      <div className="bg-gradient-to-b from-yellow-50 to-white border border-yellow-200 rounded-3xl p-8 shadow-sm">
+        <h2 className="text-3xl font-bold mb-2">Premium 👑</h2>
+        <p className="text-gray-500 mb-8">Desbloqueie tudo.</p>
+        <div className="space-y-4">
+          {StripeService.PLANS.map(plan => (
+            <a key={plan.id} href={StripeService.getPaymentLink(plan.id, session?.user?.email)} className="block no-underline">
+              <div className="border-2 rounded-xl p-4 hover:border-chef-green flex justify-between items-center transition-all bg-white hover:shadow-md relative overflow-hidden">
+                <div className="text-left">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-gray-800">{plan.name}</h3>
+                    {/* CORREÇÃO: Exibição do desconto (Savings) */}
+                    {plan.savings && (
+                      <span className="bg-green-100 text-chef-green text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border border-green-200">
+                        {plan.savings} OFF
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">{plan.interval}</p>
+                </div>
+                <div className="text-right">
+                   <span className="text-xl font-bold text-chef-green">R$ {plan.price.toFixed(2).replace('.', ',')}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
