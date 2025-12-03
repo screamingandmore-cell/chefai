@@ -6,20 +6,18 @@
     
     <!-- PWA Primary Meta Tags -->
     <meta name="theme-color" content="#10b981" />
-    <meta name="description" content="Chef.ai: Seu assistente de cozinha pessoal com Inteligência Artificial. Crie receitas, cardápios semanais e economize nas compras." />
-    <meta name="keywords" content="receitas, inteligência artificial, cardápio semanal, culinária, cozinha, chef, ai, planejamento alimentar" />
-    <title>Chef.ai - Cardápios Inteligentes</title>
+    <meta name="description" content="Chef.ai: Seu assistente de cozinha pessoal com Inteligência Artificial." />
+    <title>Chef.ai</title>
     
-    <!-- Link OBRIGATÓRIO para o Manifesto Manual -->
+    <!-- Link para o Manifesto -->
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- iOS / Apple Support -->
+    <!-- iOS Support -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Chef.ai" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     
-    <!-- Favicons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     
@@ -85,7 +83,7 @@
       }
       .print-header { display: none; }
     </style>
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.1",
@@ -95,7 +93,9 @@
     "openai": "https://aistudiocdn.com/openai@^6.9.1",
     "vite": "https://aistudiocdn.com/vite@^7.2.6",
     "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.2.0"
+    "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.2.0",
+    "workbox-precaching": "https://aistudiocdn.com/workbox-precaching@^7.4.0",
+    "workbox-core": "https://aistudiocdn.com/workbox-core@^7.4.0"
   }
 }
 </script>
@@ -103,5 +103,20 @@
   <body class="bg-gray-50 text-gray-900 antialiased">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    
+    <!-- Service Worker Registration Manual -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW registered: ', registration);
+            })
+            .catch(registrationError => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

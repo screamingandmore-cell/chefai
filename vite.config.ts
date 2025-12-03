@@ -11,17 +11,19 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        injectRegister: 'auto',
-        strategies: 'injectManifest',
-        srcDir: 'src',
-        filename: 'sw.js',
-        manifest: false, // Usa o arquivo manual public/manifest.json
+        injectRegister: null, // Desativa injeção automática para usarmos o script manual no index.html
+        strategies: 'generateSW', // O sistema gera o arquivo sozinho, sem precisar de src/sw.js
+        filename: 'sw.js', // Nome padrão universal
+        manifest: false, // Usa o arquivo public/manifest.json que já configuramos
         devOptions: {
           enabled: true,
           type: 'module',
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,json}']
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true
         },
         includeAssets: [
             'favicon.svg', 
