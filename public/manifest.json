@@ -1,106 +1,90 @@
-
-<!DOCTYPE html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    
-    <!-- PWA Primary Meta Tags -->
-    <meta name="theme-color" content="#10b981" />
-    <meta name="description" content="Chef.ai: Seu assistente de cozinha pessoal com Inteligência Artificial." />
-    <title>Chef.ai</title>
-    
-    <!-- Link para o Manifesto -->
-    <link rel="manifest" href="/manifest.json" />
-
-    <!-- iOS Support -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Chef.ai" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
-    
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
-    
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-SEU_ID_AQUI" crossorigin="anonymous"></script>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
-            colors: {
-              primary: {
-                50: '#eff6ff',
-                100: '#dbeafe',
-                500: '#3b82f6',
-                600: '#2563eb',
-                700: '#1d4ed8',
-              },
-              chef: {
-                green: '#10b981',
-                orange: '#f97316',
-              }
-            }
-          },
-        },
-      }
-    </script>
-    <style>
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-      /* --- ESTILOS DE IMPRESSÃO (PDF) --- */
-      .print-only { display: none; }
-
-      @media print {
-        header, nav, button, .no-print, iframe, .google-ad-placeholder {
-          display: none !important;
-        }
-        .print-only { display: block !important; }
-        body, #root, main {
-          background-color: white !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          width: 100% !important;
-          max-width: none !important;
-          overflow: visible !important;
-          box-shadow: none !important;
-        }
-        body { color: black !important; font-size: 12pt; }
-        .page-break { page-break-before: always; }
-        .print-header {
-          display: block !important;
-          text-align: center;
-          margin-bottom: 20px;
-          border-bottom: 2px solid #10b981;
-          padding-bottom: 10px;
-        }
-      }
-      .print-header { display: none; }
-    </style>
-  <script type="importmap">
 {
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.86.0",
-    "openai": "https://aistudiocdn.com/openai@^6.9.1",
-    "vite": "https://aistudiocdn.com/vite@^7.2.6",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.2.0"
-  }
+  "name": "Chef.ai - Cardápios Inteligentes",
+  "short_name": "Chef.ai",
+  "description": "Seu assistente de cozinha pessoal com Inteligência Artificial.",
+  "theme_color": "#10b981",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/",
+  "scope": "/",
+  "id": "com.chefai.app",
+  "categories": [
+    "food",
+    "lifestyle"
+  ],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile-1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tela Inicial"
+    },
+    {
+      "src": "/screenshot-mobile-2.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Geladeira"
+    },
+    {
+      "src": "/screenshot-mobile-3.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Cardápio"
+    },
+    {
+      "src": "/screenshot-desktop-1.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop Home"
+    },
+    {
+      "src": "/screenshot-desktop-2.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop Menu"
+    },
+    {
+      "src": "/screenshot-desktop-3.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop Recipe"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }
-</script>
-</head>
-  <body class="bg-gray-50 text-gray-900 antialiased">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
-</html>
