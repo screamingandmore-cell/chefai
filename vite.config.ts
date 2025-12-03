@@ -11,17 +11,21 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        injectRegister: null, // Desligado para usarmos o script manual no index.html (Mais robusto)
+        injectRegister: 'auto', // LIGA O PILOTO AUTOMÁTICO
         strategies: 'generateSW',
-        filename: 'chef-sw.js', // Nome fixo do arquivo
-        manifest: false, // Usa o arquivo public/manifest.json
+        filename: 'chef-sw.js', // Nome do arquivo gerado
+        manifest: false, // Respeita o seu arquivo manual public/manifest.json
+        devOptions: {
+          enabled: true, // Funciona no localhost
+          type: 'module',
+        },
         includeAssets: [
             'favicon.svg', 
             'icon-192.png', 
             'icon-512.png', 
             'robots.txt', 
             'apple-touch-icon.png',
-            'screenshot-*.png' // Força inclusão dos prints
+            'screenshot-*.png'
         ],
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],

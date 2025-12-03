@@ -103,20 +103,5 @@
   <body class="bg-gray-50 text-gray-900 antialiased">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-    
-    <!-- REGISTRO MANUAL E ROBUSTO DO SERVICE WORKER -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/chef-sw.js')
-            .then(registration => {
-              console.log('SW registrado com sucesso:', registration.scope);
-            })
-            .catch(err => {
-              console.log('Falha ao registrar SW:', err);
-            });
-        });
-      }
-    </script>
   </body>
 </html>
