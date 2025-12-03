@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, GoogleAdPlaceholder } from './components/Layout';
+import { Layout, AdBanner, GoogleAdPlaceholder } from './components/Layout';
 import { 
   ViewState, 
   UserProfile, 
@@ -325,7 +325,9 @@ export default function App() {
        setCurrentIngredient('');
     }
 
-    // Validação Flexível
+    // Validação Flexível:
+    // Se tiver mais de 1 item, ok.
+    // Se tiver só 1 item, mas ele for longo (provavelmente uma lista colada sem vírgula), passa também.
     const isLongText = finalIngredients.length === 1 && finalIngredients[0].includes(' ');
     
     if (finalIngredients.length < 2 && !isLongText) {
@@ -340,7 +342,7 @@ export default function App() {
       const menu = await OpenAIService.generateWeeklyMenu(
         finalIngredients, 
         user.allergies,
-        user.isPremium
+        user.isPremium // Passa status premium para calcular macros
       );
       
       await SupabaseService.saveWeeklyMenu(session.user.id, menu);
@@ -522,16 +524,16 @@ export default function App() {
       </div>
 
       <div className="bg-white p-4 rounded-xl border border-gray-200">
-        <label className="block text-sm font-bold text-gray-700 mb-2">Dificuldade da Receita</label>
-        <div className="flex gap-2">
+        <p className="text-xs font-bold text-gray-500 uppercase mb-3">Nível de Dificuldade</p>
+        <div className="flex bg-gray-100 rounded-lg p-1">
           {[Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD].map((diff) => (
             <button
               key={diff}
               onClick={() => setSelectedDifficulty(diff)}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold border transition-colors ${
+              className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${
                 selectedDifficulty === diff
-                  ? 'bg-chef-green text-white border-chef-green shadow-sm'
-                  : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                  ? 'bg-white text-gray-800 shadow-sm'
+                  : 'text-gray-400 hover:text-gray-600'
               }`}
             >
               {diff}
@@ -894,35 +896,29 @@ export default function App() {
         </div>
 
         <div className="space-y-4">
-          {StripeService.PLANS.map(plan => {
-             // Gera o link estático para usar na tag <a>
-             const paymentLink = StripeService.getPaymentLink(plan.id, session?.user?.email);
-             return (
-               <a 
-                 key={plan.id}
-                 href={paymentLink}
-                 className={`block border-2 rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.02] relative no-underline ${
-                   plan.id === 'annual' ? 'border-chef-green bg-green-50' : 'border-gray-200 hover:border-chef-green'
-                 }`}
-               >
-                 {plan.savings && (
-                   <span className="absolute -top-3 right-4 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
-                     ECO {plan.savings}
-                   </span>
-                 )}
-                 <div className="flex justify-between items-center">
-                   <div className="text-left">
-                     <h3 className="font-bold text-gray-800">{plan.name}</h3>
-                     <p className="text-xs text-gray-500">Cobrado por {plan.interval}</p>
-                   </div>
-                   <div className="text-right">
-                     <span className="text-xl font-bold text-chef-green">R$ {plan.price.toFixed(2).replace('.', ',')}</span>
-                     <span className="text-xs text-gray-400 block">/{plan.interval}</span>
-                   </div>
-                 </div>
-               </a>
-             );
-          })}
+          {StripeService.PLANS.map(plan => (
+            <a key={plan.id} href={StripeService.getPaymentLink(plan.id, session?.user?.email)} className="no-underline block">
+              <div className={`border-2 rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.02] relative ${
+                plan.id === 'annual' ? 'border-chef-green bg-green-50' : 'border-gray-200 hover:border-chef-green'
+              }`}>
+                {plan.savings && (
+                  <span className="absolute -top-3 right-4 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
+                    ECO {plan.savings}
+                  </span>
+                )}
+                <div className="flex justify-between items-center">
+                  <div className="text-left">
+                    <h3 className="font-bold text-gray-800">{plan.name}</h3>
+                    <p className="text-xs text-gray-500">Cobrado por {plan.interval}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xl font-bold text-chef-green">R$ {plan.price.toFixed(2).replace('.', ',')}</span>
+                    <span className="text-xs text-gray-400 block">/{plan.interval}</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          ))}
         </div>
       </div>
     </div>
@@ -938,7 +934,6 @@ export default function App() {
              👤
            </div>
            <div>
-             {/* Usa session.user.email em vez de user.email para evitar erro de TS */}
              <p className="font-bold text-gray-800">{session?.user?.email}</p>
              <p className={`text-sm ${user?.isPremium ? 'text-chef-green font-bold' : 'text-gray-500'}`}>
                {user?.isPremium ? 'Membro Premium 👑' : 'Plano Gratuito'}
@@ -1083,6 +1078,8 @@ export default function App() {
   const renderCurrentView = () => {
     switch(view) {
       case ViewState.HOME: return <div key="home" className="animate-fadeIn">{renderHome()}</div>;
+      // REDIRECIONAMENTO CORRIGIDO: QUICK_RECIPE agora renderiza a tela de geladeira para input
+      case ViewState.QUICK_RECIPE: return <div key="quick" className="animate-fadeIn">{renderFridge()}</div>;
       case ViewState.FRIDGE: return <div key="fridge" className="animate-fadeIn">{renderFridge()}</div>;
       case ViewState.WEEKLY_PLAN: return <div key="weekly" className="animate-fadeIn">{renderWeeklyPlan()}</div>;
       case ViewState.RECIPE_DETAILS: return <div key="details">{renderRecipeDetails()}</div>;
@@ -1097,12 +1094,8 @@ export default function App() {
   };
 
   return (
-    <Layout 
-      activeView={view} 
-      onNavigate={setView} 
-      isPremium={user?.isPremium || false}
-    >
-      {renderCurrentView()}
+    <Layout activeView={view} onNavigate={setView} isPremium={user?.isPremium || false}>
+      <div className="animate-fade-in">{renderCurrentView()}</div>
     </Layout>
   );
 }
