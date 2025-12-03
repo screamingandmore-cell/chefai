@@ -48,4 +48,8 @@ npm run dev
 
 ## Configuração do Banco de Dados (Supabase)
 
-Copie o conteúdo dos arquivos `.sql` do projeto e rode no **SQL Editor** do seu painel Supabase para criar as tabelas necessárias.
+Para o app funcionar corretamente, você precisa rodar os scripts SQL no **SQL Editor** do Supabase:
+
+1. **Criação das Tabelas:** Copie o conteúdo de `supabase_setup.sql` e rode.
+2. **Confirmação de Email Automática:** Copie o conteúdo de `supabase_autoconfirm.sql` e rode.
+3. **Correção do Botão Excluir:** Copie o conteúdo de `supabase_fix_delete.sql` e rode (Isso é necessário para a lixeira funcionar).
