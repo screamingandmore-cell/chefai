@@ -12,7 +12,20 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png', 'robots.txt', 'apple-touch-icon.png'],
+        injectRegister: 'auto',
+        includeAssets: [
+            'favicon.svg', 
+            'icon-192.png', 
+            'icon-512.png', 
+            'robots.txt', 
+            'apple-touch-icon.png',
+            'screenshot-mobile-1.png',
+            'screenshot-mobile-2.png',
+            'screenshot-mobile-3.png',
+            'screenshot-desktop-1.png',
+            'screenshot-desktop-2.png',
+            'screenshot-desktop-3.png'
+        ],
         devOptions: {
           enabled: true,
           type: 'module',
