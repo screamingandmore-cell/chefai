@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
         srcDir: 'src',
         filename: 'sw.js',
         registerType: 'autoUpdate',
-        injectRegister: null, // Registro manual no index.html
+        injectRegister: null, // Registro manual no index.html para maior controle
         manifest: false, // Usa o public/manifest.json manual
         devOptions: {
           enabled: true,
@@ -25,15 +25,7 @@ export default defineConfig(({ mode }) => {
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true
-        },
-        includeAssets: [
-            'favicon.svg', 
-            'icon-192.png', 
-            'icon-512.png', 
-            'robots.txt', 
-            'apple-touch-icon.png',
-            'screenshot-*.png'
-        ]
+        }
       })
     ],
     define: {
