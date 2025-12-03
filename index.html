@@ -1,13 +1,25 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- PWA Primary Meta Tags -->
     <meta name="theme-color" content="#10b981" />
+    <meta name="description" content="Chef.ai: Seu assistente de cozinha pessoal com Inteligência Artificial. Crie receitas, cardápios semanais e economize nas compras." />
+    <meta name="keywords" content="receitas, inteligência artificial, cardápio semanal, culinária, cozinha, chef, ai, planejamento alimentar" />
     <title>Chef.ai - Cardápios Inteligentes</title>
     
-    <!-- Ícone da Aba -->
+    <!-- iOS / Apple Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Chef.ai" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    
+    <!-- Favicons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-SEU_ID_AQUI" crossorigin="anonymous"></script>
@@ -41,32 +53,53 @@
     <style>
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* --- ESTILOS DE IMPRESSÃO (PDF) --- */
+      .print-only { display: none; }
+
+      @media print {
+        header, nav, button, .no-print, iframe, .google-ad-placeholder {
+          display: none !important;
+        }
+        .print-only { display: block !important; }
+        body, #root, main {
+          background-color: white !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+          max-width: none !important;
+          overflow: visible !important;
+          box-shadow: none !important;
+        }
+        body { color: black !important; font-size: 12pt; }
+        .page-break { page-break-before: always; }
+        .print-header {
+          display: block !important;
+          text-align: center;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #10b981;
+          padding-bottom: 10px;
+        }
+      }
+      .print-header { display: none; }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
     "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.86.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
     "vite": "https://aistudiocdn.com/vite@^7.2.6",
-    "openai": "https://aistudiocdn.com/openai@^6.9.1",
-    "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.2.0"
+    "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.2.0",
+    "openai": "https://aistudiocdn.com/openai@^6.9.1"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-gray-50 text-gray-900 antialiased">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
-        });
-      }
-    </script>
   </body>
 </html>

@@ -5,7 +5,6 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Carrega variáveis de ambiente
   const env = loadEnv(mode, (process as any).cwd(), '');
 
   return {
@@ -13,22 +12,38 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
+        includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png', 'robots.txt', 'apple-touch-icon.png'],
         devOptions: {
           enabled: true,
           type: 'module',
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
-          skipWaiting: true
+          skipWaiting: true,
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-cache',
+                expiration: {
+                  maxEntries: 10,
+                  maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                },
+                cacheableResponse: {
+                  statuses: [0, 200]
+                }
+              }
+            }
+          ]
         },
         manifest: {
           id: 'com.chefai.app',
           name: 'Chef.ai - Cardápios Inteligentes',
           short_name: 'Chef.ai',
-          description: 'Seu assistente de cozinha pessoal com Inteligência Artificial. Crie receitas, cardápios e economize.',
+          description: 'Seu assistente de cozinha pessoal com Inteligência Artificial. Crie receitas, cardápios e economize tempo e dinheiro.',
           theme_color: '#10b981',
           background_color: '#ffffff',
           display: 'standalone',
@@ -38,17 +53,11 @@ export default defineConfig(({ mode }) => {
           categories: ['food', 'lifestyle', 'productivity', 'health'],
           lang: 'pt-BR',
           dir: 'ltr',
-          // Configurações para Loja e Nota Máxima no PWABuilder
-          prefer_related_applications: true,
-          related_applications: [
-            {
-              platform: "play",
-              url: "https://play.google.com/store/apps/details?id=com.chefai.app",
-              id: "com.chefai.app"
-            }
-          ],
-          // Classificação Etária (Exemplo genérico para "Livre")
-          iarc_rating_id: "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7", 
+          launch_handler: {
+            client_mode: "auto"
+          },
+          prefer_related_applications: false,
+          iarc_rating_id: "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
           icons: [
             {
               src: '/icon-192.png',
@@ -69,50 +78,57 @@ export default defineConfig(({ mode }) => {
               sizes: '1080x1920',
               type: 'image/png',
               form_factor: 'narrow',
-              label: 'Tela Inicial'
+              label: 'Tela Inicial do Chef.ai'
             },
             {
               src: '/screenshot-mobile-2.png',
               sizes: '1080x1920',
               type: 'image/png',
               form_factor: 'narrow',
-              label: 'Geladeira Inteligente'
+              label: 'Gerenciamento de Geladeira'
             },
             {
               src: '/screenshot-mobile-3.png',
               sizes: '1080x1920',
               type: 'image/png',
               form_factor: 'narrow',
-              label: 'Cardápio Semanal'
+              label: 'Cardápio Semanal Inteligente'
             },
             {
               src: '/screenshot-desktop-1.png',
               sizes: '1920x1080',
               type: 'image/png',
               form_factor: 'wide',
-              label: 'Visão Geral Desktop'
+              label: 'Visão Geral no Desktop'
             },
             {
               src: '/screenshot-desktop-2.png',
               sizes: '1920x1080',
               type: 'image/png',
               form_factor: 'wide',
-              label: 'Planejamento Desktop'
+              label: 'Planejamento de Refeições'
             },
             {
               src: '/screenshot-desktop-3.png',
               sizes: '1920x1080',
               type: 'image/png',
               form_factor: 'wide',
-              label: 'Receitas Desktop'
+              label: 'Receitas Detalhadas'
             }
           ],
           shortcuts: [
             {
               name: "Abrir Geladeira",
               short_name: "Geladeira",
-              description: "Adicionar ingredientes",
-              url: "/",
+              description: "Adicionar ingredientes e ver o que tem em casa",
+              url: "/?action=fridge",
+              icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }]
+            },
+            {
+              name: "Ver Cardápio",
+              short_name: "Cardápio",
+              description: "Ver o planejamento semanal",
+              url: "/?action=weekly",
               icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }]
             }
           ]
