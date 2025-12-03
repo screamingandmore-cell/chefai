@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
           skipWaiting: true
         },
         manifest: {
-          id: '/',
+          id: 'com.chefai.app',
           name: 'Chef.ai - Cardápios Inteligentes',
           short_name: 'Chef.ai',
           description: 'Seu assistente de cozinha pessoal com Inteligência Artificial. Crie receitas, cardápios e economize.',
@@ -38,6 +38,17 @@ export default defineConfig(({ mode }) => {
           categories: ['food', 'lifestyle', 'productivity', 'health'],
           lang: 'pt-BR',
           dir: 'ltr',
+          // Configurações para Loja e Nota Máxima no PWABuilder
+          prefer_related_applications: true,
+          related_applications: [
+            {
+              platform: "play",
+              url: "https://play.google.com/store/apps/details?id=com.chefai.app",
+              id: "com.chefai.app"
+            }
+          ],
+          // Classificação Etária (Exemplo genérico para "Livre")
+          iarc_rating_id: "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7", 
           icons: [
             {
               src: '/icon-192.png',
@@ -102,7 +113,7 @@ export default defineConfig(({ mode }) => {
               short_name: "Geladeira",
               description: "Adicionar ingredientes",
               url: "/",
-              icons: [{ src: "/icon-192.png", sizes: "192x192" }]
+              icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }]
             }
           ]
         }
