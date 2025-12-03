@@ -12,8 +12,9 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         injectRegister: 'auto',
-        // Usamos false aqui para ele respeitar o arquivo public/manifest.json manual
-        manifest: false, 
+        strategies: 'generateSW',
+        filename: 'chef-sw.js', // Nome explícito para o Service Worker
+        manifest: false, // Respeita o arquivo manual public/manifest.json
         includeAssets: [
             'favicon.svg', 
             'icon-192.png', 
@@ -45,6 +46,20 @@ export default defineConfig(({ mode }) => {
                 expiration: {
                   maxEntries: 10,
                   maxAgeSeconds: 60 * 60 * 24 * 365
+                },
+                cacheableResponse: {
+                  statuses: [0, 200]
+                }
+              }
+            },
+            {
+              urlPattern: /^https:\/\/cdn\.tailwindcss\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'tailwind-cache',
+                expiration: {
+                  maxEntries: 10,
+                  maxAgeSeconds: 60 * 60 * 24 * 30
                 },
                 cacheableResponse: {
                   statuses: [0, 200]
