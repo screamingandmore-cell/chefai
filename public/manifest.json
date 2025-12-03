@@ -46,42 +46,42 @@
       "src": "/screenshot-mobile-1.png",
       "sizes": "1080x1920",
       "type": "image/png",
-      "form_factor: "narrow",
+      "form_factor": "narrow",
       "label": "Tela Inicial do Chef.ai"
     },
     {
       "src": "/screenshot-mobile-2.png",
       "sizes": "1080x1920",
       "type": "image/png",
-      "form_factor: "narrow",
+      "form_factor": "narrow",
       "label": "Gerenciamento de Geladeira"
     },
     {
       "src": "/screenshot-mobile-3.png",
       "sizes": "1080x1920",
       "type": "image/png",
-      "form_factor: "narrow",
+      "form_factor": "narrow",
       "label": "Cardápio Semanal Inteligente"
     },
     {
       "src": "/screenshot-desktop-1.png",
       "sizes": "1920x1080",
       "type": "image/png",
-      "form_factor: "wide",
+      "form_factor": "wide",
       "label": "Visão Geral no Desktop"
     },
     {
       "src": "/screenshot-desktop-2.png",
       "sizes": "1920x1080",
       "type": "image/png",
-      "form_factor: "wide",
+      "form_factor": "wide",
       "label": "Planejamento de Refeições"
     },
     {
       "src": "/screenshot-desktop-3.png",
       "sizes": "1920x1080",
       "type": "image/png",
-      "form_factor: "wide",
+      "form_factor": "wide",
       "label": "Receitas Detalhadas"
     }
   ],

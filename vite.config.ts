@@ -12,7 +12,8 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         injectRegister: 'auto',
-        // Importante: incluir os screenshots na lista de assets para o SW cachear
+        // Usamos false aqui para ele respeitar o arquivo public/manifest.json manual
+        manifest: false, 
         includeAssets: [
             'favicon.svg', 
             'icon-192.png', 
@@ -43,43 +44,12 @@ export default defineConfig(({ mode }) => {
                 cacheName: 'google-fonts-cache',
                 expiration: {
                   maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365 // 365 dias
+                  maxAgeSeconds: 60 * 60 * 24 * 365
                 },
                 cacheableResponse: {
                   statuses: [0, 200]
                 }
               }
-            }
-          ]
-        },
-        // Mantemos a configuração aqui também para garantir redundância
-        manifest: {
-          id: 'com.chefai.app',
-          name: 'Chef.ai - Cardápios Inteligentes',
-          short_name: 'Chef.ai',
-          description: 'Seu assistente de cozinha pessoal com Inteligência Artificial.',
-          theme_color: '#10b981',
-          background_color: '#ffffff',
-          display: 'standalone',
-          orientation: 'portrait',
-          start_url: '/',
-          scope: '/',
-          categories: ['food', 'lifestyle', 'productivity', 'health'],
-          lang: 'pt-BR',
-          dir: 'ltr',
-          prefer_related_applications: false,
-          icons: [
-            {
-              src: '/icon-192.png',
-              sizes: '192x192',
-              type: 'image/png',
-              purpose: 'any maskable'
-            },
-            {
-              src: '/icon-512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any maskable'
             }
           ]
         }
