@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, GoogleAdPlaceholder, AdBanner } from './components/Layout';
+import { Layout, GoogleAdPlaceholder, AdBanner, AdInterstitial } from './components/Layout';
 import { ViewState, UserProfile, Recipe, WeeklyMenu, Difficulty } from './types';
 import * as OpenAIService from './services/openai';
 import * as SupabaseService from './services/supabase';
@@ -92,6 +92,11 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Estados para Controle de Anúncios e Limites
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [isWatchingAd, setIsWatchingAd] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'quick' | 'weekly' | null>(null);
+
   useEffect(() => {
     SupabaseService.getUserSession().then(sess => {
       setSession(sess);
@@ -171,9 +176,42 @@ export default function App() {
     } catch (err) { console.error(err); setError("Erro ao analisar imagens."); } finally { setIsLoading(false); }
   };
 
-  const generateQuick = async () => {
+  // Lógica de Limites e Anúncios
+  const checkLimits = (type: 'quick' | 'weekly'): boolean => {
+    if (!user || user.isPremium) return true; // Premium não tem limite
+    
+    // Limites: 10 Receitas Rápidas, 1 Cardápio Semanal
+    if (type === 'quick' && user.usage.quickRecipes >= 10) return false;
+    if (type === 'weekly' && user.usage.weeklyMenus >= 1) return false;
+    
+    return true;
+  };
+
+  const triggerAdReward = (type: 'quick' | 'weekly') => {
+    setPendingAction(type);
+    setShowLimitModal(true);
+  };
+
+  const handleAdFinish = () => {
+    setIsWatchingAd(false);
+    setShowLimitModal(false);
+    
+    // Executa a ação pendente (ignora o limite dessa vez)
+    if (pendingAction === 'quick') generateQuick(true);
+    if (pendingAction === 'weekly') handleGenerateWeeklyClick(true);
+    
+    setPendingAction(null);
+  };
+
+  const generateQuick = async (bypassLimit = false) => {
     if (!user || !session?.user) return;
-    if (!user.isPremium && user.usage.quickRecipes >= 10) { alert("Limite atingido. Seja Premium!"); setView(ViewState.PREMIUM); return; }
+    
+    // Verifica limite (se não for bypass de anúncio)
+    if (!bypassLimit && !checkLimits('quick')) {
+      triggerAdReward('quick');
+      return;
+    }
+
     let finalIngredients = [...ingredients];
     if (currentIngredient.trim()) {
        const extra = processIngredientInput(currentIngredient);
@@ -184,15 +222,22 @@ export default function App() {
     try {
       const recipe = await OpenAIService.generateQuickRecipe(finalIngredients, user.allergies, selectedDifficulty, user.isPremium);
       setGeneratedRecipe(recipe);
+      // Incrementa uso apenas se não for bypass (opcional, ou incrementa sempre)
       const updatedUser = await SupabaseService.incrementUsage(session.user.id, 'quickRecipes');
       setUser(updatedUser);
       setView(ViewState.RECIPE_DETAILS);
     } catch (err: any) { setError(err.message); } finally { setIsLoading(false); }
   };
 
-  const handleGenerateWeeklyClick = async () => {
+  const handleGenerateWeeklyClick = async (bypassLimit = false) => {
     if (!user || !session?.user) return;
-    if (!user.isPremium && user.usage.weeklyMenus >= 1) { alert("Limite semanal atingido. Seja Premium!"); setView(ViewState.PREMIUM); return; }
+
+    // Verifica limite
+    if (!bypassLimit && !checkLimits('weekly')) {
+      triggerAdReward('weekly');
+      return;
+    }
+
     let finalIngredients = [...ingredients];
     if (currentIngredient.trim()) {
        const extra = processIngredientInput(currentIngredient);
@@ -208,10 +253,7 @@ export default function App() {
       setAllMenus(prev => [menu, ...prev]);
       const updatedUser = await SupabaseService.incrementUsage(session.user.id, 'weeklyMenus');
       setUser(updatedUser);
-      
-      // FORÇA A TROCA DE TELA PARA O CARDÁPIO
       setView(ViewState.WEEKLY_PLAN);
-      
     } catch (err: any) { setError(err.message); } finally { setIsLoading(false); }
   };
 
@@ -305,8 +347,8 @@ export default function App() {
       </div>
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center"><span>{error}</span><button onClick={() => setError(null)}>×</button></div>}
       <div className="grid grid-cols-2 gap-4 sticky bottom-4">
-        <button onClick={generateQuick} disabled={isLoading} className="bg-chef-orange text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Receita Rápida'}</button>
-        <button onClick={handleGenerateWeeklyClick} disabled={isLoading} className="bg-chef-green text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Semanal'}</button>
+        <button onClick={() => generateQuick(false)} disabled={isLoading} className="bg-chef-orange text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Receita Rápida'}</button>
+        <button onClick={() => handleGenerateWeeklyClick(false)} disabled={isLoading} className="bg-chef-green text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Semanal'}</button>
       </div>
     </div>
   );
@@ -328,7 +370,7 @@ export default function App() {
       </div>
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center"><span>{error}</span><button onClick={() => setError(null)}>×</button></div>}
       <div className="sticky bottom-4">
-        <button onClick={generateQuick} disabled={isLoading} className="w-full bg-chef-orange text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Gerar Receita Agora'}</button>
+        <button onClick={() => generateQuick(false)} disabled={isLoading} className="w-full bg-chef-orange text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Gerar Receita Agora'}</button>
       </div>
     </div>
   );
@@ -431,7 +473,6 @@ export default function App() {
     <div className="space-y-6 text-center">
       <div className="bg-gradient-to-b from-yellow-50 to-white border border-yellow-200 rounded-3xl p-8 shadow-sm">
         <h2 className="text-3xl font-bold mb-4">Premium 👑</h2>
-        {/* LISTA DE BENEFÍCIOS */}
         <div className="bg-white/50 rounded-xl p-4 mb-8 text-left space-y-3">
            <p className="flex items-center gap-2"><span className="text-chef-green">✅</span> Cardápios Ilimitados</p>
            <p className="flex items-center gap-2"><span className="text-chef-green">✅</span> Análise de Fotos (IA)</p>
@@ -511,7 +552,47 @@ export default function App() {
   return (
     <Layout activeView={view} onNavigate={setView} isPremium={user?.isPremium || false}>
       <div className="animate-fade-in pb-safe">{renderCurrentView()}</div>
-      <div className="text-center text-[10px] text-gray-300 py-2">Versão 2.0</div>
+      
+      {/* Modal de Limite Atingido (Reward Ad) */}
+      {showLimitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center relative overflow-hidden">
+            <button onClick={() => setShowLimitModal(false)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500">✕</button>
+            <div className="text-4xl mb-4">🛑</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Limite Atingido!</h3>
+            <p className="text-gray-500 text-sm mb-6">Você atingiu o limite do plano gratuito.</p>
+            
+            <div className="space-y-3">
+              <button 
+                onClick={() => { setShowLimitModal(false); setView(ViewState.PREMIUM); }}
+                className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-white font-bold py-3 rounded-xl shadow-md hover:scale-105 transition-transform"
+              >
+                👑 Seja Premium (Ilimitado)
+              </button>
+              
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-gray-200"></div>
+                <span className="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase">ou</span>
+                <div className="flex-grow border-t border-gray-200"></div>
+              </div>
+
+              <button 
+                onClick={() => { setShowLimitModal(false); setIsWatchingAd(true); }}
+                className="w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-xl border border-gray-300 hover:bg-gray-200 flex items-center justify-center gap-2"
+              >
+                <span>📺</span> Assistir Anúncio (+1 Receita)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tela de Anúncio Intersticial (Reward) */}
+      {isWatchingAd && (
+        <AdInterstitial onFinish={handleAdFinish} />
+      )}
+
+      <div className="text-center text-[10px] text-gray-300 py-2 no-print">Versão 2.1</div>
     </Layout>
   );
 }

@@ -24,7 +24,7 @@ export interface Recipe {
     carbs: string;
     fat: string;
   };
-  imagePrompt?: string; 
+  imagePrompt?: string; // Used to generate placeholder or find image
 }
 
 export interface DayPlan {
@@ -43,7 +43,7 @@ export interface WeeklyMenu {
 export interface UserProfile {
   isPremium: boolean;
   allergies: string[];
-  favorites: string[]; 
+  favorites: string[]; // recipe IDs
   usage: {
     quickRecipes: number;
     weeklyMenus: number;

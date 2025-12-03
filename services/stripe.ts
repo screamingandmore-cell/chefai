@@ -1,3 +1,4 @@
+
 import { SubscriptionPlan } from "../types";
 
 // Configuração de Links de Pagamento Direto (Payment Links)
