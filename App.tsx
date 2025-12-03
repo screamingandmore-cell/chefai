@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Layout, GoogleAdPlaceholder, AdBanner } from './components/Layout';
 import { ViewState, UserProfile, Recipe, WeeklyMenu, Difficulty } from './types';
@@ -263,10 +264,8 @@ export default function App() {
     </div>
   );
 
-  const renderFridge = () => (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">Minha Geladeira ❄️</h2>
+  const renderIngredientInput = () => (
+    <>
         <div className="flex gap-2 mb-4">
           <input value={currentIngredient} onChange={(e) => setCurrentIngredient(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddIngredient()} placeholder="Ex: Frango, Batata..." className="flex-1 border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-chef-green" />
           <button onClick={handleAddIngredient} className="bg-chef-green text-white px-4 rounded-xl hover:bg-green-600">+</button>
@@ -284,6 +283,14 @@ export default function App() {
             </span>
           ))}
         </div>
+    </>
+  );
+
+  const renderFridge = () => (
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">Minha Geladeira ❄️</h2>
+        {renderIngredientInput()}
       </div>
       <div className="bg-white p-4 rounded-xl border border-gray-200">
         <p className="text-xs font-bold text-gray-500 uppercase mb-3">Dificuldade</p>
@@ -297,6 +304,28 @@ export default function App() {
       <div className="grid grid-cols-2 gap-4 sticky bottom-4">
         <button onClick={generateQuick} disabled={isLoading} className="bg-chef-orange text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Receita Rápida'}</button>
         <button onClick={handleGenerateWeeklyClick} disabled={isLoading} className="bg-chef-green text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Semanal'}</button>
+      </div>
+    </div>
+  );
+
+  const renderQuickRecipeView = () => (
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-chef-orange">Receita Rápida 🍳</h2>
+        <p className="text-sm text-gray-500 mb-4">Adicione o que você tem agora para uma solução expressa.</p>
+        {renderIngredientInput()}
+      </div>
+      <div className="bg-white p-4 rounded-xl border border-gray-200">
+        <p className="text-xs font-bold text-gray-500 uppercase mb-3">Dificuldade</p>
+        <div className="flex bg-gray-100 rounded-lg p-1">
+          {[Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD].map((diff) => (
+            <button key={diff} onClick={() => setSelectedDifficulty(diff)} className={`flex-1 py-2 rounded-md text-xs font-bold ${selectedDifficulty === diff ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400'}`}>{diff}</button>
+          ))}
+        </div>
+      </div>
+      {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center"><span>{error}</span><button onClick={() => setError(null)}>×</button></div>}
+      <div className="sticky bottom-4">
+        <button onClick={generateQuick} disabled={isLoading} className="w-full bg-chef-orange text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Gerar Receita Agora'}</button>
       </div>
     </div>
   );
@@ -402,16 +431,16 @@ export default function App() {
         <p className="text-gray-500 mb-8">Desbloqueie tudo.</p>
         <div className="space-y-4">
           {StripeService.PLANS.map(plan => (
-            <a key={plan.id} href={StripeService.getPaymentLink(plan.id, session?.user?.email)} className="block no-underline">
-              <div className="border-2 rounded-xl p-4 hover:border-chef-green flex justify-between items-center transition-all bg-white hover:shadow-md relative overflow-hidden">
+            <a key={plan.id} href={StripeService.getPaymentLink(plan.id, session?.user?.email)} className="block no-underline group">
+              <div className="border-2 rounded-xl p-4 group-hover:border-chef-green flex justify-between items-center transition-all bg-white group-hover:shadow-md relative overflow-hidden">
+                {plan.savings && (
+                  <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-2 py-1 rounded-bl-lg font-bold shadow-sm">
+                    {plan.savings} OFF
+                  </span>
+                )}
                 <div className="text-left">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-gray-800">{plan.name}</h3>
-                    {plan.savings && (
-                      <span className="bg-green-100 text-chef-green text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border border-green-200">
-                        {plan.savings} OFF
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-gray-500">{plan.interval}</p>
                 </div>
@@ -451,7 +480,7 @@ export default function App() {
     switch(view) {
       case ViewState.HOME: return renderHome();
       case ViewState.FRIDGE: return renderFridge();
-      case ViewState.QUICK_RECIPE: return renderFridge();
+      case ViewState.QUICK_RECIPE: return renderQuickRecipeView();
       case ViewState.WEEKLY_PLAN: return renderWeeklyPlan();
       case ViewState.RECIPE_DETAILS: return renderRecipeDetails();
       case ViewState.SHOPPING_LIST: return renderShoppingList();
