@@ -1065,8 +1065,8 @@ export default function App() {
       
       {allMenus.length > 0 && (
          <button 
-            onClick={handleDeleteAllMenus}
-        className="w-full mt-8 bg-gray-100 text-red-500 py-3 rounded-xl font-bold border border-gray-200 hover:bg-red-50 transition-colors"
+           onClick={handleDeleteAllMenus}
+           className="w-full mt-8 bg-gray-100 text-red-500 py-3 rounded-xl font-bold border border-gray-200 hover:bg-red-50 transition-colors"
          >
            Limpar Todo o Histórico
          </button>
