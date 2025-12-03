@@ -1078,7 +1078,6 @@ export default function App() {
   const renderCurrentView = () => {
     switch(view) {
       case ViewState.HOME: return <div key="home" className="animate-fadeIn">{renderHome()}</div>;
-      // REDIRECIONAMENTO CORRIGIDO: QUICK_RECIPE agora renderiza a tela de geladeira para input
       case ViewState.QUICK_RECIPE: return <div key="quick" className="animate-fadeIn">{renderFridge()}</div>;
       case ViewState.FRIDGE: return <div key="fridge" className="animate-fadeIn">{renderFridge()}</div>;
       case ViewState.WEEKLY_PLAN: return <div key="weekly" className="animate-fadeIn">{renderWeeklyPlan()}</div>;
