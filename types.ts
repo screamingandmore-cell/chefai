@@ -60,8 +60,7 @@ export enum ViewState {
   PROFILE = 'PROFILE',
   RECIPE_DETAILS = 'RECIPE_DETAILS',
   PRIVACY = 'PRIVACY',
-  TERMS = 'TERMS',
-  MENU_HISTORY = 'MENU_HISTORY'
+  TERMS = 'TERMS'
 }
 
 export interface SubscriptionPlan {

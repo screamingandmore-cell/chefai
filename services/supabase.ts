@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { UserProfile, WeeklyMenu } from "../types";
 
@@ -14,9 +13,25 @@ if (supabaseUrl === 'https://placeholder-url.supabase.co') {
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
+/* 
+  ESTRUTURA SUGERIDA NO SUPABASE:
+  Table: profiles
+  - id (uuid, references auth.users)
+  - email (text)
+  - is_premium (boolean)
+  - allergies (text array)
+  - favorites (text array)
+  - usage_quick_recipes (int)
+  - usage_weekly_menus (int)
+
+  Table: weekly_menus
+  - id (uuid)
+  - user_id (uuid, references profiles.id)
+  - created_at (timestamp)
+  - data (jsonb)
+*/
+
 export const signIn = async (email: string, password: string) => {
-  if (supabaseUrl.includes('placeholder')) throw new Error("Configure o arquivo .env primeiro!");
-  
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -26,8 +41,6 @@ export const signIn = async (email: string, password: string) => {
 };
 
 export const signUp = async (email: string, password: string) => {
-  if (supabaseUrl.includes('placeholder')) throw new Error("Configure o arquivo .env primeiro!");
-
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -81,6 +94,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
     return defaultProfile;
   }
 
+  // Mapeia colunas do DB para o tipo UserProfile
   return {
     isPremium: data.is_premium,
     allergies: data.allergies || [],
@@ -119,7 +133,6 @@ export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<
     .from('weekly_menus')
     .insert([
       {
-        id: menu.id,
         user_id: userId,
         data: menu,
         created_at: new Date().toISOString()
@@ -127,38 +140,6 @@ export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<
     ]);
     
   if (error) console.error("Error saving menu:", error);
-};
-
-export const deleteWeeklyMenu = async (menuId: string): Promise<void> => {
-  console.log("Tentando deletar menu ID:", menuId);
-  
-  const { error, count } = await supabase
-    .from('weekly_menus')
-    .delete({ count: 'exact' })
-    .eq('id', menuId);
-
-  if (error) {
-    console.error("Erro DETALHADO ao deletar:", error);
-    throw new Error(`Erro Supabase: ${error.message} (${error.code})`);
-  }
-
-  // Se count for 0, significa que o comando rodou sem erro, mas não achou nada pra deletar
-  // (Pode ser problema de permissão RLS ou ID errado)
-  if (count === 0) {
-    console.warn("Atenção: Nenhum registro foi deletado. Verifique as políticas RLS.");
-  }
-};
-
-// Nova função para limpar todo o histórico
-export const deleteAllUserMenus = async (userId: string): Promise<void> => {
-  const { error } = await supabase
-    .from('weekly_menus')
-    .delete()
-    .eq('user_id', userId);
-
-  if (error) {
-    throw new Error(`Erro ao limpar histórico: ${error.message}`);
-  }
 };
 
 export const getWeeklyMenus = async (userId: string): Promise<WeeklyMenu[]> => {
@@ -169,5 +150,5 @@ export const getWeeklyMenus = async (userId: string): Promise<WeeklyMenu[]> => {
     .order('created_at', { ascending: false });
 
   if (error || !data) return [];
-  return data.map(row => row.data);
+  return data.map(row => row.data); // Extrai o JSON armazenado
 };
