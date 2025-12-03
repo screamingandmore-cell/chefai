@@ -48,23 +48,31 @@ const checkApiKey = () => {
   }
 };
 
-export const analyzeFridgeImage = async (base64Image: string): Promise<string[]> => {
+export const analyzeFridgeImage = async (images: string | string[]): Promise<string[]> => {
   checkApiKey();
+  
+  const imageList = Array.isArray(images) ? images : [images];
+  
+  const contentParts: any[] = [
+    { type: "text", text: "Liste apenas os ingredientes alimentares visíveis nesta imagem. Ignore pessoas, objetos não comestíveis ou textos irrelevantes. Retorne APENAS um JSON array de strings (ex: ['tomate', 'ovos']). Use português." }
+  ];
+
+  imageList.forEach(url => {
+    contentParts.push({
+      type: "image_url",
+      image_url: {
+        url: url,
+      },
+    });
+  });
+
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "user",
-          content: [
-            { type: "text", text: "Liste apenas os ingredientes alimentares visíveis nesta imagem. Ignore pessoas, objetos não comestíveis ou textos irrelevantes. Retorne APENAS um JSON array de strings (ex: ['tomate', 'ovos']). Use português." },
-            {
-              type: "image_url",
-              image_url: {
-                url: base64Image,
-              },
-            },
-          ],
+          content: contentParts,
         },
       ],
       response_format: { type: "json_object" },
