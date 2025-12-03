@@ -11,10 +11,11 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        injectRegister: 'auto', 
-        strategies: 'generateSW',
-        filename: 'chef-sw.js',
-        manifest: false, // IMPORTANTE: Usa o arquivo manual public/manifest.json
+        injectRegister: 'auto',
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.js',
+        manifest: false, // Usa o arquivo manual public/manifest.json
         devOptions: {
           enabled: true,
           type: 'module',
@@ -26,33 +27,7 @@ export default defineConfig(({ mode }) => {
             'robots.txt', 
             'apple-touch-icon.png',
             'screenshot-*.png'
-        ],
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
-          cleanupOutdatedCaches: true,
-          clientsClaim: true,
-          skipWaiting: true,
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                cacheableResponse: { statuses: [0, 200] }
-              }
-            },
-            {
-              urlPattern: /^https:\/\/cdn\.tailwindcss\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'tailwind-cache',
-                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 30 },
-                cacheableResponse: { statuses: [0, 200] }
-              }
-            }
-          ]
-        }
+        ]
       })
     ],
     define: {
