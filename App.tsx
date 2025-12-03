@@ -633,9 +633,6 @@ export default function App() {
     }
   };
 
-  const renderPrivacyPolicy = () => <div className="p-6 bg-white"><button onClick={() => setView(ViewState.HOME)}>← Voltar</button><h1 className="text-2xl font-bold mt-4">Política de Privacidade</h1><p className="mt-4">Texto da política...</p></div>;
-  const renderTermsOfUse = () => <div className="p-6 bg-white"><button onClick={() => setView(ViewState.HOME)}>← Voltar</button><h1 className="text-2xl font-bold mt-4">Termos de Uso</h1><p className="mt-4">Texto dos termos...</p></div>;
-
   return (
     <Layout activeView={view} onNavigate={setView} isPremium={user?.isPremium || false}>
       <div className="animate-fade-in">{renderCurrentView()}</div>
