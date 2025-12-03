@@ -24,7 +24,7 @@ export interface Recipe {
     carbs: string;
     fat: string;
   };
-  imagePrompt?: string; // Used to generate placeholder or find image
+  imagePrompt?: string; 
 }
 
 export interface DayPlan {
@@ -43,7 +43,7 @@ export interface WeeklyMenu {
 export interface UserProfile {
   isPremium: boolean;
   allergies: string[];
-  favorites: string[]; // recipe IDs
+  favorites: string[]; 
   usage: {
     quickRecipes: number;
     weeklyMenus: number;
@@ -60,7 +60,8 @@ export enum ViewState {
   PROFILE = 'PROFILE',
   RECIPE_DETAILS = 'RECIPE_DETAILS',
   PRIVACY = 'PRIVACY',
-  TERMS = 'TERMS'
+  TERMS = 'TERMS',
+  MENU_HISTORY = 'MENU_HISTORY'
 }
 
 export interface SubscriptionPlan {

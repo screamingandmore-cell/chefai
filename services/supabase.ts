@@ -1,35 +1,11 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { UserProfile, WeeklyMenu } from "../types";
 
-// Tenta ler do Vite (import.meta.env) ou do process.env (fallback)
-// Se não encontrar, usa valores dummy para evitar que o app trave com "supabaseUrl is required"
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://placeholder-url.supabase.co';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
-
-// Apenas avisa no console, mas permite o app carregar para mostrar a UI de erro amigável se necessário
-if (supabaseUrl === 'https://placeholder-url.supabase.co') {
-  console.warn("⚠️ Supabase não configurado no .env. O login não funcionará.");
-}
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
-
-/* 
-  ESTRUTURA SUGERIDA NO SUPABASE:
-  Table: profiles
-  - id (uuid, references auth.users)
-  - email (text)
-  - is_premium (boolean)
-  - allergies (text array)
-  - favorites (text array)
-  - usage_quick_recipes (int)
-  - usage_weekly_menus (int)
-
-  Table: weekly_menus
-  - id (uuid)
-  - user_id (uuid, references profiles.id)
-  - created_at (timestamp)
-  - data (jsonb)
-*/
 
 export const signIn = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -48,7 +24,6 @@ export const signUp = async (email: string, password: string) => {
   
   if (error) throw error;
 
-  // Cria perfil inicial se o cadastro for bem sucedido
   if (data.user) {
     await supabase.from('profiles').insert([
       { 
@@ -84,7 +59,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
     .single();
 
   if (error || !data) {
-    // Fallback caso o perfil não exista (erro de sync)
     const defaultProfile: UserProfile = {
       isPremium: false,
       allergies: [],
@@ -94,7 +68,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
     return defaultProfile;
   }
 
-  // Mapeia colunas do DB para o tipo UserProfile
   return {
     isPremium: data.is_premium,
     allergies: data.allergies || [],
@@ -133,6 +106,7 @@ export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<
     .from('weekly_menus')
     .insert([
       {
+        id: menu.id,
         user_id: userId,
         data: menu,
         created_at: new Date().toISOString()
@@ -140,6 +114,29 @@ export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<
     ]);
     
   if (error) console.error("Error saving menu:", error);
+};
+
+export const deleteWeeklyMenu = async (menuId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('weekly_menus')
+    .delete()
+    .eq('id', menuId);
+
+  if (error) {
+    console.error("Erro ao deletar:", error);
+    throw new Error(error.message);
+  }
+};
+
+export const deleteAllUserMenus = async (userId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('weekly_menus')
+    .delete()
+    .eq('user_id', userId);
+
+  if (error) {
+    throw new Error(`Erro ao limpar histórico: ${error.message}`);
+  }
 };
 
 export const getWeeklyMenus = async (userId: string): Promise<WeeklyMenu[]> => {
@@ -150,5 +147,5 @@ export const getWeeklyMenus = async (userId: string): Promise<WeeklyMenu[]> => {
     .order('created_at', { ascending: false });
 
   if (error || !data) return [];
-  return data.map(row => row.data); // Extrai o JSON armazenado
+  return data.map(row => row.data);
 };
