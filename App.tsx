@@ -34,9 +34,9 @@ const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
         await SupabaseService.signIn(email, password);
       } else {
         await SupabaseService.signUp(email, password);
-        try { await SupabaseService.signIn(email, password); } catch (ignore) {}
+        try { await SupabaseService.signIn(email, password); } catch (ignore) { }
       }
-      onLogin(); 
+      onLogin();
     } catch (err: any) {
       if (err.message && err.message.includes("Failed to fetch")) {
         setError("Erro de conexão. Verifique o .env.");
@@ -53,17 +53,17 @@ const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm">
         <div className="text-center mb-6">
-          <img 
-            src="/icon-192.png" 
-            alt="Chef.ai Logo" 
+          <img
+            src="/icon-192.png"
+            alt="Chef.ai Logo"
             className="w-20 h-20 mx-auto mb-4 rounded-2xl shadow-md object-contain bg-gray-900"
             onError={(e) => {
               if (e.currentTarget.src.endsWith('icon-192.png')) {
-                 e.currentTarget.src = '/icon-192.png.png';
+                e.currentTarget.src = '/icon-192.png.png';
               } else {
-                 e.currentTarget.src = '/favicon.svg';
-                 e.currentTarget.style.backgroundColor = 'transparent';
-                 e.currentTarget.onerror = null;
+                e.currentTarget.src = '/favicon.svg';
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.onerror = null;
               }
             }}
           />
@@ -103,7 +103,7 @@ export default function App() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(Difficulty.EASY);
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
-  const [allMenus, setAllMenus] = useState<WeeklyMenu[]>([]); 
+  const [allMenus, setAllMenus] = useState<WeeklyMenu[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -191,7 +191,7 @@ export default function App() {
       reader.onloadend = async () => {
         const base64 = reader.result as string;
         const detectedIngredients = await OpenAIService.analyzeFridgeImage(base64);
-        setIngredients(prev => [...new Set([...prev, ...detectedIngredients])]); 
+        setIngredients(prev => [...new Set([...prev, ...detectedIngredients])]);
         setIsLoading(false);
       };
       reader.readAsDataURL(file);
@@ -208,10 +208,10 @@ export default function App() {
     }
     let finalIngredients = [...ingredients];
     if (currentIngredient.trim()) {
-       const extra = processIngredientInput(currentIngredient);
-       finalIngredients = [...finalIngredients, ...extra];
-       setIngredients(prev => [...prev, ...extra]);
-       setCurrentIngredient('');
+      const extra = processIngredientInput(currentIngredient);
+      finalIngredients = [...finalIngredients, ...extra];
+      setIngredients(prev => [...prev, ...extra]);
+      setCurrentIngredient('');
     }
     if (finalIngredients.length === 0) { setError("Adicione ingredientes!"); return; }
     setIsLoading(true); setError(null);
@@ -231,10 +231,10 @@ export default function App() {
     }
     let finalIngredients = [...ingredients];
     if (currentIngredient.trim()) {
-       const extra = processIngredientInput(currentIngredient);
-       finalIngredients = [...finalIngredients, ...extra];
-       setIngredients(prev => [...prev, ...extra]);
-       setCurrentIngredient('');
+      const extra = processIngredientInput(currentIngredient);
+      finalIngredients = [...finalIngredients, ...extra];
+      setIngredients(prev => [...prev, ...extra]);
+      setCurrentIngredient('');
     }
     const isLongText = finalIngredients.length === 1 && finalIngredients[0].includes(' ');
     if (finalIngredients.length < 2 && !isLongText) {
@@ -281,7 +281,7 @@ export default function App() {
     } catch (e: any) { alert("Erro ao limpar: " + e.message); }
   };
 
-  if (!session) return <AuthScreen onLogin={() => {}} />;
+  if (!session) return <AuthScreen onLogin={() => { }} />;
 
   const renderHome = () => (
     <div className="space-y-6">
@@ -397,8 +397,8 @@ export default function App() {
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Nenhum plano ativo</h2>
           <p className="text-gray-500 mb-8">Vá para a aba "Geladeira" para gerar seu primeiro cardápio.</p>
           <div className="flex justify-center gap-4">
-             <button onClick={() => setView(ViewState.FRIDGE)} className="text-chef-green font-bold hover:underline">Ir para Geladeira</button>
-             {allMenus.length > 0 && <button onClick={() => setView(ViewState.MENU_HISTORY)} className="text-gray-500 font-bold hover:underline">Ver Histórico</button>}
+            <button onClick={() => setView(ViewState.FRIDGE)} className="text-chef-green font-bold hover:underline">Ir para Geladeira</button>
+            {allMenus.length > 0 && <button onClick={() => setView(ViewState.MENU_HISTORY)} className="text-gray-500 font-bold hover:underline">Ver Histórico</button>}
           </div>
         </div>
       );
@@ -444,15 +444,15 @@ export default function App() {
           })}
         </div>
         <div className="print-only">
-           <div className="print-header"><h1>Chef.ai - Cardápio Semanal</h1><p>Semana de {new Date(weeklyMenu.createdAt).toLocaleDateString()}</p></div>
-           {weeklyMenu.days.map((day, i) => (
-             <div key={i} className="page-break mb-8">
-               <h2 className="text-xl font-bold border-b-2 border-gray-300 mb-4 mt-8 uppercase">{day.day}</h2>
-               <div className="mb-6"><h3 className="text-lg font-bold text-gray-800 mb-2">☀️ ALMOÇO: {day.lunch.title}</h3><p className="italic text-gray-600 mb-2">{day.lunch.description}</p><div className="grid grid-cols-2 gap-4"><div><h4 className="font-bold text-sm uppercase">Ingredientes:</h4><ul className="text-sm list-disc pl-4">{day.lunch.ingredients.map(ing => <li key={ing}>{ing}</li>)}</ul></div><div><h4 className="font-bold text-sm uppercase">Preparo:</h4><ol className="text-sm list-decimal pl-4">{day.lunch.instructions.map((step, idx) => <li key={idx}>{step}</li>)}</ol></div></div></div>
-               <div><h3 className="text-lg font-bold text-gray-800 mb-2">🌙 JANTAR: {day.dinner.title}</h3><p className="italic text-gray-600 mb-2">{day.dinner.description}</p><div className="grid grid-cols-2 gap-4"><div><h4 className="font-bold text-sm uppercase">Ingredientes:</h4><ul className="text-sm list-disc pl-4">{day.dinner.ingredients.map(ing => <li key={ing}>{ing}</li>)}</ul></div><div><h4 className="font-bold text-sm uppercase">Preparo:</h4><ol className="text-sm list-decimal pl-4">{day.dinner.instructions.map((step, idx) => <li key={idx}>{step}</li>)}</ol></div></div></div>
-             </div>
-           ))}
-           <div className="page-break"><h2 className="text-xl font-bold border-b-2 border-gray-300 mb-4 mt-8 uppercase">🛒 Lista de Compras</h2><ul className="list-disc pl-5">{weeklyMenu.shoppingList.map((item, i) => (<li key={i} className="mb-1">{item}</li>))}</ul></div>
+          <div className="print-header"><h1>Chef.ai - Cardápio Semanal</h1><p>Semana de {new Date(weeklyMenu.createdAt).toLocaleDateString()}</p></div>
+          {weeklyMenu.days.map((day, i) => (
+            <div key={i} className="page-break mb-8">
+              <h2 className="text-xl font-bold border-b-2 border-gray-300 mb-4 mt-8 uppercase">{day.day}</h2>
+              <div className="mb-6"><h3 className="text-lg font-bold text-gray-800 mb-2">☀️ ALMOÇO: {day.lunch.title}</h3><p className="italic text-gray-600 mb-2">{day.lunch.description}</p><div className="grid grid-cols-2 gap-4"><div><h4 className="font-bold text-sm uppercase">Ingredientes:</h4><ul className="text-sm list-disc pl-4">{day.lunch.ingredients.map(ing => <li key={ing}>{ing}</li>)}</ul></div><div><h4 className="font-bold text-sm uppercase">Preparo:</h4><ol className="text-sm list-decimal pl-4">{day.lunch.instructions.map((step, idx) => <li key={idx}>{step}</li>)}</ol></div></div></div>
+              <div><h3 className="text-lg font-bold text-gray-800 mb-2">🌙 JANTAR: {day.dinner.title}</h3><p className="italic text-gray-600 mb-2">{day.dinner.description}</p><div className="grid grid-cols-2 gap-4"><div><h4 className="font-bold text-sm uppercase">Ingredientes:</h4><ul className="text-sm list-disc pl-4">{day.dinner.ingredients.map(ing => <li key={ing}>{ing}</li>)}</ul></div><div><h4 className="font-bold text-sm uppercase">Preparo:</h4><ol className="text-sm list-decimal pl-4">{day.dinner.instructions.map((step, idx) => <li key={idx}>{step}</li>)}</ol></div></div></div>
+            </div>
+          ))}
+          <div className="page-break"><h2 className="text-xl font-bold border-b-2 border-gray-300 mb-4 mt-8 uppercase">🛒 Lista de Compras</h2><ul className="list-disc pl-5">{weeklyMenu.shoppingList.map((item, i) => (<li key={i} className="mb-1">{item}</li>))}</ul></div>
         </div>
       </div>
     );
@@ -462,12 +462,12 @@ export default function App() {
     if (!weeklyMenu) return null;
     return (
       <div className="space-y-6">
-         <button onClick={() => setView(ViewState.WEEKLY_PLAN)} className="text-gray-500 mb-2">← Voltar</button>
-         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2"><span className="text-3xl">🛒</span> Lista de Compras</h2>
-            <ul className="space-y-3 mb-8">{weeklyMenu.shoppingList.map((item, i) => (<li key={i} className="flex items-start gap-3 text-gray-700 p-2 hover:bg-gray-50 rounded-lg transition-colors border-b border-gray-50"><input type="checkbox" className="mt-1.5 w-5 h-5 accent-chef-green rounded border-gray-300" /><span className="text-lg">{item}</span></li>))}</ul>
-            <button onClick={handleShareList} className="w-full bg-[#25D366] text-white py-3 rounded-xl font-bold hover:bg-[#128C7E] transition-colors flex items-center justify-center gap-2 shadow-sm"><span>📲</span> Compartilhar no WhatsApp</button>
-         </div>
+        <button onClick={() => setView(ViewState.WEEKLY_PLAN)} className="text-gray-500 mb-2">← Voltar</button>
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2"><span className="text-3xl">🛒</span> Lista de Compras</h2>
+          <ul className="space-y-3 mb-8">{weeklyMenu.shoppingList.map((item, i) => (<li key={i} className="flex items-start gap-3 text-gray-700 p-2 hover:bg-gray-50 rounded-lg transition-colors border-b border-gray-50"><input type="checkbox" className="mt-1.5 w-5 h-5 accent-chef-green rounded border-gray-300" /><span className="text-lg">{item}</span></li>))}</ul>
+          <button onClick={handleShareList} className="w-full bg-[#25D366] text-white py-3 rounded-xl font-bold hover:bg-[#128C7E] transition-colors flex items-center justify-center gap-2 shadow-sm"><span>📲</span> Compartilhar no WhatsApp</button>
+        </div>
       </div>
     );
   };
@@ -500,17 +500,19 @@ export default function App() {
 
   const renderProfile = () => (
     <div className="space-y-6">
-       <h2 className="text-2xl font-bold text-gray-800">Meu Perfil</h2>
-       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-         <div className="flex items-center gap-4 mb-6"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-2xl border border-gray-200">👤</div><div><p className="font-bold text-gray-800">{session?.user?.email}</p><p className={`text-sm ${user?.isPremium ? 'text-chef-green font-bold' : 'text-gray-500'}`}>{user?.isPremium ? 'Membro Premium 👑' : 'Plano Gratuito'}</p></div></div>
-         <div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-2">Minhas Alergias</label><input placeholder="Ex: Amendoim, Lactose..." className="w-full border border-gray-300 rounded-lg p-3 text-sm" value={user?.allergies?.join(', ') || ''} onChange={(e) => { const allergies = e.target.value.split(',').map(s => s.trim()); if (user && session?.user) { const updated = { ...user, allergies }; setUser(updated); SupabaseService.updateUserProfile(session.user.id, updated); } }} /><p className="text-xs text-gray-400 mt-1">A IA nunca sugerirá receitas com estes itens.</p></div></div>
-       </div>
-       <div className="grid grid-cols-2 gap-4"><button onClick={handleDeleteAllMenus} className="bg-red-50 text-red-500 font-bold py-3 rounded-xl hover:bg-red-100 transition-colors border border-red-100">Limpar Histórico</button><button onClick={handleLogout} className="bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">Sair da Conta</button></div>
+      <h2 className="text-2xl font-bold text-gray-800">Meu Perfil</h2>
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <div className="flex items-center gap-4 mb-6"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-2xl border border-gray-200">👤</div><div><p className="font-bold text-gray-800">{session?.user?.email}</p><p className={`text-sm ${user?.isPremium ? 'text-chef-green font-bold' : 'text-gray-500'}`}>{user?.isPremium ? 'Membro Premium 👑' : 'Plano Gratuito'}</p></div></div>
+        <div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-2">Minhas Alergias</label><input placeholder="Ex: Amendoim, Lactose..." className="w-full border border-gray-300 rounded-lg p-3 text-sm" value={user?.allergies?.join(', ') || ''} onChange={(e) => { const allergies = e.target.value.split(',').map(s => s.trim()); if (user && session?.user) { const updated = { ...user, allergies }; setUser(updated); SupabaseService.updateUserProfile(session.user.id, updated); } }} /><p className="text-xs text-gray-400 mt-1">A IA nunca sugerirá receitas com estes itens.</p></div></div>
+      </div>
+      <div className="grid grid-cols-2 gap-4"><button onClick={handleDeleteAllMenus} className="bg-red-50 text-red-500 font-bold py-3 rounded-xl hover:bg-red-100 transition-colors border border-red-100">Limpar Histórico</button><button onClick={handleLogout} className="bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">Sair da Conta</button></div>
     </div>
   );
 
   const renderPrivacyPolicy = () => (
-    <div className="bg-white min-h-screen absolute inset-0 z-50 p-6 overflow-y-auto"><div className="max-w-md mx-auto"><button onClick={() => setView(ViewState.HOME)} className="mb-6 text-chef-green font-bold text-lg flex items-center gap-2"><span>←</span> Voltar</button><h1 className="text-2xl font-bold mb-6 text-gray-900">Política de Privacidade</h1><div className="space-y-4 text-gray-600 text-sm leading-relaxed"><p><strong>Última atualização: Dezembro de 2024</strong></p><p>Coletamos seu endereço de e-mail para autenticação.</p><p>Seus dados de ingredientes são processados pela OpenAI e armazenados no Supabase.</p></div></div></div>
+    <div className="bg-white min-h-screen absolute inset-0 z-50 p-6 overflow-y-auto"><div className="max-w-md mx-auto"><button onClick={() => setView(ViewState.HOME)} className="mb-6 text-chef-green font-bold text-lg flex items-center gap-2"><span>←</span> Voltar</button><h1 className="text-2xl font-bold mb-6 text-gray-900">Política de Privacidade</h1><div className="space-y-4 text-gray-600 text-sm leading-relaxed"><p><strong>Última atualização: Dezembro de 2024</strong></p><p>Coletamos seu endereço de e-mail para autenticação.</p><p>Seus dados de ingredientes são processados pela OpenAI e armazenados no Supabase.</p></div>
+    </div>
+    </div>
   );
 
   const renderTermsOfUse = () => (
@@ -529,7 +531,7 @@ export default function App() {
   );
 
   const renderCurrentView = () => {
-    switch(view) {
+    switch (view) {
       case ViewState.HOME: return <div key="home" className="animate-fadeIn">{renderHome()}</div>;
       case ViewState.QUICK_RECIPE: return <div key="quick" className="animate-fadeIn">{renderFridge()}</div>;
       case ViewState.FRIDGE: return <div key="fridge" className="animate-fadeIn">{renderFridge()}</div>;
