@@ -95,6 +95,9 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Estados para Gestão de Alergias (Perfil)
+  const [allergyInput, setAllergyInput] = useState('');
+
   // Estados para Controle de Anúncios e Limites
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
@@ -159,6 +162,26 @@ export default function App() {
 
   const handleRemoveIngredient = (index: number) => setIngredients(ingredients.filter((_, i) => i !== index));
 
+  const handleAddAllergy = async () => {
+    if (!allergyInput.trim() || !user || !session?.user) return;
+    const newAllergy = allergyInput.trim();
+    const updatedAllergies = [...(user.allergies || []), newAllergy];
+    const updatedUser = { ...user, allergies: updatedAllergies };
+    
+    setUser(updatedUser); // Update local state immediately for UI
+    setAllergyInput('');
+    await SupabaseService.updateUserProfile(session.user.id, updatedUser); // Save to DB
+  };
+
+  const handleRemoveAllergy = async (index: number) => {
+    if (!user || !session?.user) return;
+    const updatedAllergies = user.allergies.filter((_, i) => i !== index);
+    const updatedUser = { ...user, allergies: updatedAllergies };
+    
+    setUser(updatedUser);
+    await SupabaseService.updateUserProfile(session.user.id, updatedUser);
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -198,22 +221,15 @@ export default function App() {
   const handleAdFinish = () => {
     setIsWatchingAd(false);
     setShowLimitModal(false);
-    
-    // Executa a ação pendente (ignora o limite dessa vez)
     if (pendingAction === 'quick') generateQuick(true);
     if (pendingAction === 'weekly') handleGenerateWeeklyClick(true);
-    
     setPendingAction(null);
   };
 
   const generateQuick = async (bypassLimit = false) => {
     if (!user || !session?.user) return;
     
-    // Verifica limite (se não for bypass de anúncio)
-    if (!bypassLimit && !checkLimits('quick')) {
-      triggerAdReward('quick');
-      return;
-    }
+    if (!bypassLimit && !checkLimits('quick')) { triggerAdReward('quick'); return; }
 
     let finalIngredients = [...ingredients];
     if (currentIngredient.trim()) {
@@ -225,7 +241,6 @@ export default function App() {
     try {
       const recipe = await OpenAIService.generateQuickRecipe(finalIngredients, user.allergies, selectedDifficulty, user.isPremium);
       setGeneratedRecipe(recipe);
-      // Incrementa uso apenas se não for bypass (opcional, ou incrementa sempre)
       const updatedUser = await SupabaseService.incrementUsage(session.user.id, 'quickRecipes');
       setUser(updatedUser);
       setView(ViewState.RECIPE_DETAILS);
@@ -235,11 +250,7 @@ export default function App() {
   const handleGenerateWeeklyClick = async (bypassLimit = false) => {
     if (!user || !session?.user) return;
 
-    // Verifica limite
-    if (!bypassLimit && !checkLimits('weekly')) {
-      triggerAdReward('weekly');
-      return;
-    }
+    if (!bypassLimit && !checkLimits('weekly')) { triggerAdReward('weekly'); return; }
 
     let finalIngredients = [...ingredients];
     if (currentIngredient.trim()) {
@@ -476,7 +487,7 @@ export default function App() {
     <div className="space-y-6 text-center">
       <div className="bg-gradient-to-b from-yellow-50 to-white border border-yellow-200 rounded-3xl p-8 shadow-sm">
         <h2 className="text-3xl font-bold mb-4">Premium 👑</h2>
-        {/* LISTA DE BENEFÍCIOS ADICIONADA */}
+        {/* LISTA DE BENEFÍCIOS */}
         <div className="bg-white/50 rounded-xl p-4 mb-8 text-left space-y-3">
            <p className="flex items-center gap-2"><span className="text-chef-green">✅</span> Cardápios Ilimitados</p>
            <p className="flex items-center gap-2"><span className="text-chef-green">✅</span> Análise de Fotos (IA)</p>
@@ -544,11 +555,57 @@ export default function App() {
         <div className="space-y-6">
            <h2 className="text-2xl font-bold">Perfil</h2>
            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200"><p className="font-bold">{session?.user?.email}</p><p className="text-sm">{user?.isPremium ? 'Premium' : 'Gratuito'}</p></div>
+           
+           {/* SEÇÃO DE ALERGIAS */}
+           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+             <h3 className="font-bold mb-4 flex items-center gap-2">⚠️ Restrições Alimentares</h3>
+             <div className="flex gap-2 mb-4">
+               <input 
+                 value={allergyInput}
+                 onChange={(e) => setAllergyInput(e.target.value)}
+                 placeholder="Ex: Camarão, Glúten..."
+                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+               />
+               <button onClick={handleAddAllergy} className="bg-red-50 text-red-500 font-bold px-4 rounded-lg hover:bg-red-100">+</button>
+             </div>
+             <div className="flex flex-wrap gap-2">
+               {user?.allergies?.map((allergy, i) => (
+                 <span key={i} className="bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 border border-red-100">
+                   {allergy} <button onClick={() => handleRemoveAllergy(i)}>×</button>
+                 </span>
+               ))}
+               {(!user?.allergies || user.allergies.length === 0) && <p className="text-gray-400 text-xs italic">Nenhuma restrição cadastrada.</p>}
+             </div>
+           </div>
+
            <button onClick={handleLogout} className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">Sair</button>
         </div>
       );
-      case ViewState.PRIVACY: return <div className="p-6 bg-white min-h-screen"><button onClick={() => setView(ViewState.HOME)} className="mb-4">← Voltar</button><h1 className="text-2xl font-bold mb-4">Política de Privacidade</h1><p>Coletamos seu e-mail para autenticação. Seus dados de ingredientes são processados pela IA e não compartilhados.</p></div>;
-      case ViewState.TERMS: return <div className="p-6 bg-white min-h-screen"><button onClick={() => setView(ViewState.HOME)} className="mb-4">← Voltar</button><h1 className="text-2xl font-bold mb-4">Termos de Uso</h1><p>O Chef.ai usa inteligência artificial. Verifique as receitas antes de consumir se tiver alergias.</p></div>;
+      case ViewState.PRIVACY: return (
+        <div className="p-6 bg-white min-h-screen">
+          <button onClick={() => setView(ViewState.HOME)} className="mb-4">← Voltar</button>
+          <h1 className="text-2xl font-bold mb-6">Política de Privacidade</h1>
+          <div className="space-y-4 text-gray-700">
+            <p><strong>1. Coleta de Dados:</strong> Coletamos seu e-mail para autenticação via Supabase. Seus dados de ingredientes e receitas geradas são armazenados para fornecer o histórico.</p>
+            <p><strong>2. Processamento de Imagens:</strong> As fotos enviadas para análise de geladeira são processadas temporariamente pela OpenAI e não são armazenadas permanentemente para fins de treinamento.</p>
+            <p><strong>3. Pagamentos:</strong> Todas as transações são processadas via Stripe. Não armazenamos seus dados bancários.</p>
+            <p><strong>4. Segurança:</strong> Utilizamos criptografia e regras de segurança rígidas (RLS) para proteger seus dados.</p>
+            <p><strong>5. Exclusão:</strong> Você pode solicitar a exclusão da sua conta a qualquer momento.</p>
+          </div>
+        </div>
+      );
+      case ViewState.TERMS: return (
+        <div className="p-6 bg-white min-h-screen">
+          <button onClick={() => setView(ViewState.HOME)} className="mb-4">← Voltar</button>
+          <h1 className="text-2xl font-bold mb-6">Termos de Uso</h1>
+          <div className="space-y-4 text-gray-700">
+            <p><strong>1. Aceitação:</strong> Ao usar o Chef.ai, você concorda com estes termos.</p>
+            <p><strong>2. Isenção de Responsabilidade (IA):</strong> As receitas são geradas por Inteligência Artificial. <strong>Não somos nutricionistas.</strong> Verifique os ingredientes em caso de alergias graves.</p>
+            <p><strong>3. Assinatura Premium:</strong> A cobrança é recorrente e gerenciada pelo Stripe. Você pode cancelar a qualquer momento para evitar cobranças futuras.</p>
+            <p><strong>4. Uso Aceitável:</strong> É proibido usar o serviço para fins ilegais. Reservamo-nos o direito de suspender contas que violem as regras.</p>
+          </div>
+        </div>
+      );
       default: return renderHome();
     }
   };
