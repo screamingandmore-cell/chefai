@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, GoogleAdPlaceholder } from './components/Layout';
+import { Layout, GoogleAdPlaceholder, AdBanner } from './components/Layout';
 import { ViewState, UserProfile, Recipe, WeeklyMenu, Difficulty } from './types';
 import * as OpenAIService from './services/openai';
 import * as SupabaseService from './services/supabase';
@@ -208,6 +207,7 @@ export default function App() {
       setAllMenus(prev => [menu, ...prev]);
       const updatedUser = await SupabaseService.incrementUsage(session.user.id, 'weeklyMenus');
       setUser(updatedUser);
+      setView(ViewState.WEEKLY_PLAN);
     } catch (err: any) { setError(err.message); } finally { setIsLoading(false); }
   };
 
@@ -253,7 +253,7 @@ export default function App() {
           <span className="text-3xl bg-blue-50 p-3 rounded-full">📅</span><span className="font-bold text-gray-700">Cardápio Semanal</span>
         </button>
       </div>
-      {!user?.isPremium && <GoogleAdPlaceholder label="Publicidade" />}
+      {!user?.isPremium && <AdBanner type="banner" />}
       {weeklyMenu && (
         <div onClick={() => setView(ViewState.WEEKLY_PLAN)} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-pointer mt-8">
           <p className="text-sm text-gray-500">Último: {new Date(weeklyMenu.createdAt).toLocaleDateString()}</p>
@@ -403,9 +403,21 @@ export default function App() {
         <div className="space-y-4">
           {StripeService.PLANS.map(plan => (
             <a key={plan.id} href={StripeService.getPaymentLink(plan.id, session?.user?.email)} className="block no-underline">
-              <div className="border-2 rounded-xl p-4 hover:border-chef-green flex justify-between items-center">
-                <div className="text-left"><h3 className="font-bold text-gray-800">{plan.name}</h3><p className="text-xs text-gray-500">{plan.interval}</p></div>
-                <span className="text-xl font-bold text-chef-green">R$ {plan.price}</span>
+              <div className="border-2 rounded-xl p-4 hover:border-chef-green flex justify-between items-center transition-all bg-white hover:shadow-md relative overflow-hidden">
+                <div className="text-left">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-gray-800">{plan.name}</h3>
+                    {plan.savings && (
+                      <span className="bg-green-100 text-chef-green text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border border-green-200">
+                        {plan.savings} OFF
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">{plan.interval}</p>
+                </div>
+                <div className="text-right">
+                   <span className="text-xl font-bold text-chef-green">R$ {plan.price.toFixed(2).replace('.', ',')}</span>
+                </div>
               </div>
             </a>
           ))}
@@ -452,8 +464,8 @@ export default function App() {
            <button onClick={handleLogout} className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">Sair</button>
         </div>
       );
-      case ViewState.PRIVACY: return <div className="p-6 bg-white"><button onClick={() => setView(ViewState.HOME)}>Voltar</button><h1>Privacidade</h1><p>Seus dados são seguros.</p></div>;
-      case ViewState.TERMS: return <div className="p-6 bg-white"><button onClick={() => setView(ViewState.HOME)}>Voltar</button><h1>Termos</h1><p>Use com responsabilidade.</p></div>;
+      case ViewState.PRIVACY: return <div className="p-6 bg-white min-h-screen"><button onClick={() => setView(ViewState.HOME)} className="mb-4">← Voltar</button><h1 className="text-2xl font-bold mb-4">Política de Privacidade</h1><p>Coletamos seu e-mail para autenticação. Seus dados de ingredientes são processados pela IA e não compartilhados.</p></div>;
+      case ViewState.TERMS: return <div className="p-6 bg-white min-h-screen"><button onClick={() => setView(ViewState.HOME)} className="mb-4">← Voltar</button><h1 className="text-2xl font-bold mb-4">Termos de Uso</h1><p>O Chef.ai usa inteligência artificial. Verifique as receitas antes de consumir se tiver alergias.</p></div>;
       default: return renderHome();
     }
   };
@@ -464,54 +476,3 @@ export default function App() {
     </Layout>
   );
 }
-// ... (código anterior mantido, focando nas mudanças)
-
-  const handleGenerateWeeklyClick = async () => {
-    // ... validações ...
-    try {
-      const menu = await OpenAIService.generateWeeklyMenu(finalIngredients, user.allergies, user.isPremium);
-      await SupabaseService.saveWeeklyMenu(session.user.id, menu);
-      setWeeklyMenu(menu);
-      setAllMenus(prev => [menu, ...prev]);
-      const updatedUser = await SupabaseService.incrementUsage(session.user.id, 'weeklyMenus');
-      setUser(updatedUser);
-      
-      // CORREÇÃO: Força a mudança de tela para o Cardápio imediatamente após gerar
-      setView(ViewState.WEEKLY_PLAN); 
-      
-    } catch (err: any) { setError(err.message); } finally { setIsLoading(false); }
-  };
-
-// ...
-
-  const renderPremium = () => (
-    <div className="space-y-6 text-center">
-      <div className="bg-gradient-to-b from-yellow-50 to-white border border-yellow-200 rounded-3xl p-8 shadow-sm">
-        <h2 className="text-3xl font-bold mb-2">Premium 👑</h2>
-        <p className="text-gray-500 mb-8">Desbloqueie tudo.</p>
-        <div className="space-y-4">
-          {StripeService.PLANS.map(plan => (
-            <a key={plan.id} href={StripeService.getPaymentLink(plan.id, session?.user?.email)} className="block no-underline">
-              <div className="border-2 rounded-xl p-4 hover:border-chef-green flex justify-between items-center transition-all bg-white hover:shadow-md relative overflow-hidden">
-                <div className="text-left">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-gray-800">{plan.name}</h3>
-                    {/* CORREÇÃO: Exibição do desconto (Savings) */}
-                    {plan.savings && (
-                      <span className="bg-green-100 text-chef-green text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border border-green-200">
-                        {plan.savings} OFF
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500">{plan.interval}</p>
-                </div>
-                <div className="text-right">
-                   <span className="text-xl font-bold text-chef-green">R$ {plan.price.toFixed(2).replace('.', ',')}</span>
-                </div>
-              </div>
-            </a>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
