@@ -95,10 +95,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Estados para Gestão de Alergias (Perfil)
   const [allergyInput, setAllergyInput] = useState('');
-
-  // Estados para Controle de Anúncios e Limites
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [pendingAction, setPendingAction] = useState<'quick' | 'weekly' | null>(null);
@@ -168,9 +165,9 @@ export default function App() {
     const updatedAllergies = [...(user.allergies || []), newAllergy];
     const updatedUser = { ...user, allergies: updatedAllergies };
     
-    setUser(updatedUser); // Update local state immediately for UI
+    setUser(updatedUser); 
     setAllergyInput('');
-    await SupabaseService.updateUserProfile(session.user.id, updatedUser); // Save to DB
+    await SupabaseService.updateUserProfile(session.user.id, updatedUser); 
   };
 
   const handleRemoveAllergy = async (index: number) => {
@@ -202,14 +199,10 @@ export default function App() {
     } catch (err) { console.error(err); setError("Erro ao analisar imagens."); } finally { setIsLoading(false); }
   };
 
-  // Lógica de Limites e Anúncios
   const checkLimits = (type: 'quick' | 'weekly'): boolean => {
-    if (!user || user.isPremium) return true; // Premium não tem limite
-    
-    // Limites: 10 Receitas Rápidas, 1 Cardápio Semanal
+    if (!user || user.isPremium) return true; 
     if (type === 'quick' && user.usage.quickRecipes >= 10) return false;
     if (type === 'weekly' && user.usage.weeklyMenus >= 1) return false;
-    
     return true;
   };
 
