@@ -13,9 +13,9 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         strategies: 'generateSW', // Gera o arquivo automaticamente
-        filename: 'sw.js', // Nome padrão universal
+        filename: 'sw.js', 
         registerType: 'autoUpdate',
-        injectRegister: null, // DESLIGADO: Vamos registrar manualmente no index.html
+        injectRegister: null, // Registro manual no index.html
         manifest: false, // Usa o arquivo manual public/manifest.json
         devOptions: {
           enabled: true,

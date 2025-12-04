@@ -6,14 +6,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, 'public');
 
-console.log('🔄 Iniciando padronização de imagens...');
+console.log('🔄 Iniciando RENOMEAÇÃO FORÇADA de imagens...');
 
 if (!fs.existsSync(publicDir)) {
     console.error('❌ Pasta public não encontrada!');
     process.exit(1);
 }
 
-// Ler arquivos
+// Ler arquivos PNG
 const files = fs.readdirSync(publicDir).filter(f => f.toLowerCase().endsWith('.png'));
 
 let screenCount = 1;
@@ -22,34 +22,30 @@ files.forEach(file => {
     const oldPath = path.join(publicDir, file);
     let newName = file.toLowerCase();
 
-    // Preservar Ícones (se tiver 192 ou 512 no nome)
+    // Preservar Ícones
     if (file.includes('192')) {
         newName = 'icon-192.png';
     } else if (file.includes('512')) {
         newName = 'icon-512.png';
     } 
-    // Renomear Screenshots sequencialmente
+    // Renomear Screenshots para um nome NUNCA USADO ANTES
+    // Isso obriga o Git a detectar como arquivo novo
     else {
-        newName = `screen-${screenCount}.png`;
+        newName = `pwa-shot-${screenCount}.png`;
         screenCount++;
     }
 
     const newPath = path.join(publicDir, newName);
 
-    // Renomear apenas se o nome for diferente
     if (file !== newName) {
-        // Evitar sobrescrever se já existe (no Windows rename direto pode falhar se mudar só case)
-        if (fs.existsSync(newPath) && file.toLowerCase() !== newName) {
-            console.log(`⚠️ Pulei ${file} pois ${newName} já existe.`);
-        } else {
-            try {
-                fs.renameSync(oldPath, newPath);
-                console.log(`✅ ${file} -> ${newName}`);
-            } catch (e) {
-                console.error(`Erro ao renomear ${file}:`, e);
-            }
+        try {
+            fs.renameSync(oldPath, newPath);
+            console.log(`✅ Renomeado: ${file} -> ${newName}`);
+        } catch (e) {
+            console.error(`Erro ao renomear ${file}:`, e);
         }
     }
 });
 
-console.log('🎉 Imagens padronizadas! Agora faça o git add/commit/push.');
+console.log('🎉 Imagens renomeadas! Agora o Git vai detectar mudanças.');
+console.log('👉 Execute: git add . && git commit -m "Novas fotos PWA" && git push');
