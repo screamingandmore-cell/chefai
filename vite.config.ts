@@ -6,16 +6,13 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    // Força o Vite a tratar esses arquivos como assets estáticos
     assetsInclude: ['**/*.png', '**/*.jpg', '**/*.svg'],
     plugins: [
       react(),
       VitePWA({
-        strategies: 'injectManifest',
-        srcDir: 'src',
-        filename: 'sw.js',
+        strategies: 'generateSW', // MUDANÇA: Gera automático (sem depender de src/sw.js)
         registerType: 'autoUpdate',
-        injectRegister: null, // Registro manual no index.html
+        injectRegister: null, // Mantemos null pois temos o script manual no index.html
         manifest: false, // Usa o arquivo manual public/manifest.json
         devOptions: {
           enabled: true,
@@ -27,6 +24,8 @@ export default defineConfig(({ mode }) => {
           clientsClaim: true,
           skipWaiting: true,
           maximumFileSizeToCacheInBytes: 5000000,
+          // Garante que o arquivo se chame sw.js para bater com o index.html
+          swDest: 'dist/sw.js', 
         },
         includeAssets: [
           'favicon.svg', 
