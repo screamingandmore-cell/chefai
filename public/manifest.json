@@ -51,42 +51,42 @@
   "screenshots": [
     {
       "src": "screenshot-mobile-1.png",
-      "sizes": "1920x1080",
+      "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Tela Inicial"
     },
     {
       "src": "screenshot-mobile-2.png",
-      "sizes": "1920x1080",
+      "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Geladeira Inteligente"
     },
     {
       "src": "screenshot-mobile-3.png",
-      "sizes": "1920x1080",
+      "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Cardápio Semanal"
     },
     {
       "src": "screenshot-desktop-1.png",
-      "sizes": "1080x1920",
+      "sizes": "1920x1920",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Home"
     },
     {
       "src": "screenshot-desktop-2.png",
-      "sizes": "1080x1920",
+      "sizes": "1920x1920",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Menu"
     },
     {
       "src": "screenshot-desktop-3.png",
-      "sizes": "1080x1920",
+      "sizes": "1920x1920",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Receita"
