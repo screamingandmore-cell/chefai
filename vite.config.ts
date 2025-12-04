@@ -10,9 +10,9 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       VitePWA({
-        strategies: 'generateSW', // MUDANÇA: Gera automático (sem depender de src/sw.js)
+        strategies: 'generateSW',
         registerType: 'autoUpdate',
-        injectRegister: null, // Mantemos null pois temos o script manual no index.html
+        injectRegister: 'auto', // ATIVADO: O plugin injeta o script de registro correto automaticamente
         manifest: false, // Usa o arquivo manual public/manifest.json
         devOptions: {
           enabled: true,
@@ -24,8 +24,6 @@ export default defineConfig(({ mode }) => {
           clientsClaim: true,
           skipWaiting: true,
           maximumFileSizeToCacheInBytes: 5000000,
-          // Garante que o arquivo se chame sw.js para bater com o index.html
-          swDest: 'dist/sw.js', 
         },
         includeAssets: [
           'favicon.svg', 
