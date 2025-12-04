@@ -6,20 +6,24 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    publicDir: 'public', // Garante que a pasta public seja usada
-    assetsInclude: ['**/*.png', '**/*.jpg', '**/*.svg'], // Força inclusão de imagens
+    publicDir: 'public',
+    assetsInclude: ['**/*.png', '**/*.jpg', '**/*.svg'],
     plugins: [
       react(),
       VitePWA({
-        strategies: 'injectManifest',
-        srcDir: 'src',
-        filename: 'sw.js',
+        strategies: 'generateSW', // MUDANÇA: Gera automaticamente sem precisar de arquivo fonte
         registerType: 'autoUpdate',
-        injectRegister: null,
-        manifest: false, 
+        injectRegister: null, // Usa o script manual do index.html
+        manifest: false, // Usa o manifesto manual de public/manifest.json
         devOptions: {
           enabled: true,
-          type: 'module',
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
+          navigateFallback: '/index.html', // Garante funcionamento offline para SPA
         },
         includeAssets: [
           'favicon.svg', 
