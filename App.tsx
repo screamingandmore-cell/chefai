@@ -59,9 +59,9 @@ const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
         {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-200">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-xs font-bold text-gray-700 uppercase mb-1">Email</label>
+            <label htmlFor="email-input" className="block text-xs font-bold text-gray-700 uppercase mb-1">Email</label>
             <input 
-              id="email"
+              id="email-input"
               type="email" 
               name="email"
               autoComplete="email"
@@ -72,9 +72,9 @@ const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-xs font-bold text-gray-700 uppercase mb-1">Senha</label>
+            <label htmlFor="password-input" className="block text-xs font-bold text-gray-700 uppercase mb-1">Senha</label>
             <input 
-              id="password"
+              id="password-input"
               type="password" 
               name="password"
               autoComplete="current-password"
@@ -121,7 +121,6 @@ export default function App() {
     SupabaseService.getUserSession().then(sess => {
       setSession(sess);
       
-      // Checa parâmetros de URL para Deep Linking (Atalhos PWA)
       const params = new URLSearchParams(window.location.search);
       const action = params.get('action');
       
@@ -345,8 +344,23 @@ export default function App() {
   const renderIngredientInput = () => (
     <>
         <div className="flex gap-2 mb-4">
-          <input value={currentIngredient} onChange={(e) => setCurrentIngredient(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddIngredient()} placeholder="Ex: Frango, Batata..." className="flex-1 border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-chef-green" />
-          <button onClick={handleAddIngredient} className="bg-chef-green text-white px-4 rounded-xl hover:bg-green-600">+</button>
+          <label htmlFor="ingredient-input" className="sr-only">Digite um ingrediente</label>
+          <input 
+            id="ingredient-input"
+            aria-label="Adicionar ingrediente"
+            value={currentIngredient} 
+            onChange={(e) => setCurrentIngredient(e.target.value)} 
+            onKeyDown={(e) => e.key === 'Enter' && handleAddIngredient()} 
+            placeholder="Ex: Frango, Batata..." 
+            className="flex-1 border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-chef-green" 
+          />
+          <button 
+            onClick={handleAddIngredient} 
+            aria-label="Adicionar"
+            className="bg-chef-green text-white px-4 rounded-xl hover:bg-green-600"
+          >
+            +
+          </button>
         </div>
         <div className="flex items-center gap-4 mb-6">
           <input type="file" accept="image/*" multiple ref={fileInputRef} className="hidden" onChange={handleImageUpload} />
@@ -579,13 +593,22 @@ export default function App() {
            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
              <h3 className="font-bold mb-4 flex items-center gap-2">⚠️ Restrições Alimentares</h3>
              <div className="flex gap-2 mb-4">
+               <label htmlFor="allergy-input" className="sr-only">Digite uma restrição alimentar</label>
                <input 
+                 id="allergy-input"
+                 aria-label="Adicionar restrição alimentar"
                  value={allergyInput}
                  onChange={(e) => setAllergyInput(e.target.value)}
                  placeholder="Ex: Camarão, Glúten..."
                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
                />
-               <button onClick={handleAddAllergy} className="bg-red-50 text-red-500 font-bold px-4 rounded-lg hover:bg-red-100">+</button>
+               <button 
+                 onClick={handleAddAllergy} 
+                 aria-label="Adicionar"
+                 className="bg-red-50 text-red-500 font-bold px-4 rounded-lg hover:bg-red-100"
+               >
+                 +
+               </button>
              </div>
              <div className="flex flex-wrap gap-2">
                {user?.allergies?.map((allergy, i) => (
@@ -672,7 +695,7 @@ export default function App() {
         <AdInterstitial onFinish={handleAdFinish} />
       )}
 
-      <div className="text-center text-[10px] text-gray-300 py-2 no-print">Versão 2.2</div>
+      <div className="text-center text-[10px] text-gray-300 py-2 no-print">Versão 2.3 - A11y</div>
     </Layout>
   );
 }
