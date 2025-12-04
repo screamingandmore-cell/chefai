@@ -2,13 +2,13 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- SEO & Ranqueamento -->
     <title>Chef.ai - Cardápios Inteligentes</title>
     <meta name="description" content="Seu assistente de cozinha pessoal com Inteligência Artificial. Crie receitas, cardápios semanais e listas de compras economizando tempo e dinheiro." />
     <meta name="keywords" content="receitas, inteligência artificial, cardápio semanal, economia, cozinha, chef, planejamento alimentar" />
-    <meta name="theme-color" content="#10b981" />
+    <meta name="theme-color" content="#059669" />
 
     <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="website" />
@@ -25,7 +25,7 @@
     <meta property="twitter:image" content="/icon-512.png" />
     
     <!-- PWA & Mobile -->
-    <link rel="manifest" href="/manifest.json?v=seo_update" />
+    <link rel="manifest" href="/manifest.json?v=accessible" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -36,7 +36,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     
     <link href="/index.css" rel="stylesheet">
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.1",
@@ -62,9 +62,9 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/chef-worker.js')
+          navigator.serviceWorker.register('/sw.js')
             .then(registration => {
-              console.log('✅ Service Worker registrado com sucesso:', registration.scope);
+              console.log('✅ Service Worker registrado:', registration.scope);
             })
             .catch(error => {
               console.error('❌ Falha ao registrar Service Worker:', error);

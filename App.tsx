@@ -42,7 +42,7 @@ const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm">
         <div className="text-center mb-6">
           <img 
@@ -59,12 +59,30 @@ const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
         {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-200">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Email</label>
-            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-chef-green" />
+            <label htmlFor="email" className="block text-xs font-bold text-gray-700 uppercase mb-1">Email</label>
+            <input 
+              id="email"
+              type="email" 
+              name="email"
+              autoComplete="email"
+              required 
+              value={email} 
+              onChange={e => setEmail(e.target.value)} 
+              className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-chef-green" 
+            />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Senha</label>
-            <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-chef-green" />
+            <label htmlFor="password" className="block text-xs font-bold text-gray-700 uppercase mb-1">Senha</label>
+            <input 
+              id="password"
+              type="password" 
+              name="password"
+              autoComplete="current-password"
+              required 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-chef-green" 
+            />
           </div>
           <button type="submit" disabled={loading} className="w-full bg-chef-green text-white font-bold py-3 rounded-xl shadow-lg hover:bg-green-600 transition-all disabled:opacity-50">
             {loading ? <LoadingSpinner /> : (isLogin ? 'Entrar' : 'Criar Conta')}
@@ -76,7 +94,7 @@ const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 

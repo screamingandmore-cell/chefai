@@ -1,4 +1,3 @@
-
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -22,8 +21,9 @@ export default {
           700: '#1d4ed8',
         },
         chef: {
-          green: '#10b981',
-          orange: '#f97316',
+          // Cores ajustadas para passar no teste de contraste WCAG AA
+          green: '#059669', // Era #10b981 (Muito claro para texto branco)
+          orange: '#ea580c', // Era #f97316
         }
       }
     },
