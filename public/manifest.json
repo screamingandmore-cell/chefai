@@ -8,7 +8,7 @@
   "orientation": "portrait",
   "start_url": "/",
   "scope": "/",
-  "id": "com.chefai.app",
+  "id": "/",
   "categories": [
     "food",
     "lifestyle",
@@ -24,25 +24,25 @@
   },
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -50,34 +50,28 @@
   ],
   "screenshots": [
     {
-      "src": "screen-1.png",
+      "src": "/screen-1.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Tela Inicial"
     },
     {
-      "src": "screen-2.png",
+      "src": "/screen-2.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Geladeira Inteligente"
     },
     {
-      "src": "screen-3.png",
+      "src": "/screen-3.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Cardápio Semanal"
     }
   ],
-  "related_applications": [
-    {
-      "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=com.chefai.app",
-      "id": "com.chefai.app"
-    }
-  ],
+  "related_applications": [],
   "prefer_related_applications": false,
   "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7"
 }
