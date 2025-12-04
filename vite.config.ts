@@ -6,14 +6,16 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    assetsInclude: ['**/*.png', '**/*.jpg', '**/*.svg'],
+    // Força o Vite a aceitar imagens como arquivos estáticos
+    assetsInclude: ['**/*.png', '**/*.jpg', '**/*.svg', '**/*.ico'],
     
     plugins: [
       react(),
       VitePWA({
-        strategies: 'generateSW',
+        strategies: 'generateSW', // Gera o arquivo automaticamente
+        filename: 'sw.js', // Nome padrão universal
         registerType: 'autoUpdate',
-        injectRegister: 'auto', // Deixa o plugin criar o script de registro
+        injectRegister: null, // DESLIGADO: Vamos registrar manualmente no index.html
         manifest: false, // Usa o arquivo manual public/manifest.json
         devOptions: {
           enabled: true,
@@ -24,14 +26,13 @@ export default defineConfig(({ mode }) => {
           clientsClaim: true,
           skipWaiting: true,
           navigateFallback: '/index.html',
-          navigateFallbackDenylist: [/^\/.*\.png$/, /^\/.*\.json$/]
-        },
-        includeAssets: [
-          'favicon.svg', 
-          'icon-192.png', 
-          'icon-512.png',
-          'screen-1.png', 'screen-2.png', 'screen-3.png'
-        ]
+          navigateFallbackDenylist: [
+            /^\/.*\.png$/, 
+            /^\/.*\.json$/, 
+            /^\/.*\.jpg$/,
+            /^\/sw.js$/
+          ]
+        }
       })
     ],
     define: {
