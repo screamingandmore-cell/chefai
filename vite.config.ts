@@ -6,37 +6,27 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    assetsInclude: ['**/*.png', '**/*.jpg', '**/*.svg'],
+    publicDir: 'public', // Garante que a pasta public seja usada
+    assetsInclude: ['**/*.png', '**/*.jpg', '**/*.svg'], // Força inclusão de imagens
     plugins: [
       react(),
       VitePWA({
-        strategies: 'generateSW',
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.js',
         registerType: 'autoUpdate',
-        injectRegister: 'auto',
-        manifest: false, // Usa o arquivo manual public/manifest.json
+        injectRegister: null,
+        manifest: false, 
         devOptions: {
           enabled: true,
           type: 'module',
-        },
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
-          cleanupOutdatedCaches: true,
-          clientsClaim: true,
-          skipWaiting: true,
-          maximumFileSizeToCacheInBytes: 5000000,
-          // Ignora query params para garantir que o SW funcione em qualquer rota
-          ignoreURLParametersMatching: [/^utm_/, /^fbclid$/]
         },
         includeAssets: [
           'favicon.svg', 
           'icon-192.png', 
           'icon-512.png',
-          'cell1.png',
-          'cell2.png',
-          'cell3.png',
-          'pc1.png',
-          'pc2.png',
-          'pc3.png'
+          'cell1.png', 'cell2.png', 'cell3.png',
+          'pc1.png', 'pc2.png', 'pc3.png'
         ]
       })
     ],
@@ -45,7 +35,8 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
-      assetsDir: 'assets'
+      assetsDir: 'assets',
+      emptyOutDir: true
     }
   }
 })

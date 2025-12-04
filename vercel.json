@@ -1,2 +1,20 @@
+
 {
+  "rewrites": [
+    {
+      "source": "/((?!assets/|sw.js|manifest.json|favicon.svg|.*\\.png|.*\\.jpg|.*\\.css|.*\\.js).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)\\.png",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
 }
