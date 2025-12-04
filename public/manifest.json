@@ -1,3 +1,4 @@
+
 {
   "name": "Chef.ai - Cardápios Inteligentes",
   "short_name": "Chef.ai",
@@ -11,10 +12,17 @@
   "id": "com.chefai.app",
   "categories": [
     "food",
-    "lifestyle"
+    "lifestyle",
+    "health"
   ],
   "lang": "pt-BR",
   "dir": "ltr",
+  "launch_handler": {
+    "client_mode": "auto"
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
   "icons": [
     {
       "src": "/icon-192.png",
@@ -54,37 +62,44 @@
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Geladeira"
+      "label": "Geladeira Inteligente"
     },
     {
       "src": "/screenshot-mobile-3.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Cardápio"
+      "label": "Cardápio Semanal"
     },
     {
       "src": "/screenshot-desktop-1.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Desktop Home"
+      "label": "Visão Desktop Home"
     },
     {
       "src": "/screenshot-desktop-2.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Desktop Menu"
+      "label": "Visão Desktop Menu"
     },
     {
       "src": "/screenshot-desktop-3.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Desktop Recipe"
+      "label": "Visão Desktop Receita"
     }
   ],
-  "related_applications": [],
-  "prefer_related_applications": false
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.chefai.app",
+      "id": "com.chefai.app"
+    }
+  ],
+  "prefer_related_applications": false,
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7"
 }
