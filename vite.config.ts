@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         strategies: 'generateSW',
         registerType: 'autoUpdate',
-        injectRegister: 'auto', // ATIVADO: O plugin injeta o script de registro correto automaticamente
+        injectRegister: 'auto',
         manifest: false, // Usa o arquivo manual public/manifest.json
         devOptions: {
           enabled: true,
@@ -24,17 +24,19 @@ export default defineConfig(({ mode }) => {
           clientsClaim: true,
           skipWaiting: true,
           maximumFileSizeToCacheInBytes: 5000000,
+          // Ignora query params para garantir que o SW funcione em qualquer rota
+          ignoreURLParametersMatching: [/^utm_/, /^fbclid$/]
         },
         includeAssets: [
           'favicon.svg', 
           'icon-192.png', 
           'icon-512.png',
-          'screenshot-mobile-1.png',
-          'screenshot-mobile-2.png',
-          'screenshot-mobile-3.png',
-          'screenshot-desktop-1.png',
-          'screenshot-desktop-2.png',
-          'screenshot-desktop-3.png'
+          'cell1.png',
+          'cell2.png',
+          'cell3.png',
+          'pc1.png',
+          'pc2.png',
+          'pc3.png'
         ]
       })
     ],
