@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
@@ -23,9 +24,6 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-SEU_ID_AQUI" crossorigin="anonymous"></script>
-
     <!-- Fontes -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script type="importmap">
@@ -53,13 +51,12 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          // O arquivo sw.js é gerado na raiz durante o build a partir do src/sw.js
           navigator.serviceWorker.register('/sw.js')
             .then(registration => {
-              console.log('✅ Service Worker registrado:', registration.scope);
+              console.log('✅ Service Worker registrado com sucesso:', registration.scope);
             })
             .catch(error => {
-              console.error('❌ Falha no Service Worker:', error);
+              console.error('❌ Falha ao registrar Service Worker:', error);
             });
         });
       }
