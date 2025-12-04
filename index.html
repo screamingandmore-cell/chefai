@@ -8,7 +8,8 @@
     <meta name="description" content="Chef.ai: Seu assistente de cozinha pessoal com Inteligência Artificial." />
     <title>Chef.ai</title>
     
-    <link rel="manifest" href="/manifest.json" />
+    <!-- Cache Busting: ?v=3.0 força o navegador/PWABuilder a baixar o novo manifesto -->
+    <link rel="manifest" href="/manifest.json?v=3.0" />
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -41,16 +42,5 @@
   <body class="bg-gray-50 text-gray-900 antialiased">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-    
-    <!-- REGISTRO MANUAL DO SERVICE WORKER -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(registration => console.log('✅ SW registrado:', registration.scope))
-            .catch(error => console.error('❌ Erro SW:', error));
-        });
-      }
-    </script>
   </body>
 </html>
