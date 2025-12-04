@@ -21,9 +21,11 @@ export default {
           700: '#1d4ed8',
         },
         chef: {
-          // Cores ajustadas para passar no teste de contraste WCAG AA
-          green: '#059669', // Era #10b981 (Muito claro para texto branco)
-          orange: '#ea580c', // Era #f97316
+          // Cores ajustadas para passar no teste de contraste WCAG AA/AAA
+          // Verde escurecido para #047857 (Emerald 700) para garantir leitura de texto branco
+          green: '#047857', 
+          // Laranja escurecido para #c2410c (Orange 700) para garantir contraste suficiente
+          orange: '#c2410c', 
         }
       }
     },
