@@ -33,8 +33,7 @@ export default defineConfig(({ mode }) => {
           'favicon.svg', 
           'icon-192.png', 
           'icon-512.png',
-          'screen-1.png', 'screen-2.png', 'screen-3.png',
-          'screen-4.png', 'screen-5.png', 'screen-6.png'
+          'screen-1.png', 'screen-2.png', 'screen-3.png'
         ]
       })
     ],

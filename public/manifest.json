@@ -69,27 +69,6 @@
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Cardápio Semanal"
-    },
-    {
-      "src": "screen-4.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Visão Desktop Home"
-    },
-    {
-      "src": "screen-5.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Visão Desktop Menu"
-    },
-    {
-      "src": "screen-6.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Visão Desktop Receita"
     }
   ],
   "related_applications": [
