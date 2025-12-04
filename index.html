@@ -4,13 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
+    <!-- SEO & Ranqueamento -->
+    <title>Chef.ai - Cardápios Inteligentes</title>
+    <meta name="description" content="Seu assistente de cozinha pessoal com Inteligência Artificial. Crie receitas, cardápios semanais e listas de compras economizando tempo e dinheiro." />
+    <meta name="keywords" content="receitas, inteligência artificial, cardápio semanal, economia, cozinha, chef, planejamento alimentar" />
     <meta name="theme-color" content="#10b981" />
-    <meta name="description" content="Chef.ai: Seu assistente de cozinha pessoal com Inteligência Artificial." />
-    <title>Chef.ai</title>
-    
-    <!-- Cache Buster no Manifesto - Versão ULTIMATE -->
-    <link rel="manifest" href="/manifest.json?v=ultimate" />
 
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://chefai-zl8v.vercel.app/" />
+    <meta property="og:title" content="Chef.ai - Seu Chef Pessoal" />
+    <meta property="og:description" content="Descubra o que cozinhar com o que você tem na geladeira. Inteligência Artificial para suas receitas." />
+    <meta property="og:image" content="/icon-512.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://chefai-zl8v.vercel.app/" />
+    <meta property="twitter:title" content="Chef.ai - Cardápios Inteligentes" />
+    <meta property="twitter:description" content="Economize tempo e dinheiro na cozinha com IA." />
+    <meta property="twitter:image" content="/icon-512.png" />
+    
+    <!-- PWA & Mobile -->
+    <link rel="manifest" href="/manifest.json?v=seo_update" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -21,7 +36,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     
     <link href="/index.css" rel="stylesheet">
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.1",
@@ -43,11 +58,11 @@
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     
-    <!-- REGISTRO MANUAL E FORÇADO DO SERVICE WORKER -->
+    <!-- REGISTRO MANUAL DO SERVICE WORKER (Para garantir nota PWA) -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('/chef-worker.js')
             .then(registration => {
               console.log('✅ Service Worker registrado com sucesso:', registration.scope);
             })

@@ -1,7 +1,7 @@
 {
-  "name": "Chef.ai - Cardápios Inteligentes",
+  "name": "Chef.ai - Cardápios e Receitas com IA",
   "short_name": "Chef.ai",
-  "description": "Seu assistente de cozinha pessoal com Inteligência Artificial. Crie receitas, cardápios e economize tempo e dinheiro.",
+  "description": "Seu assistente de cozinha pessoal com Inteligência Artificial. Transforme ingredientes em receitas, crie cardápios semanais econômicos e gere listas de compras automáticas.",
   "theme_color": "#10b981",
   "background_color": "#ffffff",
   "display": "standalone",
@@ -13,7 +13,8 @@
   "categories": [
     "food",
     "lifestyle",
-    "health"
+    "health",
+    "productivity"
   ],
   "lang": "pt-BR",
   "dir": "ltr",
@@ -23,6 +24,12 @@
   "edge_side_panel": {
     "preferred_width": 400
   },
+  "protocol_handlers": [
+    {
+      "protocol": "web+chef",
+      "url": "/?recipe=%s"
+    }
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -55,21 +62,21 @@
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Tela Inicial"
+      "label": "Tela Inicial do Chef.ai"
     },
     {
       "src": "/pwa-shot-2.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Geladeira Inteligente"
+      "label": "Geladeira Inteligente com IA"
     },
     {
       "src": "/pwa-shot-3.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Cardápio Semanal"
+      "label": "Cardápio Semanal Completo"
     },
     {
       "src": "/pwa-shot-4.png",
