@@ -1,30 +1,24 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
-    <!-- PWA Primary Meta Tags -->
     <meta name="theme-color" content="#10b981" />
     <meta name="description" content="Chef.ai: Seu assistente de cozinha pessoal com Inteligência Artificial." />
     <title>Chef.ai</title>
     
-    <!-- Link para o Manifesto -->
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- Meta Tags Modernas para PWA -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Chef.ai" />
     
-    <!-- Ícones -->
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     
-    <!-- Fontes -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script type="importmap">
 {
@@ -47,16 +41,17 @@
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     
-    <!-- Registro Manual do Service Worker -->
+    <!-- REGISTRO MANUAL DO SERVICE WORKER -->
+    <!-- Aponta para /sw.js que será gerado automaticamente pelo Vite -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
             .then(registration => {
-              console.log('✅ Service Worker registrado com sucesso:', registration.scope);
+              console.log('✅ Service Worker registrado:', registration.scope);
             })
             .catch(error => {
-              console.error('❌ Falha ao registrar Service Worker:', error);
+              console.error('❌ Erro SW:', error);
             });
         });
       }

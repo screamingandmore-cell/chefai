@@ -1,31 +1,24 @@
-
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, (process as any).cwd(), '');
+  const env = loadEnv(mode, process.cwd(), '');
 
   return {
     plugins: [
       react(),
       VitePWA({
-        strategies: 'injectManifest',
-        srcDir: 'src',
-        filename: 'sw.js',
         registerType: 'autoUpdate',
-        injectRegister: null, // Registro manual no index.html
+        // 'generateSW' é o padrão quando não definimos 'strategies'.
+        // Isso cria o sw.js automaticamente na raiz sem precisar de arquivo fonte.
         manifest: false, // Usa o arquivo manual public/manifest.json
-        devOptions: {
-          enabled: true,
-          type: 'module',
-        },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
-          skipWaiting: true
+          skipWaiting: true,
+          maximumFileSizeToCacheInBytes: 5000000, // Aumenta limite para 5MB para evitar avisos
         },
         includeAssets: [
           'favicon.svg', 
