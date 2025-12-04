@@ -6,12 +6,13 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
+    // Forçar inclusão de PNGs
     assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.svg', '**/*.ico'],
     
     plugins: [
       react(),
       VitePWA({
-        strategies: 'generateSW',
+        strategies: 'generateSW', // Modo automático mais robusto
         filename: 'sw.js', 
         registerType: 'autoUpdate',
         injectRegister: null, // Registro manual no index.html
@@ -25,6 +26,7 @@ export default defineConfig(({ mode }) => {
           clientsClaim: true,
           skipWaiting: true,
           navigateFallback: '/index.html',
+          // Impedir que o SW intercepte imagens e retorne HTML
           navigateFallbackDenylist: [
             /^\/.*\.png$/, 
             /^\/.*\.jpg$/,
@@ -37,12 +39,13 @@ export default defineConfig(({ mode }) => {
           'favicon.svg', 
           'icon-192.png', 
           'icon-512.png',
-          'pwa-shot-1.jpg',
-          'pwa-shot-2.jpg',
-          'pwa-shot-3.jpg',
-          'pwa-shot-4.jpg',
-          'pwa-shot-5.jpg',
-          'pwa-shot-6.jpg'
+          // LISTA DE PNGs
+          'pwa-shot-1.png',
+          'pwa-shot-2.png',
+          'pwa-shot-3.png',
+          'pwa-shot-4.png',
+          'pwa-shot-5.png',
+          'pwa-shot-6.png'
         ]
       })
     ],

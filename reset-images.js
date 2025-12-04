@@ -6,17 +6,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, 'public');
 
-console.log('🔄 Iniciando RENOMEAÇÃO para JPG...');
+console.log('🔄 Iniciando PADRONIZAÇÃO para PNG...');
 
 if (!fs.existsSync(publicDir)) {
     console.error('❌ Pasta public não encontrada!');
     process.exit(1);
 }
 
-// Ler arquivos de imagem (PNG e JPG)
+// Ler apenas arquivos PNG (O usuário deve converter manualmente)
 const files = fs.readdirSync(publicDir).filter(f => {
-    const lower = f.toLowerCase();
-    return lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg');
+    return f.toLowerCase().endsWith('.png');
 });
 
 let screenCount = 1;
@@ -24,9 +23,8 @@ let screenCount = 1;
 files.forEach(file => {
     const oldPath = path.join(publicDir, file);
     let newName = file.toLowerCase();
-    const ext = path.extname(file).toLowerCase(); // .jpg ou .png
 
-    // Preservar Ícones (Geralmente são PNG)
+    // Preservar Ícones
     if (file.includes('192')) {
         newName = 'icon-192.png';
     } else if (file.includes('512')) {
@@ -34,15 +32,12 @@ files.forEach(file => {
     } 
     // Renomear Screenshots
     else {
-        // Forçar extensão para .jpg se for screenshot, pois o usuário disse que são jpg
-        // Se o arquivo original for png, mantemos png, se for jpg, mantemos jpg
-        newName = `pwa-shot-${screenCount}${ext}`;
+        newName = `pwa-shot-${screenCount}.png`;
         screenCount++;
     }
 
     const newPath = path.join(publicDir, newName);
 
-    // Só renomeia se o nome for diferente
     if (file !== newName) {
         try {
             fs.renameSync(oldPath, newPath);
@@ -53,8 +48,9 @@ files.forEach(file => {
     }
 });
 
-console.log('🎉 Imagens organizadas!');
-console.log('👉 AGORA RODE NO TERMINAL:');
+console.log('🎉 Imagens PNG organizadas!');
+console.log('👉 Lembre-se de deletar os JPGs antigos se houver!');
+console.log('👉 DEPOIS RODE:');
 console.log('   git add .');
-console.log('   git commit -m "Ajuste fotos JPG"');
+console.log('   git commit -m "Volta para PNG"');
 console.log('   git push');

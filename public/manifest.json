@@ -50,44 +50,44 @@
   ],
   "screenshots": [
     {
-      "src": "/pwa-shot-1.jpg",
+      "src": "/pwa-shot-1.png",
       "sizes": "1080x1920",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "narrow",
       "label": "Tela Inicial"
     },
     {
-      "src": "/pwa-shot-2.jpg",
+      "src": "/pwa-shot-2.png",
       "sizes": "1080x1920",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "narrow",
       "label": "Geladeira Inteligente"
     },
     {
-      "src": "/pwa-shot-3.jpg",
+      "src": "/pwa-shot-3.png",
       "sizes": "1080x1920",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "narrow",
       "label": "Cardápio Semanal"
     },
     {
-      "src": "/pwa-shot-4.jpg",
+      "src": "/pwa-shot-4.png",
       "sizes": "1920x1080",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Home"
     },
     {
-      "src": "/pwa-shot-5.jpg",
+      "src": "/pwa-shot-5.png",
       "sizes": "1920x1080",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Menu"
     },
     {
-      "src": "/pwa-shot-6.jpg",
+      "src": "/pwa-shot-6.png",
       "sizes": "1920x1080",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Receita"
     }
