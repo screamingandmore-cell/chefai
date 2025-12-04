@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         strategies: 'generateSW',
-        filename: 'chef-worker.js',
+        filename: 'sw.js', // CORRIGIDO: Nome padrão para evitar erro 404
         registerType: 'autoUpdate',
         injectRegister: null, // Registro manual no index.html
         manifest: false, // Usa o arquivo manual public/manifest.json
@@ -32,7 +32,7 @@ export default defineConfig(({ mode }) => {
             /^\/.*\.jpg$/,
             /^\/.*\.jpeg$/,
             /^\/.*\.json$/, 
-            /^\/chef-worker.js$/
+            /^\/sw.js$/
           ],
           runtimeCaching: [
             {
@@ -67,7 +67,7 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       assetsDir: 'assets',
       emptyOutDir: true,
-      sourcemap: false, // Desabilitar mapa de código em produção (Mais leve e seguro)
+      sourcemap: false,
       rollupOptions: {
         output: {
           manualChunks: {
