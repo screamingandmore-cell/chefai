@@ -6,14 +6,16 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
+    // Força o Vite a tratar PNGs como arquivos estáticos (evita 404)
     assetsInclude: ['**/*.png', '**/*.jpg', '**/*.svg'],
+    
     plugins: [
       react(),
       VitePWA({
-        strategies: 'generateSW',
+        strategies: 'generateSW', // Estratégia automática e robusta
         registerType: 'autoUpdate',
-        injectRegister: 'auto',
-        manifest: false, 
+        injectRegister: 'auto',   // Deixa o plugin injetar o registro no HTML
+        manifest: false,          // Respeita o arquivo manual public/manifest.json
         devOptions: {
           enabled: true,
         },
@@ -23,15 +25,16 @@ export default defineConfig(({ mode }) => {
           clientsClaim: true,
           skipWaiting: true,
           navigateFallback: '/index.html',
-          // Impede que imagens e json sejam redirecionados para o index.html pelo SW
+          // Não redirecionar imagens para o index.html (corrige erro de text/html)
           navigateFallbackDenylist: [/^\/.*\.png$/, /^\/.*\.json$/]
         },
+        // Lista explícita de arquivos para o Service Worker cachear
         includeAssets: [
           'favicon.svg', 
           'icon-192.png', 
           'icon-512.png',
-          'cell1.png', 'cell2.png', 'cell3.png',
-          'pc1.png', 'pc2.png', 'pc3.png'
+          'screen-1.png', 'screen-2.png', 'screen-3.png',
+          'screen-4.png', 'screen-5.png', 'screen-6.png'
         ]
       })
     ],
