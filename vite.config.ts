@@ -6,15 +6,14 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    publicDir: 'public',
     assetsInclude: ['**/*.png', '**/*.jpg', '**/*.svg'],
     plugins: [
       react(),
       VitePWA({
-        strategies: 'generateSW', // MUDANÇA: Gera automaticamente sem precisar de arquivo fonte
+        strategies: 'generateSW',
         registerType: 'autoUpdate',
-        injectRegister: null, // Usa o script manual do index.html
-        manifest: false, // Usa o manifesto manual de public/manifest.json
+        injectRegister: 'auto',
+        manifest: false, 
         devOptions: {
           enabled: true,
         },
@@ -23,7 +22,9 @@ export default defineConfig(({ mode }) => {
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
-          navigateFallback: '/index.html', // Garante funcionamento offline para SPA
+          navigateFallback: '/index.html',
+          // Impede que imagens e json sejam redirecionados para o index.html pelo SW
+          navigateFallbackDenylist: [/^\/.*\.png$/, /^\/.*\.json$/]
         },
         includeAssets: [
           'favicon.svg', 
