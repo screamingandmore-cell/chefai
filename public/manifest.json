@@ -5,6 +5,7 @@
   "theme_color": "#10b981",
   "background_color": "#ffffff",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait",
   "start_url": "/",
   "scope": "/",
@@ -90,6 +91,22 @@
       "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Receita"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Abrir Geladeira",
+      "short_name": "Geladeira",
+      "description": "Adicione ingredientes e cozinhe agora",
+      "url": "/?action=fridge",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Cardápio Semanal",
+      "short_name": "Cardápio",
+      "description": "Ver seu plano de refeições",
+      "url": "/?action=weekly",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ],
   "related_applications": [],

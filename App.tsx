@@ -102,12 +102,21 @@ export default function App() {
   useEffect(() => {
     SupabaseService.getUserSession().then(sess => {
       setSession(sess);
+      
+      // Checa parâmetros de URL para Deep Linking (Atalhos PWA)
       const params = new URLSearchParams(window.location.search);
+      const action = params.get('action');
+      
       if (params.get('success') === 'true' && sess?.user) {
         handlePaymentSuccess(sess.user.id);
         window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (action === 'fridge') {
+        setView(ViewState.FRIDGE);
+      } else if (action === 'weekly') {
+        setView(ViewState.WEEKLY_PLAN);
       }
     });
+
     const { data: { subscription } } = SupabaseService.supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (!session) {
