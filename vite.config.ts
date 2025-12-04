@@ -14,22 +14,39 @@ export default defineConfig(({ mode }) => {
         srcDir: 'src',
         filename: 'sw.js',
         registerType: 'autoUpdate',
-        injectRegister: null, // Registro manual no index.html para maior controle
+        injectRegister: null, // Registro manual no index.html
         manifest: false, // Usa o public/manifest.json manual
         devOptions: {
           enabled: true,
           type: 'module',
         },
+        // Força a inclusão destes arquivos no build final
+        includeAssets: [
+          'favicon.svg', 
+          'icon-192.png', 
+          'icon-512.png',
+          'screenshot-mobile-1.png',
+          'screenshot-mobile-2.png',
+          'screenshot-mobile-3.png',
+          'screenshot-desktop-1.png',
+          'screenshot-desktop-2.png',
+          'screenshot-desktop-3.png'
+        ],
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
-          skipWaiting: true
+          skipWaiting: true,
+          ignoreURLParametersMatching: [/.*/]
         }
       })
     ],
     define: {
       'process.env': env
+    },
+    build: {
+      outDir: 'dist',
+      assetsDir: 'assets'
     }
   }
 })
