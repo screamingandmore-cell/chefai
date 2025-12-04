@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/((?!assets/|sw.js|workbox-.*|manifest.json|favicon.svg|.*\\.png|.*\\.jpg|.*\\.css|.*\\.js).*)",
+      "source": "/((?!.*\\.).*)",
       "destination": "/index.html"
     }
   ],
@@ -25,6 +25,10 @@
         {
           "key": "Content-Type",
           "value": "application/manifest+json"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
         }
       ]
     }

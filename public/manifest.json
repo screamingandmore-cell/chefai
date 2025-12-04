@@ -1,55 +1,104 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const publicDir = path.join(__dirname, 'public');
-
-console.log('🔄 Iniciando padronização de imagens...');
-
-if (!fs.existsSync(publicDir)) {
-    console.error('❌ Pasta public não encontrada!');
-    process.exit(1);
+{
+  "name": "Chef.ai - Cardápios Inteligentes",
+  "short_name": "Chef.ai",
+  "description": "Seu assistente de cozinha pessoal com Inteligência Artificial.",
+  "theme_color": "#10b981",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/",
+  "scope": "/",
+  "id": "com.chefai.app",
+  "categories": [
+    "food",
+    "lifestyle",
+    "health"
+  ],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "launch_handler": {
+    "client_mode": "auto"
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screen-1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tela Inicial"
+    },
+    {
+      "src": "screen-2.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Geladeira Inteligente"
+    },
+    {
+      "src": "screen-3.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Cardápio Semanal"
+    },
+    {
+      "src": "screen-4.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Visão Desktop Home"
+    },
+    {
+      "src": "screen-5.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Visão Desktop Menu"
+    },
+    {
+      "src": "screen-6.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Visão Desktop Receita"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.chefai.app",
+      "id": "com.chefai.app"
+    }
+  ],
+  "prefer_related_applications": false,
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7"
 }
-
-// Ler arquivos
-const files = fs.readdirSync(publicDir).filter(f => f.toLowerCase().endsWith('.png'));
-
-let screenCount = 1;
-
-files.forEach(file => {
-    const oldPath = path.join(publicDir, file);
-    let newName = file.toLowerCase();
-
-    // Preservar Ícones (se tiver 192 ou 512 no nome)
-    if (file.includes('192')) {
-        newName = 'icon-192.png';
-    } else if (file.includes('512')) {
-        newName = 'icon-512.png';
-    } 
-    // Renomear Screenshots sequencialmente
-    else {
-        newName = `screen-${screenCount}.png`;
-        screenCount++;
-    }
-
-    const newPath = path.join(publicDir, newName);
-
-    // Renomear apenas se o nome for diferente
-    if (file !== newName) {
-        // Evitar sobrescrever se já existe (no Windows rename direto pode falhar se mudar só case)
-        if (fs.existsSync(newPath) && file.toLowerCase() !== newName) {
-            console.log(`⚠️ Pulei ${file} pois ${newName} já existe.`);
-        } else {
-            try {
-                fs.renameSync(oldPath, newPath);
-                console.log(`✅ ${file} -> ${newName}`);
-            } catch (e) {
-                console.error(`Erro ao renomear ${file}:`, e);
-            }
-        }
-    }
-});
-
-console.log('🎉 Imagens padronizadas! Agora faça o git add/commit/push.');
