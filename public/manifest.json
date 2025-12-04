@@ -72,21 +72,21 @@
     },
     {
       "src": "screenshot-desktop-1.png",
-      "sizes": "1920x1920",
+      "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Home"
     },
     {
       "src": "screenshot-desktop-2.png",
-      "sizes": "1920x1920",
+      "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Menu"
     },
     {
       "src": "screenshot-desktop-3.png",
-      "sizes": "1920x1920",
+      "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Receita"
