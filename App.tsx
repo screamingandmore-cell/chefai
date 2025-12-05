@@ -5,6 +5,9 @@ import * as OpenAIService from './services/openai';
 import * as SupabaseService from './services/supabase';
 import * as StripeService from './services/stripe';
 
+// Link do Portal do Cliente Stripe (Coloque no seu .env ou substitua aqui)
+const STRIPE_PORTAL_URL = process.env.VITE_STRIPE_PORTAL_URL || 'https://billing.stripe.com/p/login/SEU_LINK_AQUI';
+
 const LoadingSpinner = () => (
   <svg className="animate-spin h-8 w-8 text-chef-green mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -169,6 +172,32 @@ export default function App() {
     await SupabaseService.signOut();
     setSession(null); setUser(null); setWeeklyMenu(null); setAllMenus([]); setIngredients([]); setGeneratedRecipe(null);
     setView(ViewState.HOME);
+  };
+
+  // FUNÇÃO REAL DE EXCLUSÃO DE CONTA
+  const handleDeleteAccount = async () => {
+    const confirm1 = confirm("⚠️ ATENÇÃO: Tem certeza que deseja excluir sua conta?\n\nEsta ação apagará seu login, senha, cardápios e histórico para sempre. Não é possível desfazer.");
+    if (!confirm1) return;
+    
+    const confirm2 = confirm("Último aviso: Se você tiver uma assinatura Premium ativa, cancele-a no portal antes de excluir a conta para evitar cobranças futuras.\n\nDeseja prosseguir com a exclusão?");
+    if (!confirm2) return;
+
+    setIsLoading(true);
+    try {
+      await SupabaseService.deleteAccount();
+      alert("Sua conta foi excluída com sucesso. Sentiremos sua falta!");
+      // O estado será limpo automaticamente pelo onAuthStateChange
+    } catch (e: any) {
+      alert("Erro ao excluir conta: " + e.message);
+      // Fallback para email se o SQL falhar
+      if (e.message.includes("SQL")) {
+         const subject = "Solicitação de Exclusão de Conta - Chef.ai";
+         const body = `Olá, gostaria de solicitar a exclusão manual da minha conta: ${session?.user?.email}`;
+         window.location.href = `mailto:suporte@chefai.app?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const processIngredientInput = (input: string) => input.split(/[,;\n]+/).map(s => s.trim()).filter(s => s.length > 0);
@@ -620,6 +649,24 @@ export default function App() {
              </div>
            </div>
 
+           {/* GERENCIAMENTO DE ASSINATURA E EXCLUSÃO */}
+           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+             {user?.isPremium && (
+               <a 
+                 href={STRIPE_PORTAL_URL} 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 className="w-full block text-center bg-gray-50 text-chef-green font-bold py-3 rounded-xl border border-gray-200 hover:bg-green-50 mb-4"
+               >
+                 Gerenciar Assinatura (Cancelar)
+               </a>
+             )}
+             
+             <button onClick={handleDeleteAccount} className="w-full text-red-400 text-xs hover:text-red-600 underline">
+               Excluir minha conta e dados
+             </button>
+           </div>
+
            <button onClick={handleLogout} className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">Sair</button>
         </div>
       );
@@ -632,7 +679,7 @@ export default function App() {
             <p><strong>2. Processamento de Imagens:</strong> As fotos enviadas para análise de geladeira são processadas temporariamente pela OpenAI e não são armazenadas permanentemente para fins de treinamento.</p>
             <p><strong>3. Pagamentos:</strong> Todas as transações são processadas via Stripe. Não armazenamos seus dados bancários.</p>
             <p><strong>4. Segurança:</strong> Utilizamos criptografia e regras de segurança rígidas (RLS) para proteger seus dados.</p>
-            <p><strong>5. Exclusão:</strong> Você pode solicitar a exclusão da sua conta a qualquer momento.</p>
+            <p><strong>5. Exclusão:</strong> Você pode solicitar a exclusão da sua conta a qualquer momento na tela de Perfil.</p>
           </div>
         </div>
       );
@@ -695,7 +742,7 @@ export default function App() {
         <AdInterstitial onFinish={handleAdFinish} />
       )}
 
-      <div className="text-center text-[10px] text-gray-300 py-2 no-print">Versão 2.3 - A11y</div>
+      <div className="text-center text-[10px] text-gray-300 py-2 no-print">Versão 2.4 - A11y</div>
     </Layout>
   );
 }

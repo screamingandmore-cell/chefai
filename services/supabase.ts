@@ -58,6 +58,20 @@ export const signOut = async () => {
   if (error) throw error;
 };
 
+// --- FUNÇÃO DE EXCLUSÃO DE CONTA ---
+export const deleteAccount = async (): Promise<void> => {
+  // Chama a função RPC 'delete_user' que criamos no SQL
+  const { error } = await supabase.rpc('delete_user');
+  
+  if (error) {
+    console.error("Erro ao excluir conta:", error);
+    throw new Error(`Erro ao excluir: ${error.message}. (Você rodou o script SQL 'supabase_delete_user.sql'?)`);
+  }
+  
+  // Faz logout local após excluir
+  await supabase.auth.signOut();
+};
+
 export const getUserSession = async () => {
   const { data } = await supabase.auth.getSession();
   return data.session;
@@ -142,14 +156,11 @@ export const deleteWeeklyMenu = async (menuId: string): Promise<void> => {
     throw new Error(`Erro Supabase: ${error.message} (${error.code})`);
   }
 
-  // Se count for 0, significa que o comando rodou sem erro, mas não achou nada pra deletar
-  // (Pode ser problema de permissão RLS ou ID errado)
   if (count === 0) {
     console.warn("Atenção: Nenhum registro foi deletado. Verifique as políticas RLS.");
   }
 };
 
-// Nova função para limpar todo o histórico
 export const deleteAllUserMenus = async (userId: string): Promise<void> => {
   const { error } = await supabase
     .from('weekly_menus')
