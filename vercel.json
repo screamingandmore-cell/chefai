@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/((?!assets/|sw.js|manifest.json|robots.txt|favicon.svg|.*\\.png|.*\\.jpg|.*\\.css|.*\\.js).*)",
+      "source": "/((?!.well-known/|assets/|sw.js|manifest.json|robots.txt|favicon.svg|.*\\.png|.*\\.jpg|.*\\.css|.*\\.js).*)",
       "destination": "/index.html"
     }
   ],
@@ -23,6 +23,12 @@
       "headers": [
         { "key": "Content-Type", "value": "application/javascript" },
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" }
       ]
     }
   ]
