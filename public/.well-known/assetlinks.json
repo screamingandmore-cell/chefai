@@ -3,7 +3,7 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.chefai.pro",
+      "package_name": "com.chefai.final",
       "sha256_cert_fingerprints": ["COLE_AQUI_O_SHA256_DO_GOOGLE_PLAY_CONSOLE"]
     }
   }
