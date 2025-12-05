@@ -652,8 +652,8 @@ export default function App() {
              {user?.isPremium && (
                <button 
                  onClick={() => {
-                    if (STRIPE_PORTAL_URL.includes(https://billing.stripe.com/p/login/9B66oGgBi2Is6YI7gB2kw00)) {
-                        alert("Link do portal não configurado no .env");
+                    if (STRIPE_PORTAL_URL.includes('SEU_LINK_AQUI')) {
+                        alert("https://billing.stripe.com/p/login/9B66oGgBi2Is6YI7gB2kw00");
                         return;
                     }
                     window.location.href = STRIPE_PORTAL_URL;
