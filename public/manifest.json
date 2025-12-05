@@ -133,8 +133,8 @@
   "related_applications": [
     {
       "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=chef.inteligente.app",
-      "id": "chef.inteligente.app"
+      "url": "https://play.google.com/store/apps/details?id=com.chefai.pro",
+      "id": "com.chefai.pro"
     }
   ],
   "prefer_related_applications": false,
