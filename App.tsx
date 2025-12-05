@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Layout, GoogleAdPlaceholder, AdBanner, AdInterstitial } from './components/Layout';
 import { ViewState, UserProfile, Recipe, WeeklyMenu, Difficulty } from './types';
@@ -5,7 +6,7 @@ import * as OpenAIService from './services/openai';
 import * as SupabaseService from './services/supabase';
 import * as StripeService from './services/stripe';
 
-// Link do Portal do Cliente Stripe (Coloque no seu .env ou substitua aqui)
+// Link do Portal do Cliente Stripe
 const STRIPE_PORTAL_URL = process.env.VITE_STRIPE_PORTAL_URL || 'https://billing.stripe.com/p/login/SEU_LINK_AQUI';
 
 const LoadingSpinner = () => (
@@ -174,7 +175,6 @@ export default function App() {
     setView(ViewState.HOME);
   };
 
-  // FUNÇÃO REAL DE EXCLUSÃO DE CONTA
   const handleDeleteAccount = async () => {
     const confirm1 = confirm("⚠️ ATENÇÃO: Tem certeza que deseja excluir sua conta?\n\nEsta ação apagará seu login, senha, cardápios e histórico para sempre. Não é possível desfazer.");
     if (!confirm1) return;
@@ -186,10 +186,8 @@ export default function App() {
     try {
       await SupabaseService.deleteAccount();
       alert("Sua conta foi excluída com sucesso. Sentiremos sua falta!");
-      // O estado será limpo automaticamente pelo onAuthStateChange
     } catch (e: any) {
       alert("Erro ao excluir conta: " + e.message);
-      // Fallback para email se o SQL falhar
       if (e.message.includes("SQL")) {
          const subject = "Solicitação de Exclusão de Conta - Chef.ai";
          const body = `Olá, gostaria de solicitar a exclusão manual da minha conta: ${session?.user?.email}`;
@@ -652,14 +650,18 @@ export default function App() {
            {/* GERENCIAMENTO DE ASSINATURA E EXCLUSÃO */}
            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
              {user?.isPremium && (
-               <a 
-                 href={STRIPE_PORTAL_URL} 
-                 target="_blank" 
-                 rel="noopener noreferrer"
+               <button 
+                 onClick={() => {
+                    if (STRIPE_PORTAL_URL.includes('SEU_LINK_AQUI')) {
+                        alert("Link do portal não configurado no .env");
+                        return;
+                    }
+                    window.location.href = STRIPE_PORTAL_URL;
+                 }}
                  className="w-full block text-center bg-gray-50 text-chef-green font-bold py-3 rounded-xl border border-gray-200 hover:bg-green-50 mb-4"
                >
                  Gerenciar Assinatura (Cancelar)
-               </a>
+               </button>
              )}
              
              <button onClick={handleDeleteAccount} className="w-full text-red-400 text-xs hover:text-red-600 underline">
