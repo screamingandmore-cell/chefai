@@ -4,7 +4,7 @@
     "target": {
       "namespace": "android_app",
       "package_name": "com.chefai.final2",
-      "sha256_cert_fingerprints": ["COLE_AQUI_O_SHA256_DO_GOOGLE_PLAY_CONSOLE"]
+      "sha256_cert_fingerprints": ["EE:50:B9:25:C1:D2:51:EB:44:F6:98:71:A2:99:7A:33"]
     }
   }
 ]
