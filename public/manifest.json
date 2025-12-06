@@ -36,25 +36,25 @@
   ],
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -62,42 +62,42 @@
   ],
   "screenshots": [
     {
-      "src": "/pwa-shot-1.png",
+      "src": "pwa-shot-1.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Tela Inicial do Chef.ai"
     },
     {
-      "src": "/pwa-shot-2.png",
+      "src": "pwa-shot-2.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Geladeira Inteligente com IA"
     },
     {
-      "src": "/pwa-shot-3.png",
+      "src": "pwa-shot-3.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Cardápio Semanal Completo"
     },
     {
-      "src": "/pwa-shot-4.png",
+      "src": "pwa-shot-4.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Home"
     },
     {
-      "src": "/pwa-shot-5.png",
+      "src": "pwa-shot-5.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Visão Desktop Menu"
     },
     {
-      "src": "/pwa-shot-6.png",
+      "src": "pwa-shot-6.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
@@ -112,7 +112,7 @@
       "url": "/?action=fridge",
       "icons": [
         {
-          "src": "/icon-192.png",
+          "src": "icon-192.png",
           "sizes": "192x192"
         }
       ]
@@ -124,7 +124,7 @@
       "url": "/?action=weekly",
       "icons": [
         {
-          "src": "/icon-192.png",
+          "src": "icon-192.png",
           "sizes": "192x192"
         }
       ]
@@ -133,8 +133,8 @@
   "related_applications": [
     {
       "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=com.chefai.final",
-      "id": "com.chefai.final"
+      "url": "https://play.google.com/store/apps/details?id=com.chefai.final2",
+      "id": "com.chefai.final2"
     }
   ],
   "prefer_related_applications": false,
