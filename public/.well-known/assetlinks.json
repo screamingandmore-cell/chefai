@@ -4,7 +4,7 @@
     "target": {
       "namespace": "android_app",
       "package_name": "com.chefai.final2",
-      "sha256_cert_fingerprints": [EE:50:B9:25:C1:D2:51:EB:44:F6:98:71:A2:99:7A:33]
+      "sha256_cert_fingerprints": ["00:C6:9F:1A:88:7B:75:DE:8B:C9:EB:AC:90:CC:41:CC:92:F0:F0:39:5A:65:B6:E4:F7:47:F2:80:08:74:12:67"]
     }
   }
 ]
