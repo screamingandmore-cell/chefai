@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Layout, GoogleAdPlaceholder, AdBanner, AdInterstitial } from './components/Layout';
 import { ViewState, UserProfile, Recipe, WeeklyMenu, Difficulty } from './types';
@@ -429,18 +428,20 @@ export default function App() {
       
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center"><span>{error}</span><button onClick={() => setError(null)}>×</button></div>}
       
-      {/* ESPAÇADOR GRANDE PARA PERMITIR SCROLL ATÉ O FIM DO CONTEÚDO */}
-      <div className="h-48 w-full"></div>
+      {/* ESPAÇADOR GIGANTE PARA PERMITIR SCROLL ATÉ O FINAL SEM COLISÃO */}
+      <div className="h-64 w-full"></div>
 
-      {/* Botões Fixos Flutuantes - AGORA COM Z-INDEX 100 E FUNDO PARA NÃO MISTURAR */}
-      <div className="fixed bottom-24 left-4 right-4 z-[100] max-w-[calc(28rem-2rem)] sm:mx-auto bg-white/10 backdrop-blur-sm p-2 rounded-2xl">
-         <div className="grid grid-cols-2 gap-4">
-            <button onClick={() => generateQuick(false)} disabled={isLoading} className="bg-chef-orange text-white font-bold py-4 rounded-xl shadow-2xl hover:bg-orange-600 disabled:opacity-50 border border-white/20">
-              {isLoading ? <LoadingSpinner /> : 'Receita Rápida'}
-            </button>
-            <button onClick={() => handleGenerateWeeklyClick(false)} disabled={isLoading} className="bg-chef-green text-white font-bold py-4 rounded-xl shadow-2xl hover:bg-green-600 disabled:opacity-50 border border-white/20">
-              {isLoading ? <LoadingSpinner /> : 'Semanal'}
-            </button>
+      {/* Botões Fixos com Fundo Desfocado (Para não misturar com o texto abaixo) */}
+      <div className="fixed bottom-24 left-4 right-4 z-[100] max-w-[calc(28rem-2rem)] sm:mx-auto">
+         <div className="bg-white/80 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-white/40">
+           <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => generateQuick(false)} disabled={isLoading} className="bg-chef-orange text-white font-bold py-4 rounded-xl shadow-md hover:bg-orange-600 disabled:opacity-50 border border-white/20 active:scale-95 transition-transform">
+                {isLoading ? <LoadingSpinner /> : 'Receita Rápida'}
+              </button>
+              <button onClick={() => handleGenerateWeeklyClick(false)} disabled={isLoading} className="bg-chef-green text-white font-bold py-4 rounded-xl shadow-md hover:bg-green-600 disabled:opacity-50 border border-white/20 active:scale-95 transition-transform">
+                {isLoading ? <LoadingSpinner /> : 'Semanal'}
+              </button>
+           </div>
          </div>
       </div>
     </div>
@@ -463,12 +464,14 @@ export default function App() {
       </div>
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center"><span>{error}</span><button onClick={() => setError(null)}>×</button></div>}
       
-      <div className="h-40"></div>
+      <div className="h-48 w-full"></div>
       
-      <div className="fixed bottom-24 left-4 right-4 z-40 max-w-[calc(28rem-2rem)] sm:mx-auto">
-        <button onClick={() => generateQuick(false)} disabled={isLoading} className="w-full bg-chef-orange text-white font-bold py-4 rounded-xl shadow-2xl hover:bg-orange-600 disabled:opacity-50 border border-white/20">
-          {isLoading ? <LoadingSpinner /> : 'Gerar Receita Agora'}
-        </button>
+      <div className="fixed bottom-24 left-4 right-4 z-[100] max-w-[calc(28rem-2rem)] sm:mx-auto">
+        <div className="bg-white/80 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-white/40">
+           <button onClick={() => generateQuick(false)} disabled={isLoading} className="w-full bg-chef-orange text-white font-bold py-4 rounded-xl shadow-md hover:bg-orange-600 disabled:opacity-50 border border-white/20">
+             {isLoading ? <LoadingSpinner /> : 'Gerar Receita Agora'}
+           </button>
+        </div>
       </div>
     </div>
   );

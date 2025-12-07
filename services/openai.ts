@@ -1,4 +1,3 @@
-
 import OpenAI from "openai";
 import { WeeklyMenu, Recipe, Difficulty } from "../types";
 
@@ -143,48 +142,48 @@ export const generateWeeklyMenu = async (
 
   // Prompt ultra-reforçado para garantir dados nutricionais
   const nutritionalInstruction = isPremium 
-    ? `ATENÇÃO: O usuário é PREMIUM. 
-       Para CADA refeição (almoço e jantar), você DEVE preencher os campos 'calories' e 'macros'.
-       - Calories: Inteiro aproximado (ex: 500). NÃO USE 0.
-       - Macros: Strings estimadas (ex: "30g"). NÃO USE "0g" ou vazio.
-       Se não tiver certeza, ESTIME com base nos ingredientes padrão.` 
-    : "Não precisa calcular macros detalhados (pode ser 0).";
+    ? `STATUS: USUÁRIO PREMIUM ATIVO 👑.
+       OBRIGATÓRIO: Para CADA prato (lunch/dinner), você DEVE estimar e preencher:
+       - "calories": (número inteiro, ex: 600). NÃO USE ZERO.
+       - "macros": { "protein": "30g", "carbs": "40g", "fat": "20g" }. NÃO USE VALORES VAZIOS.
+       Se os dados reais não estiverem disponíveis, faça sua MELHOR ESTIMATIVA CULINÁRIA.` 
+    : "Modo Gratuito: Pode deixar calories como 0 e macros como null.";
 
   const userPrompt = `
     Crie um Planejamento Semanal (7 DIAS - Segunda a Domingo).
-    Ingredientes disponíveis: ${ingredients.join(', ')}.
+    Ingredientes disponíveis na geladeira: ${ingredients.join(', ')}.
     Objetivo: Economizar, variando os pratos.
     
     ${allergyWarning}
     
     ${nutritionalInstruction}
 
-    JSON Obrigatório (Use este formato exato, PREENCHENDO OS NÚMEROS):
+    JSON Obrigatório (Siga estritamente esta estrutura):
     {
       "days": [
         { 
           "day": "Segunda-feira", 
           "lunch": { 
-            "title": "Frango Assado", 
-            "ingredients": ["Frango", "Limão"], 
-            "instructions": ["Assar por 40min"], 
-            "prepTime": "50 min", 
-            "difficulty": "Médio", 
-            "calories": 450, 
-            "macros": { "protein": "40g", "carbs": "2g", "fat": "15g" } 
+            "title": "Nome do Prato", 
+            "ingredients": ["Ingrediente 1", "Ingrediente 2"], 
+            "instructions": ["Passo 1..."], 
+            "prepTime": "30 min", 
+            "difficulty": "Fácil", 
+            "calories": 500, 
+            "macros": { "protein": "30g", "carbs": "50g", "fat": "15g" } 
           }, 
           "dinner": { 
-            "title": "Salada", 
-            "ingredients": ["Alface"], 
-            "instructions": ["Lavar e servir"], 
-            "prepTime": "10 min", 
+            "title": "Nome do Prato", 
+            "ingredients": ["..."], 
+            "instructions": ["..."], 
+            "prepTime": "20 min", 
             "difficulty": "Fácil", 
-            "calories": 120, 
-            "macros": { "protein": "5g", "carbs": "10g", "fat": "2g" } 
+            "calories": 300, 
+            "macros": { "protein": "15g", "carbs": "20g", "fat": "10g" } 
           } 
         }
       ],
-      "shoppingList": ["Item que falta 1", "Item que falta 2"]
+      "shoppingList": ["Item 1", "Item 2"]
     }
   `;
 
