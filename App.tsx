@@ -417,7 +417,7 @@ export default function App() {
         {renderIngredientInput()}
       </div>
       
-      {/* Container de Dificuldade com margem inferior suficiente para não ser coberto */}
+      {/* Container de Dificuldade */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 relative z-10">
         <p className="text-xs font-bold text-gray-500 uppercase mb-3">Dificuldade</p>
         <div className="flex bg-gray-100 rounded-lg p-1">
@@ -429,16 +429,16 @@ export default function App() {
       
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center"><span>{error}</span><button onClick={() => setError(null)}>×</button></div>}
       
-      {/* ESPAÇADOR GRANDE PARA PERMITIR SCROLL ATÉ O FIM */}
+      {/* ESPAÇADOR GRANDE PARA PERMITIR SCROLL ATÉ O FIM DO CONTEÚDO */}
       <div className="h-48 w-full"></div>
 
-      {/* Botões Fixos Flutuantes - Acima da Navegação Principal */}
-      <div className="fixed bottom-24 left-4 right-4 z-40 max-w-[calc(28rem-2rem)] sm:mx-auto">
+      {/* Botões Fixos Flutuantes - AGORA COM Z-INDEX 100 E FUNDO PARA NÃO MISTURAR */}
+      <div className="fixed bottom-24 left-4 right-4 z-[100] max-w-[calc(28rem-2rem)] sm:mx-auto bg-white/10 backdrop-blur-sm p-2 rounded-2xl">
          <div className="grid grid-cols-2 gap-4">
-            <button onClick={() => generateQuick(false)} disabled={isLoading} className="bg-chef-orange text-white font-bold py-4 rounded-xl shadow-2xl hover:bg-orange-600 disabled:opacity-50 border border-white/20 backdrop-blur-sm">
+            <button onClick={() => generateQuick(false)} disabled={isLoading} className="bg-chef-orange text-white font-bold py-4 rounded-xl shadow-2xl hover:bg-orange-600 disabled:opacity-50 border border-white/20">
               {isLoading ? <LoadingSpinner /> : 'Receita Rápida'}
             </button>
-            <button onClick={() => handleGenerateWeeklyClick(false)} disabled={isLoading} className="bg-chef-green text-white font-bold py-4 rounded-xl shadow-2xl hover:bg-green-600 disabled:opacity-50 border border-white/20 backdrop-blur-sm">
+            <button onClick={() => handleGenerateWeeklyClick(false)} disabled={isLoading} className="bg-chef-green text-white font-bold py-4 rounded-xl shadow-2xl hover:bg-green-600 disabled:opacity-50 border border-white/20">
               {isLoading ? <LoadingSpinner /> : 'Semanal'}
             </button>
          </div>

@@ -90,7 +90,7 @@ export const generateQuickRecipe = async (
     - Se a lista de ingredientes for absurda (ex: tijolo, areia), retorne uma receita de "Água Gelada" como piada educativa ou um erro.
     - Se faltam ingredientes principais para uma receita boa, sugira o prato mas avise na descrição que precisa comprar algo extra.
     
-    ${isPremium ? "CRUCIAL: CALCULE CALORIAS E MACROS REAIS (Estimativa precisa). Não retorne 0." : "Calorias e Macros podem ser 0 ou null."}
+    ${isPremium ? "CRUCIAL (PREMIUM): CALCULE CALORIAS E MACROS ESTIMADOS. Se não souber o exato, faça uma estimativa baseada nos ingredientes. É PROIBIDO retornar 0 ou null para calories/macros." : "Calorias e Macros podem ser 0 ou null."}
 
     Responda neste JSON exato:
     {
@@ -100,8 +100,8 @@ export const generateQuickRecipe = async (
       "instructions": ["Passo 1...", "Passo 2..."],
       "prepTime": "XX min",
       "difficulty": "${difficulty}",
-      "calories": 0,
-      "macros": { "protein": "0g", "carbs": "0g", "fat": "0g" }
+      "calories": 450,
+      "macros": { "protein": "30g", "carbs": "20g", "fat": "10g" }
     }
   `;
 
@@ -113,7 +113,7 @@ export const generateQuickRecipe = async (
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7 // Criativo mas controlado
+      temperature: 0.7 
     });
 
     const text = response.choices[0].message.content;
@@ -121,7 +121,6 @@ export const generateQuickRecipe = async (
     
     const data = JSON.parse(text);
     
-    // Validação básica de segurança no retorno
     if (!data.title || !data.instructions) throw new Error("Receita incompleta gerada.");
 
     return { ...data, id: crypto.randomUUID() };
@@ -142,8 +141,13 @@ export const generateWeeklyMenu = async (
     ? `⚠️ PROIBIÇÃO DE ALERGIAS: ${allergies.join(', ').toUpperCase()}. Verifique cada dia da semana. Nenhuma refeição pode conter isso.`
     : '';
 
+  // Prompt ultra-reforçado para garantir dados nutricionais
   const nutritionalInstruction = isPremium 
-    ? "OBRIGATÓRIO: O usuário é PREMIUM. Você DEVE preencher 'calories' (número int) e 'macros' (strings) para TODAS as refeições com estimativas reais. É PROIBIDO RETORNAR 0 OU NULL." 
+    ? `ATENÇÃO: O usuário é PREMIUM. 
+       Para CADA refeição (almoço e jantar), você DEVE preencher os campos 'calories' e 'macros'.
+       - Calories: Inteiro aproximado (ex: 500). NÃO USE 0.
+       - Macros: Strings estimadas (ex: "30g"). NÃO USE "0g" ou vazio.
+       Se não tiver certeza, ESTIME com base nos ingredientes padrão.` 
     : "Não precisa calcular macros detalhados (pode ser 0).";
 
   const userPrompt = `
@@ -155,7 +159,7 @@ export const generateWeeklyMenu = async (
     
     ${nutritionalInstruction}
 
-    JSON Obrigatório (Use este formato exato, com números reais no exemplo):
+    JSON Obrigatório (Use este formato exato, PREENCHENDO OS NÚMEROS):
     {
       "days": [
         { 
