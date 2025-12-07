@@ -253,8 +253,13 @@ export default function App() {
 
   const checkLimits = (type: 'quick' | 'weekly'): boolean => {
     if (!user || user.isPremium) return true; 
+    
+    // Limite de 10 Receitas Rápidas
     if (type === 'quick' && user.usage.quickRecipes >= 10) return false;
-    if (type === 'weekly' && user.usage.weeklyMenus >= 1) return false;
+    
+    // ATUALIZAÇÃO: Limite de 3 Cardápios Semanais para usuários gratuitos
+    if (type === 'weekly' && user.usage.weeklyMenus >= 3) return false;
+    
     return true;
   };
 
@@ -420,7 +425,9 @@ export default function App() {
         </div>
       </div>
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center"><span>{error}</span><button onClick={() => setError(null)}>×</button></div>}
-      <div className="grid grid-cols-2 gap-4 sticky bottom-4">
+      
+      {/* Botões Fixos com Fundo para não sobrepor */}
+      <div className="sticky bottom-0 -mx-4 px-4 py-4 bg-[#F5F7FA]/95 backdrop-blur z-20 border-t border-gray-200 grid grid-cols-2 gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <button onClick={() => generateQuick(false)} disabled={isLoading} className="bg-chef-orange text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Receita Rápida'}</button>
         <button onClick={() => handleGenerateWeeklyClick(false)} disabled={isLoading} className="bg-chef-green text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Semanal'}</button>
       </div>
@@ -443,7 +450,7 @@ export default function App() {
         </div>
       </div>
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center"><span>{error}</span><button onClick={() => setError(null)}>×</button></div>}
-      <div className="sticky bottom-4">
+      <div className="sticky bottom-0 -mx-4 px-4 py-4 bg-[#F5F7FA]/95 backdrop-blur z-20 border-t border-gray-200">
         <button onClick={() => generateQuick(false)} disabled={isLoading} className="w-full bg-chef-orange text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Gerar Receita Agora'}</button>
       </div>
     </div>
@@ -653,7 +660,7 @@ export default function App() {
                <button 
                  onClick={() => {
                     if (STRIPE_PORTAL_URL.includes('SEU_LINK_AQUI')) {
-                        alert("https://billing.stripe.com/p/login/9B66oGgBi2Is6YI7gB2kw00");
+                        alert("Link do portal não configurado no .env");
                         return;
                     }
                     window.location.href = STRIPE_PORTAL_URL;

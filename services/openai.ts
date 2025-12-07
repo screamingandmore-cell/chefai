@@ -154,15 +154,15 @@ export const generateWeeklyMenu = async (
     2. Gere uma lista de compras no final com tudo que falta.
     3. Almoço e Jantar devem ser receitas completas.
     
-    ${isPremium ? "Inclua dados nutricionais precisos para cada refeição." : ""}
+    ${isPremium ? "CRUCIAL: Você DEVE calcular calorias e macros (proteína, carbos, gordura) para CADA refeição (almoço e jantar) de CADA dia. Não retorne 0." : "Não precisa calcular macros."}
 
     JSON Obrigatório:
     {
       "days": [
         { 
           "day": "Segunda-feira", 
-          "lunch": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "Médio", "calories": 0, "macros": {...} }, 
-          "dinner": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "Fácil", "calories": 0, "macros": {...} } 
+          "lunch": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "Médio", "calories": 500, "macros": { "protein": "30g", "carbs": "40g", "fat": "15g" } }, 
+          "dinner": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "Fácil", "calories": 400, "macros": { "protein": "20g", "carbs": "30g", "fat": "10g" } } 
         },
         ... (até Domingo)
       ],
