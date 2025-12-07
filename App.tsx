@@ -464,7 +464,7 @@ export default function App() {
       </div>
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center"><span>{error}</span><button onClick={() => setError(null)}>×</button></div>}
       
-      <div className="h-48 w-full"></div>
+      <div className="h-64 w-full"></div>
       
       <div className="fixed bottom-24 left-4 right-4 z-[100] max-w-[calc(28rem-2rem)] sm:mx-auto">
         <div className="bg-white/80 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-white/40">
