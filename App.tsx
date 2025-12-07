@@ -411,12 +411,14 @@ export default function App() {
   );
 
   const renderFridge = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">Minha Geladeira ❄️</h2>
         {renderIngredientInput()}
       </div>
-      <div className="bg-white p-4 rounded-xl border border-gray-200">
+      
+      {/* Container de Dificuldade com margem inferior suficiente para não ser coberto */}
+      <div className="bg-white p-4 rounded-xl border border-gray-200 relative z-10">
         <p className="text-xs font-bold text-gray-500 uppercase mb-3">Dificuldade</p>
         <div className="flex bg-gray-100 rounded-lg p-1">
           {[Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD].map((diff) => (
@@ -424,12 +426,22 @@ export default function App() {
           ))}
         </div>
       </div>
+      
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center"><span>{error}</span><button onClick={() => setError(null)}>×</button></div>}
       
-      {/* Botões Fixos com Fundo para não sobrepor */}
-      <div className="sticky bottom-0 -mx-4 px-4 py-4 bg-[#F5F7FA]/95 backdrop-blur z-20 border-t border-gray-200 grid grid-cols-2 gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button onClick={() => generateQuick(false)} disabled={isLoading} className="bg-chef-orange text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Receita Rápida'}</button>
-        <button onClick={() => handleGenerateWeeklyClick(false)} disabled={isLoading} className="bg-chef-green text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Semanal'}</button>
+      {/* ESPAÇADOR GRANDE PARA PERMITIR SCROLL ATÉ O FIM */}
+      <div className="h-48 w-full"></div>
+
+      {/* Botões Fixos Flutuantes - Acima da Navegação Principal */}
+      <div className="fixed bottom-24 left-4 right-4 z-40 max-w-[calc(28rem-2rem)] sm:mx-auto">
+         <div className="grid grid-cols-2 gap-4">
+            <button onClick={() => generateQuick(false)} disabled={isLoading} className="bg-chef-orange text-white font-bold py-4 rounded-xl shadow-2xl hover:bg-orange-600 disabled:opacity-50 border border-white/20 backdrop-blur-sm">
+              {isLoading ? <LoadingSpinner /> : 'Receita Rápida'}
+            </button>
+            <button onClick={() => handleGenerateWeeklyClick(false)} disabled={isLoading} className="bg-chef-green text-white font-bold py-4 rounded-xl shadow-2xl hover:bg-green-600 disabled:opacity-50 border border-white/20 backdrop-blur-sm">
+              {isLoading ? <LoadingSpinner /> : 'Semanal'}
+            </button>
+         </div>
       </div>
     </div>
   );
@@ -441,7 +453,7 @@ export default function App() {
         <p className="text-sm text-gray-500 mb-4">Adicione ingredientes para uma receita imediata.</p>
         {renderIngredientInput()}
       </div>
-      <div className="bg-white p-4 rounded-xl border border-gray-200">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 relative z-10">
         <p className="text-xs font-bold text-gray-500 uppercase mb-3">Dificuldade</p>
         <div className="flex bg-gray-100 rounded-lg p-1">
           {[Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD].map((diff) => (
@@ -450,8 +462,13 @@ export default function App() {
         </div>
       </div>
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-200 flex justify-between items-center"><span>{error}</span><button onClick={() => setError(null)}>×</button></div>}
-      <div className="sticky bottom-0 -mx-4 px-4 py-4 bg-[#F5F7FA]/95 backdrop-blur z-20 border-t border-gray-200">
-        <button onClick={() => generateQuick(false)} disabled={isLoading} className="w-full bg-chef-orange text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-600 disabled:opacity-50">{isLoading ? <LoadingSpinner /> : 'Gerar Receita Agora'}</button>
+      
+      <div className="h-40"></div>
+      
+      <div className="fixed bottom-24 left-4 right-4 z-40 max-w-[calc(28rem-2rem)] sm:mx-auto">
+        <button onClick={() => generateQuick(false)} disabled={isLoading} className="w-full bg-chef-orange text-white font-bold py-4 rounded-xl shadow-2xl hover:bg-orange-600 disabled:opacity-50 border border-white/20">
+          {isLoading ? <LoadingSpinner /> : 'Gerar Receita Agora'}
+        </button>
       </div>
     </div>
   );
@@ -515,8 +532,23 @@ export default function App() {
               <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between"><h3 className="font-bold text-gray-700">{day.day}</h3></div>
               <div className="p-4 space-y-4">
                 <div onClick={() => { setGeneratedRecipe(day.lunch); setView(ViewState.RECIPE_DETAILS); }} className="cursor-pointer hover:bg-gray-50 p-2 rounded-lg"><p className="text-gray-800 font-medium">☀️ {day.lunch.title}</p></div>
+                
+                {/* Exibição de Calorias no Menu Semanal para Premium */}
+                {user?.isPremium && day.lunch.calories && (
+                  <div className="text-[10px] text-gray-500 pl-2">
+                    {day.lunch.calories} Kcal | P: {day.lunch.macros?.protein} C: {day.lunch.macros?.carbs} G: {day.lunch.macros?.fat}
+                  </div>
+                )}
+
                 <hr className="border-gray-100" />
                 <div onClick={() => { setGeneratedRecipe(day.dinner); setView(ViewState.RECIPE_DETAILS); }} className="cursor-pointer hover:bg-gray-50 p-2 rounded-lg"><p className="text-gray-800 font-medium">🌙 {day.dinner.title}</p></div>
+                
+                {/* Exibição de Calorias no Menu Semanal para Premium */}
+                {user?.isPremium && day.dinner.calories && (
+                  <div className="text-[10px] text-gray-500 pl-2">
+                    {day.dinner.calories} Kcal | P: {day.dinner.macros?.protein} C: {day.dinner.macros?.carbs} G: {day.dinner.macros?.fat}
+                  </div>
+                )}
               </div>
             </div>
           ))}

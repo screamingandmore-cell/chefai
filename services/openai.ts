@@ -90,7 +90,7 @@ export const generateQuickRecipe = async (
     - Se a lista de ingredientes for absurda (ex: tijolo, areia), retorne uma receita de "Água Gelada" como piada educativa ou um erro.
     - Se faltam ingredientes principais para uma receita boa, sugira o prato mas avise na descrição que precisa comprar algo extra.
     
-    ${isPremium ? "CALCULE CALORIAS E MACROS REAIS (Estimativa precisa)." : "Calorias e Macros podem ser 0 ou null."}
+    ${isPremium ? "CRUCIAL: CALCULE CALORIAS E MACROS REAIS (Estimativa precisa). Não retorne 0." : "Calorias e Macros podem ser 0 ou null."}
 
     Responda neste JSON exato:
     {
@@ -142,31 +142,45 @@ export const generateWeeklyMenu = async (
     ? `⚠️ PROIBIÇÃO DE ALERGIAS: ${allergies.join(', ').toUpperCase()}. Verifique cada dia da semana. Nenhuma refeição pode conter isso.`
     : '';
 
+  const nutritionalInstruction = isPremium 
+    ? "OBRIGATÓRIO: O usuário é PREMIUM. Você DEVE preencher 'calories' (número int) e 'macros' (strings) para TODAS as refeições com estimativas reais. É PROIBIDO RETORNAR 0 OU NULL." 
+    : "Não precisa calcular macros detalhados (pode ser 0).";
+
   const userPrompt = `
     Crie um Planejamento Semanal (7 DIAS - Segunda a Domingo).
-    Ingredientes disponíveis na casa: ${ingredients.join(', ')}.
-    Objetivo: Economizar usando o que tem, mas criar pratos variados e saborosos.
+    Ingredientes disponíveis: ${ingredients.join(', ')}.
+    Objetivo: Economizar, variando os pratos.
     
     ${allergyWarning}
     
-    REGRAS:
-    1. Gere EXATAMENTE 7 dias.
-    2. Gere uma lista de compras no final com tudo que falta.
-    3. Almoço e Jantar devem ser receitas completas.
-    
-    ${isPremium ? "CRUCIAL: Você DEVE calcular calorias e macros (proteína, carbos, gordura) para CADA refeição (almoço e jantar) de CADA dia. Não retorne 0." : "Não precisa calcular macros."}
+    ${nutritionalInstruction}
 
-    JSON Obrigatório:
+    JSON Obrigatório (Use este formato exato, com números reais no exemplo):
     {
       "days": [
         { 
           "day": "Segunda-feira", 
-          "lunch": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "Médio", "calories": 500, "macros": { "protein": "30g", "carbs": "40g", "fat": "15g" } }, 
-          "dinner": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "Fácil", "calories": 400, "macros": { "protein": "20g", "carbs": "30g", "fat": "10g" } } 
-        },
-        ... (até Domingo)
+          "lunch": { 
+            "title": "Frango Assado", 
+            "ingredients": ["Frango", "Limão"], 
+            "instructions": ["Assar por 40min"], 
+            "prepTime": "50 min", 
+            "difficulty": "Médio", 
+            "calories": 450, 
+            "macros": { "protein": "40g", "carbs": "2g", "fat": "15g" } 
+          }, 
+          "dinner": { 
+            "title": "Salada", 
+            "ingredients": ["Alface"], 
+            "instructions": ["Lavar e servir"], 
+            "prepTime": "10 min", 
+            "difficulty": "Fácil", 
+            "calories": 120, 
+            "macros": { "protein": "5g", "carbs": "10g", "fat": "2g" } 
+          } 
+        }
       ],
-      "shoppingList": ["Item 1", "Item 2"]
+      "shoppingList": ["Item que falta 1", "Item que falta 2"]
     }
   `;
 
@@ -179,7 +193,7 @@ export const generateWeeklyMenu = async (
       ],
       response_format: { type: "json_object" },
       max_tokens: 4096,
-      temperature: 0.5 // Mais consistente para menus
+      temperature: 0.5
     });
 
     const text = response.choices[0].message.content;
@@ -188,8 +202,6 @@ export const generateWeeklyMenu = async (
     const data = JSON.parse(text);
     
     if (!data.days || data.days.length < 7) {
-        // Se a IA falhar em gerar 7 dias, tentamos recuperar ou lançamos erro
-        // Por segurança, vamos aceitar o que vier mas logar aviso
         console.warn("IA gerou menos de 7 dias ou formato incorreto");
     }
 
