@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Recipe, WeeklyMenu, Difficulty, DietGoal, UserProfile } from '@/types';
-import * as AIService from '@/services/openai'; // Alterado de '@/services/ai' para '@/services/openai'
+import * as AIService from '@/services/ai'; 
 import * as SupabaseService from '@/services/supabase';
 import { compressImage } from '@/utils/image';
 
