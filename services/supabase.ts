@@ -2,10 +2,26 @@
 import { createClient } from '@supabase/supabase-js';
 import { UserProfile, WeeklyMenu } from "../types";
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://placeholder-url.supabase.co';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
+// Pegando as variáveis do Vite
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Verificação de segurança no Console
+if (!supabaseUrl || supabaseUrl.includes('placeholder') || !supabaseKey || supabaseKey === 'missing-key') {
+  console.error(
+    "🚨 ERRO DE CONFIGURAÇÃO NO .ENV:\n" +
+    "As chaves do Supabase não foram encontradas.\n\n" +
+    "Certifique-se de que o arquivo .env existe na raiz e contém:\n" +
+    "VITE_SUPABASE_URL=sua_url\n" +
+    "VITE_SUPABASE_ANON_KEY=sua_chave_anon\n\n" +
+    "Depois de salvar, reinicie o terminal com: npm run dev"
+  );
+}
+
+export const supabase = createClient(
+  supabaseUrl || 'https://missing-url.supabase.co', 
+  supabaseKey || 'missing-key'
+);
 
 export const signIn = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -20,13 +36,18 @@ export const signUp = async (email: string, password: string) => {
 };
 
 export const signOut = async () => {
+  const session = await supabase.auth.getSession();
+  const userId = session.data.session?.user.id;
+  if (userId) {
+    localStorage.removeItem(`chef_ai_ingredients_${userId}`);
+  }
   await supabase.auth.signOut();
 };
 
 export const deleteAccount = async (): Promise<void> => {
   const { error } = await supabase.rpc('delete_user');
   if (error) throw new Error(`Erro ao excluir: ${error.message}`);
-  await supabase.auth.signOut();
+  await signOut();
 };
 
 export const getUserSession = async () => {
@@ -63,11 +84,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
   };
 };
 
-/**
- * IMPORTANTE: No novo fluxo de segurança, atualizações de perfil críticas (Premium/Cotas) 
- * são feitas apenas pelo servidor (Edge Functions).
- * Aqui permitimos apenas edição de preferências.
- */
 export const updatePreferences = async (userId: string, allergies: string[]): Promise<void> => {
   const { error } = await supabase
     .from('profiles')
@@ -86,7 +102,6 @@ export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<
 };
 
 export const deleteWeeklyMenu = async (menuId: string, userId: string): Promise<void> => {
-  // Passamos o userId para garantir que o RLS e a query sejam restritivos
   const { error } = await supabase
     .from('weekly_menus')
     .delete()
