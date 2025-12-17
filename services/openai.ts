@@ -3,20 +3,21 @@ import { WeeklyMenu, Recipe, Difficulty, DietGoal } from "../types";
 import { supabase } from "./supabase";
 
 /**
- * Função centralizada para chamar a lógica de IA no Back-end (Supabase Edge Function)
+ * Invoca a Supabase Edge Function que contém a lógica da OpenAI (gpt-4o-mini).
+ * Otimizado para instruções concisas e geração rápida.
  */
 async function invokeChefApi(payload: any) {
   const { data, error } = await supabase.functions.invoke('chef-api', {
     body: payload
   });
 
-  if (error) {
-    throw new Error(error.message || "Erro na comunicação com o servidor.");
+  if (error) throw new Error(error.message || "Erro de conexão com o servidor.");
+  
+  if (data?.error === "TIMEOUT") {
+    throw new Error("A IA demorou muito para responder. Tente com menos ingredientes.");
   }
-
-  if (data?.error === "SERVER_TIMEOUT") {
-    throw new Error(data.message);
-  }
+  
+  if (data?.error) throw new Error(data.message || "Erro no processamento da receita.");
 
   return data;
 }
@@ -26,12 +27,17 @@ export const generateQuickRecipe = async (
   allergies: string[], 
   difficulty: Difficulty
 ): Promise<Recipe> => {
-  return await invokeChefApi({
+  const result = await invokeChefApi({
     action: 'generate-quick-recipe',
     ingredients,
     allergies,
     difficulty
   });
+  
+  return { 
+    ...result, 
+    id: crypto.randomUUID() 
+  };
 };
 
 export const generateWeeklyMenu = async (
@@ -60,5 +66,6 @@ export const analyzeFridgeImage = async (images: string | string[]): Promise<str
     action: 'analyze-fridge',
     images: imageArray
   });
+  
   return result.ingredients || [];
 };
