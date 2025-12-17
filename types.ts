@@ -5,10 +5,15 @@ export enum Difficulty {
   HARD = 'Difícil'
 }
 
-export interface Ingredient {
-  name: string;
-  quantity?: string;
-}
+export type DietGoal = 'balanced' | 'low-carb' | 'fit' | 'quick' | 'cheap';
+
+export const DIET_GOALS: Record<DietGoal, string> = {
+  'balanced': '🥗 Equilibrado',
+  'low-carb': '🥑 Low Carb',
+  'fit': '🏋️ Fit & Saudável',
+  'quick': '⚡ Rápido (30min)',
+  'cheap': '💸 Econômico'
+};
 
 export interface Recipe {
   id: string;
@@ -24,7 +29,6 @@ export interface Recipe {
     carbs: string;
     fat: string;
   };
-  imagePrompt?: string; // Used to generate placeholder or find image
 }
 
 export interface DayPlan {
@@ -36,15 +40,17 @@ export interface DayPlan {
 export interface WeeklyMenu {
   id: string;
   createdAt: string;
+  goal?: string;
   days: DayPlan[];
   shoppingList: string[];
 }
 
 export interface UserProfile {
+  id: string;
   isPremium: boolean;
   allergies: string[];
-  favorites: string[]; // recipe IDs
-  usage: {
+  favorites: string[];
+  usage?: {
     quickRecipes: number;
     weeklyMenus: number;
   };

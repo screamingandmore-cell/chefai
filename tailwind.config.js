@@ -1,11 +1,13 @@
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
     "./*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
-    "./services/**/*.{js,ts,jsx,tsx}"
+    "./services/**/*.{js,ts,jsx,tsx}",
+    "./hooks/**/*.{js,ts,jsx,tsx}",
+    "./utils/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
     extend: {
@@ -21,11 +23,22 @@ export default {
           700: '#1d4ed8',
         },
         chef: {
-          // Cores ajustadas para passar no teste de contraste WCAG AA/AAA
-          // Verde escurecido para #047857 (Emerald 700) para garantir leitura de texto branco
           green: '#047857', 
-          // Laranja escurecido para #c2410c (Orange 700) para garantir contraste suficiente
           orange: '#c2410c', 
+        }
+      },
+      animation: {
+        fadeIn: 'fadeIn 0.3s ease-out',
+        slideUp: 'slideUp 0.4s ease-out',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
         }
       }
     },
