@@ -3,11 +3,20 @@ import { WeeklyMenu, Recipe, Difficulty, DietGoal } from "../types";
 import { supabase } from "./supabase";
 
 /**
- * Invoca a Edge Function que agora utiliza Gemini 3 Flash.
- * Envia explicitamente a apikey caso o cliente precise de reforço.
+ * Gerador de ID robusto com fallback para ambientes não-seguros (sem HTTPS/localhost)
+ */
+const generateId = () => {
+  try {
+    return crypto.randomUUID();
+  } catch (e) {
+    return 'id-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+  }
+};
+
+/**
+ * Invoca a Edge Function que utiliza Gemini 3 Flash.
  */
 async function invokeChefApi(payload: any) {
-  // Verificação local antes de tentar a rede
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
   const { data, error } = await supabase.functions.invoke('chef-api', {
@@ -45,9 +54,10 @@ export const generateQuickRecipe = async (
     difficulty
   });
   
+  // Garantimos que o ID do sistema venha POR ÚLTIMO para sobrescrever qualquer id nulo da IA
   return { 
     ...result, 
-    id: crypto.randomUUID() 
+    id: generateId() 
   };
 };
 
@@ -63,12 +73,16 @@ export const generateWeeklyMenu = async (
     dietGoal
   });
 
-  return {
-    ...result,
-    id: crypto.randomUUID(),
+  // Construção robusta do objeto WeeklyMenu
+  const newMenu: WeeklyMenu = {
+    shoppingList: result.shoppingList || [],
+    days: result.days || [],
+    id: generateId(),
     createdAt: new Date().toISOString(),
     goal: dietGoal
   };
+
+  return newMenu;
 };
 
 export const analyzeFridgeImage = async (images: string | string[]): Promise<string[]> => {
