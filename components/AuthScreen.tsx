@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as SupabaseService from '../services/supabase';
 
 const LoadingSpinner = () => (
@@ -15,9 +14,21 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [configMissing, setConfigMissing] = useState(false);
+
+  useEffect(() => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+      setConfigMissing(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (configMissing) {
+      setError("Erro Crítico: Chaves do Supabase não encontradas no ambiente.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -29,11 +40,7 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
       }
       onLogin(); 
     } catch (err: any) {
-      if (err.message && err.message.includes("Failed to fetch")) {
-        setError("Erro de conexão. Verifique o .env.");
-      } else {
-        setError(err.message || "Erro na autenticação");
-      }
+      setError(err.message || "Erro na autenticação");
       setLoading(false);
     }
   };
@@ -43,12 +50,11 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm">
         <div className="text-center mb-6">
           <img 
-            src="/icon-192.png" 
+            src="/favicon.svg" 
             alt="Logo" 
-            className="w-20 h-20 mx-auto mb-4 rounded-2xl shadow-md object-contain bg-gray-900" 
+            className="w-20 h-20 mx-auto mb-4 object-contain" 
             onError={(e) => {
-              e.currentTarget.src = '/favicon.svg';
-              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.display = 'none';
             }}
           />
           <h1 className="text-2xl font-bold text-gray-800">Chef<span className="text-chef-green">.ai</span></h1>
@@ -56,17 +62,23 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
             VERSÃO BETA
           </span>
         </div>
+
+        {configMissing && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg text-[10px] mb-4 font-mono">
+            ⚠️ <b>CONFIGURAÇÃO PENDENTE:</b><br/>
+            Verifique as variáveis de ambiente na Vercel.
+          </div>
+        )}
+
         {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-200">{error}</div>}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email-input" className="block text-xs font-bold text-gray-700 uppercase mb-1">Email</label>
             <input 
               id="email-input"
               type="email" 
-              name="email"
-              autoComplete="email"
               required 
-              maxLength={100}
               value={email} 
               onChange={e => setEmail(e.target.value)} 
               className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-chef-green" 
@@ -77,10 +89,7 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
             <input 
               id="password-input"
               type="password" 
-              name="password"
-              autoComplete="current-password"
               required 
-              maxLength={100}
               value={password} 
               onChange={e => setPassword(e.target.value)} 
               className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-chef-green" 
