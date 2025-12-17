@@ -1,26 +1,35 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Recipe, WeeklyMenu, Difficulty, DietGoal, UserProfile } from '@/types';
-import * as OpenAIService from '@/services/openai';
+import * as AIService from '@/services/openai'; // Alterado de '@/services/ai' para '@/services/openai'
 import * as SupabaseService from '@/services/supabase';
 import { compressImage } from '@/utils/image';
 
 export function useChefActions(user: UserProfile | null, session: any, onProfileRefresh: () => void) {
-  // Inicializa com dados do localStorage se existirem
-  const [ingredients, setIngredients] = useState<string[]>(() => {
-    const saved = localStorage.getItem('chef_ai_temp_ingredients');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [ingredients, setIngredients] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Persiste ingredientes sempre que mudarem
   useEffect(() => {
-    localStorage.setItem('chef_ai_temp_ingredients', JSON.stringify(ingredients));
-  }, [ingredients]);
+    if (session?.user?.id) {
+      const saved = localStorage.getItem(`chef_ai_ingredients_${session.user.id}`);
+      if (saved) setIngredients(JSON.parse(saved));
+    } else {
+      setIngredients([]);
+    }
+  }, [session]);
+
+  useEffect(() => {
+    if (session?.user?.id && ingredients.length > 0) {
+      localStorage.setItem(`chef_ai_ingredients_${session.user.id}`, JSON.stringify(ingredients));
+    }
+  }, [ingredients, session]);
 
   const handleAddIngredients = useCallback((newItems: string[]) => {
-    setIngredients(prev => [...new Set([...prev, ...newItems])]);
+    setIngredients(prev => {
+      const combined = [...new Set([...prev, ...newItems])];
+      return combined.slice(0, 50);
+    });
   }, []);
 
   const handleRemoveIngredient = useCallback((index: number) => {
@@ -40,35 +49,30 @@ export function useChefActions(user: UserProfile | null, session: any, onProfile
     setError(null);
     try {
       const imagesBase64: string[] = [];
-      for (let i = 0; i < Math.min(files.length, 6); i++) {
+      for (let i = 0; i < Math.min(files.length, 3); i++) {
         const base64 = await compressImage(files[i]);
         imagesBase64.push(base64);
       }
-      const detected = await OpenAIService.analyzeFridgeImage(imagesBase64);
+      const detected = await AIService.analyzeFridgeImage(imagesBase64);
       handleAddIngredients(detected);
     } catch (err: any) {
-      setError("Falha ao analisar imagem. Tente listar manualmente.");
+      setError("Erro ao ler foto. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const generateQuick = async (difficulty: Difficulty): Promise<Recipe | null> => {
-    if (!user || !session?.user || ingredients.length === 0) return null;
-    if (!navigator.onLine) {
-      setError("Você está sem internet.");
-      return null;
-    }
+    if (!session?.user || ingredients.length === 0) return null;
     
     setIsLoading(true);
     setError(null);
     try {
-      const recipe = await OpenAIService.generateQuickRecipe(ingredients, user.allergies, difficulty);
+      const recipe = await AIService.generateQuickRecipe(ingredients, user?.allergies || [], difficulty);
       onProfileRefresh();
       return recipe;
     } catch (err: any) {
-      if (err.message === "LIMIT_REACHED") throw err;
-      setError(err.message || "Erro ao gerar receita.");
+      setError(err.message || "Falha ao gerar receita.");
       return null;
     } finally {
       setIsLoading(false);
@@ -76,22 +80,17 @@ export function useChefActions(user: UserProfile | null, session: any, onProfile
   };
 
   const generateWeekly = async (goal: DietGoal): Promise<WeeklyMenu | null> => {
-    if (!user || !session?.user || ingredients.length === 0) return null;
-    if (!navigator.onLine) {
-      setError("Você está sem internet.");
-      return null;
-    }
+    if (!session?.user || ingredients.length === 0) return null;
 
     setIsLoading(true);
     setError(null);
     try {
-      const menu = await OpenAIService.generateWeeklyMenu(ingredients, user.allergies, goal);
+      const menu = await AIService.generateWeeklyMenu(ingredients, user?.allergies || [], goal);
       await SupabaseService.saveWeeklyMenu(session.user.id, menu);
       onProfileRefresh();
       return menu;
     } catch (err: any) {
-      if (err.message === "LIMIT_REACHED") throw err;
-      setError(err.message || "Erro ao gerar cardápio.");
+      setError(err.message || "Erro ao criar cardápio.");
       return null;
     } finally {
       setIsLoading(false);

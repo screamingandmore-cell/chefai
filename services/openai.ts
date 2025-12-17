@@ -1,61 +1,33 @@
 
-import { supabase } from './supabase';
 import { WeeklyMenu, Recipe, Difficulty, DietGoal } from "../types";
+import { supabase } from "./supabase";
 
-async function invokeChefAPI<T>(action: string, payload: any): Promise<T> {
-  const timeoutMs = 35000; // 35 segundos para cobrir gerações pesadas de IA
-  
-  const fetchPromise = supabase.functions.invoke('chef-api', {
-    body: { action, ...payload }
+/**
+ * Função centralizada para chamar a lógica de IA no Back-end (Supabase Edge Function)
+ */
+async function invokeChefApi(payload: any) {
+  const { data, error } = await supabase.functions.invoke('chef-api', {
+    body: payload
   });
 
-  const timeoutPromise = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error("TIMEOUT")), timeoutMs)
-  );
-
-  try {
-    // @ts-ignore
-    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
-
-    if (error) {
-      console.error(`Erro na função ${action}:`, error);
-      
-      if (error.context) {
-        try {
-          const errorBody = await error.context.json();
-          if (errorBody.error === "LIMIT_REACHED") {
-            throw new Error("LIMIT_REACHED");
-          }
-          throw new Error(errorBody.error || "Erro no processamento.");
-        } catch (e: any) {
-          if (e.message === "LIMIT_REACHED") throw e;
-          throw new Error("Falha na resposta do servidor.");
-        }
-      }
-      throw new Error(error.message || "Erro de conexão.");
-    }
-
-    return data as T;
-  } catch (err: any) {
-    if (err.message === "TIMEOUT") {
-      throw new Error("O servidor demorou muito para responder. Tente novamente em instantes.");
-    }
-    throw err;
+  if (error) {
+    throw new Error(error.message || "Erro na comunicação com o servidor.");
   }
-}
 
-export const analyzeFridgeImage = async (images: string | string[]): Promise<string[]> => {
-  return invokeChefAPI<string[]>('analyze-fridge', {
-    images: Array.isArray(images) ? images : [images]
-  });
-};
+  if (data?.error === "SERVER_TIMEOUT") {
+    throw new Error(data.message);
+  }
+
+  return data;
+}
 
 export const generateQuickRecipe = async (
   ingredients: string[], 
   allergies: string[], 
   difficulty: Difficulty
 ): Promise<Recipe> => {
-  return invokeChefAPI<Recipe>('generate-quick-recipe', {
+  return await invokeChefApi({
+    action: 'generate-quick-recipe',
     ingredients,
     allergies,
     difficulty
@@ -67,9 +39,26 @@ export const generateWeeklyMenu = async (
   allergies: string[],
   dietGoal: DietGoal = 'balanced'
 ): Promise<WeeklyMenu> => {
-  return invokeChefAPI<WeeklyMenu>('generate-weekly-menu', {
+  const result = await invokeChefApi({
+    action: 'generate-weekly-menu',
     ingredients,
     allergies,
     dietGoal
   });
+
+  return {
+    ...result,
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    goal: dietGoal
+  };
+};
+
+export const analyzeFridgeImage = async (images: string | string[]): Promise<string[]> => {
+  const imageArray = Array.isArray(images) ? images : [images];
+  const result = await invokeChefApi({
+    action: 'analyze-fridge',
+    images: imageArray
+  });
+  return result.ingredients || [];
 };
