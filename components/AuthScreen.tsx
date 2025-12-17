@@ -26,7 +26,7 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (configMissing) {
-      setError("Erro Crítico: Chaves do Supabase não encontradas no ambiente.");
+      setError("Configure as chaves VITE_SUPABASE no ambiente.");
       return;
     }
     setLoading(true);
@@ -46,65 +46,54 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-white/20">
-        <div className="text-center mb-8">
-          <div className="bg-gray-900 w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
-            <img 
-              src="/favicon.svg" 
-              alt="Chef.ai Logo" 
-              className="w-12 h-12 object-contain" 
-            />
-          </div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Chef<span className="text-chef-green">.ai</span></h1>
-          <div className="mt-2">
-            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest border border-emerald-200">
-              Beta Privado
-            </span>
-          </div>
+    <main className="min-h-screen bg-white flex flex-col items-center justify-center p-8">
+      <div className="w-full max-w-sm text-center">
+        <div className="mb-10">
+          {/* Logo sem fundo preto conforme solicitado */}
+          <img 
+            src="/favicon.svg" 
+            alt="Chef.ai Logo" 
+            className="w-24 h-24 mx-auto mb-6" 
+          />
+          <h1 className="text-4xl font-black text-gray-900 tracking-tighter">Chef<span className="text-chef-green">.ai</span></h1>
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em] mt-2">Inteligência na Cozinha</p>
         </div>
 
         {configMissing && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-[10px] mb-6 font-mono leading-tight">
-            ⚠️ <b>CONFIGURAÇÃO NECESSÁRIA:</b><br/>
-            Adicione VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nas variáveis de ambiente da Vercel.
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-[10px] mb-6 font-mono">
+            ⚠️ <b>ERRO:</b> Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY na Vercel.
           </div>
         )}
 
-        {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-xs mb-6 border border-red-100 font-medium animate-shake">{error}</div>}
+        {error && <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-xs mb-6 border border-red-100 font-bold">{error}</div>}
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email-input" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Email</label>
+          <div className="space-y-2">
             <input 
-              id="email-input"
               type="email" 
               required 
               value={email} 
               onChange={e => setEmail(e.target.value)} 
-              placeholder="seu@email.com"
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-chef-green/20 focus:border-chef-green transition-all" 
+              placeholder="Email"
+              className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-chef-green/20 focus:border-chef-green transition-all text-sm" 
             />
-          </div>
-          <div>
-            <label htmlFor="password-input" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Senha</label>
             <input 
-              id="password-input"
               type="password" 
               required 
               value={password} 
               onChange={e => setPassword(e.target.value)} 
-              placeholder="••••••••"
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-chef-green/20 focus:border-chef-green transition-all" 
+              placeholder="Senha"
+              className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-chef-green/20 focus:border-chef-green transition-all text-sm" 
             />
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-black transition-all disabled:opacity-50 active:scale-95">
-            {loading ? <LoadingSpinner /> : (isLogin ? 'Entrar Agora' : 'Criar minha Conta')}
+          <button type="submit" disabled={loading} className="w-full bg-chef-green text-white font-black py-4 rounded-2xl shadow-xl hover:bg-green-700 transition-all disabled:opacity-50 active:scale-95 text-sm uppercase tracking-widest">
+            {loading ? <LoadingSpinner /> : (isLogin ? 'Entrar' : 'Cadastrar')}
           </button>
         </form>
-        <div className="mt-8 text-center">
-          <button onClick={() => setIsLogin(!isLogin)} className="text-xs text-gray-500 hover:text-chef-green font-bold transition-colors">
-            {isLogin ? 'Não possui uma conta? Cadastre-se' : 'Já possui conta? Faça o login'}
+        
+        <div className="mt-10">
+          <button onClick={() => setIsLogin(!isLogin)} className="text-[11px] font-black text-gray-400 uppercase tracking-widest hover:text-chef-green transition-colors">
+            {isLogin ? 'Criar uma nova conta' : 'Já tenho uma conta'}
           </button>
         </div>
       </div>
