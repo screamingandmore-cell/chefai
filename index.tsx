@@ -1,7 +1,6 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css'; // Importação obrigatória para o Tailwind funcionar
+import './index.css'; 
 import App from './App';
 
 const rootElement = document.getElementById('root');
