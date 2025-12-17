@@ -1,134 +1,112 @@
 // @ts-nocheck
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { GoogleGenAI, Type } from "npm:@google/genai";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+const corsHeaders = { 
+  'Access-Control-Allow-Origin': '*', 
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+}
 
-const SYSTEM_PROMPT = `Chef.ai: IA culinária focada em economia. Responda APENAS JSON. Use o que o usuário tem. Evite compras. Proibido: temas não culinários.`;
+const SYSTEM_PROMPT = "Você é o Chef.ai, um assistente culinário profissional. Responda APENAS JSON puro, sem markdown ou textos explicativos fora do JSON.";
 
-serve(async (req: Request) => {
-  // Resposta imediata para preflight CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders, status: 200 });
+serve(async (req) => { 
+  // 1. Resposta obrigatória para Preflight CORS
+  if (req.method === 'OPTIONS') { 
+    return new Response('ok', { headers: corsHeaders }) 
   }
 
-  try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error("Não autorizado: Token ausente.");
+  try { 
+    const { action, ingredients, allergies, difficulty, dietGoal, images } = await req.json()
 
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? "",
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ""
-    );
-
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (authError || !user) throw new Error("Sessão inválida.");
-
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    const body = await req.json();
-    const { action, ingredients, allergies, difficulty, images, dietGoal } = body;
-    
-    const apiKey = Deno.env.get('API_KEY') || Deno.env.get('GEMINI_API_KEY');
-    const ai = new GoogleGenAI({ apiKey });
-
-    let responseData: any;
-
-    if (action === 'generate-quick-recipe') {
-      const prompt = `Gere uma receita rápida de dificuldade ${difficulty} usando: ${ingredients?.join(', ')}. Alergias: ${allergies?.join(',')}.`;
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-        config: {
-          systemInstruction: SYSTEM_PROMPT,
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              description: { type: Type.STRING },
-              ingredients: { type: Type.ARRAY, items: { type: Type.STRING } },
-              instructions: { type: Type.ARRAY, items: { type: Type.STRING } },
-              prepTime: { type: Type.STRING },
-              difficulty: { type: Type.STRING }
-            }
-          }
-        }
-      });
-      responseData = JSON.parse(response.text || "{}");
-      responseData.id = crypto.randomUUID();
-    } 
-    
-    else if (action === 'generate-weekly-menu') {
-      const prompt = `Gere um cardápio semanal para objetivo ${dietGoal}. Ingredientes base: ${ingredients?.join(',')}.`;
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: prompt,
-        config: {
-          systemInstruction: SYSTEM_PROMPT,
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              shoppingList: { type: Type.ARRAY, items: { type: Type.STRING } },
-              days: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    day: { type: Type.STRING },
-                    lunch: {
-                      type: Type.OBJECT,
-                      properties: {
-                        title: { type: Type.STRING },
-                        ingredients: { type: Type.ARRAY, items: { type: Type.STRING } },
-                        instructions: { type: Type.ARRAY, items: { type: Type.STRING } }
-                      }
-                    },
-                    dinner: {
-                      type: Type.OBJECT,
-                      properties: {
-                        title: { type: Type.STRING },
-                        ingredients: { type: Type.ARRAY, items: { type: Type.STRING } },
-                        instructions: { type: Type.ARRAY, items: { type: Type.STRING } }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      });
-      
-      const data = JSON.parse(response.text || "{}");
-      responseData = {
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        goal: dietGoal,
-        days: data.days || [],
-        shoppingList: data.shoppingList || []
-      };
+    // 2. Verificação da Chave
+    const apiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!apiKey) {
+      return new Response(JSON.stringify({ 
+        error: "CONFIG_ERROR", 
+        message: "Chave OPENAI_API_KEY não configurada no Supabase." 
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 })
     }
 
-    return new Response(JSON.stringify(responseData), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    let model = "gpt-4o-mini"
+    let messages = []
 
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    // 3. Preparação dos Prompts
+    if (action === 'generate-quick-recipe') {
+      messages = [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Crie uma receita nível ${difficulty} usando apenas ou principalmente: ${ingredients?.join(', ')}. Evite usar: ${allergies?.join(',') || 'Nenhuma'}. 
+        Retorne rigorosamente este formato JSON: { "title": "...", "description": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "..." }` }
+      ]
+    } 
+    else if (action === 'generate-weekly-menu') {
+      messages = [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Crie um cardápio semanal (7 dias, almoço e jantar) para o objetivo ${dietGoal}. Baseado em: ${ingredients?.join(',')}. 
+        Retorne rigorosamente este formato JSON: { "shoppingList": [], "days": [ { "day": "Segunda-feira", "lunch": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "..." }, "dinner": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "..." } } ] }` }
+      ]
+    }
+    else if (action === 'analyze-fridge' && images) {
+      model = "gpt-4o" // Modelo com visão computacional
+      const imageParts = images.map((img: string) => ({ 
+        type: "image_url", 
+        image_url: { url: img } 
+      }));
+      
+      messages = [
+        { role: "user", content: [
+          { type: "text", text: "Liste apenas os nomes dos ingredientes comestíveis visíveis nestas fotos. Retorne JSON: { \"ingredients\": [] }" }, 
+          ...imageParts
+        ] }
+      ]
+    }
+
+    // 4. Chamada à API da OpenAI
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+        response_format: { type: "json_object" },
+        temperature: 0.7
+      })
+    })
+
+    const aiData = await openAIResponse.json()
+    
+    if (aiData.error) {
+      throw new Error(`OpenAI API Error: ${aiData.error.message}`)
+    }
+
+    // 5. Tratamento e Enriquecimento para o Frontend
+    const rawContent = aiData.choices[0].message.content
+    let content = JSON.parse(rawContent)
+
+    // Injeção de metadados obrigatórios para não quebrar a UI
+    if (action === 'generate-weekly-menu') {
+      content = {
+        ...content,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        goal: dietGoal
+      }
+    } else {
+      content.id = content.id || crypto.randomUUID()
+    }
+
+    return new Response(JSON.stringify(content), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-});
+      status: 200,
+    })
+
+  } catch (error) { 
+    console.error("Erro na Edge Function:", error.message)
+    return new Response(JSON.stringify({ error: "INTERNAL_ERROR", message: error.message }), { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+      status: 200, 
+    }) 
+  } 
+})
