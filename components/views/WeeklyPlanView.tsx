@@ -40,14 +40,17 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
   if (!weeklyMenu) {
     return (
       <div className="space-y-6 animate-slideUp">
-        <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
-          <h2 className="text-2xl font-bold mb-2">Planejador Automático</h2>
-          <p className="text-gray-500 text-sm mb-6 leading-relaxed">A IA vai montar seu cardápio semanal focando no que você já tem para evitar desperdício.</p>
+        <div className="bg-white rounded-[2rem] p-8 shadow-xl border border-gray-100">
+          <div className="flex items-center gap-3 mb-4">
+             <div className="bg-emerald-100 p-3 rounded-2xl text-2xl">📅</div>
+             <h2 className="text-2xl font-black text-gray-800">Plano Semanal</h2>
+          </div>
+          <p className="text-gray-500 text-sm mb-8 leading-relaxed">
+            Nossa IA vai organizar sua semana inteira, focando no que você já tem para economizar tempo e dinheiro.
+          </p>
 
-          <div className="mb-6">
-             <div className="bg-green-50 border border-green-100 rounded-2xl p-4 mb-4 text-xs text-green-800 font-medium">
-                Dica: Quanto mais ingredientes você listar, mais preciso será o plano.
-             </div>
+          <div className="mb-8">
+             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Ingredientes Base</p>
              <IngredientInput 
                 ingredients={ingredients}
                 onAdd={onAddIngredient}
@@ -58,20 +61,20 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
              />
           </div>
           
-          <div className="mb-8">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Estilo de Dieta</p>
+          <div className="mb-10">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Objetivo da Dieta</p>
             <div className="grid grid-cols-2 gap-3">
               {(Object.keys(DIET_GOALS) as DietGoal[]).map((goal) => (
                  <button 
                    key={goal}
                    onClick={() => setDietGoal(goal)}
-                   className={`p-3 rounded-2xl border text-left transition-all relative overflow-hidden ${
+                   className={`p-4 rounded-2xl border-2 text-left transition-all ${
                      dietGoal === goal 
-                      ? 'border-chef-green bg-green-50 ring-2 ring-chef-green/20' 
-                      : 'border-gray-100 hover:border-gray-300 bg-gray-50/50'
+                      ? 'border-chef-green bg-green-50 shadow-inner' 
+                      : 'border-gray-50 bg-gray-50/50 hover:border-gray-200'
                    }`}
                  >
-                   <span className={`font-bold text-xs block relative z-10 ${dietGoal === goal ? 'text-chef-green' : 'text-gray-600'}`}>
+                   <span className={`font-bold text-xs block ${dietGoal === goal ? 'text-chef-green' : 'text-gray-500'}`}>
                      {DIET_GOALS[goal]}
                    </span>
                  </button>
@@ -82,25 +85,31 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
           <button 
              onClick={onGenerate} 
              disabled={isLoading || ingredients.length === 0}
-             className="w-full bg-chef-green text-white font-bold py-5 rounded-2xl shadow-[0_10px_20px_rgba(4,120,87,0.2)] hover:bg-green-700 disabled:bg-gray-200 disabled:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+             className="w-full bg-gray-900 text-white font-black py-5 rounded-2xl shadow-2xl hover:bg-black disabled:bg-gray-200 disabled:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
           >
              {isLoading ? (
+               <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span className="text-sm uppercase tracking-widest">Organizando sua semana...</span>
+               </div>
+             ) : (
                <>
-                <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                IA Analisando Ingredientes...
+                <span className="text-sm uppercase tracking-widest">Gerar Cardápio Inteligente</span>
+                <span className="group-hover:translate-x-1 transition-transform">🚀</span>
                </>
-             ) : '🚀 Criar Cardápio Inteligente'}
+             )}
           </button>
           
-          {error && <div className="mt-4 p-4 bg-red-50 text-red-600 text-xs rounded-xl border border-red-100 text-center animate-bounce">{error}</div>}
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 text-red-600 text-[10px] font-bold rounded-xl border border-red-100 text-center animate-bounce uppercase tracking-widest">
+              {error}
+            </div>
+          )}
         </div>
 
         <div className="text-center pt-4">
-           <button onClick={() => onNavigate(ViewState.MENU_HISTORY)} className="text-gray-400 text-xs font-medium hover:text-chef-green transition-colors uppercase tracking-widest underline decoration-dashed">
-             Ver Histórico de Planejamentos
+           <button onClick={() => onNavigate(ViewState.MENU_HISTORY)} className="text-gray-400 text-[10px] font-black hover:text-chef-green transition-colors uppercase tracking-[0.2em] border-b border-gray-200 pb-1">
+             Ver Histórico de Planos
            </button>
         </div>
       </div>
@@ -109,76 +118,65 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
 
   return (
     <div className="space-y-6 animate-slideUp">
-      <div className="flex justify-between items-start mb-2 no-print">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Plano Semanal</h2>
-          <p className="text-xs text-gray-400 mt-1 uppercase font-bold tracking-tighter">
-            Criado em: {new Date(weeklyMenu.createdAt).toLocaleDateString()}
-          </p>
-        </div>
+      <div className="flex justify-between items-center mb-2 no-print">
+        <button onClick={() => onNavigate(ViewState.HOME)} className="text-gray-400 font-bold text-xs flex items-center gap-2 hover:text-gray-800 transition-colors">
+          <span>←</span> Início
+        </button>
         <div className="flex gap-2">
-          <button onClick={() => onNavigate(ViewState.MENU_HISTORY)} className="bg-white shadow-sm border border-gray-100 p-2.5 rounded-xl hover:bg-gray-50 transition-colors" title="Histórico">📜</button>
-          <button onClick={() => window.print()} className="bg-white shadow-sm border border-gray-100 p-2.5 rounded-xl hover:bg-gray-50 text-blue-500 transition-colors" title="Imprimir">🖨️</button>
-          <button onClick={() => onDeleteMenu(weeklyMenu.id)} className="bg-white shadow-sm border border-gray-100 p-2.5 rounded-xl hover:bg-gray-50 text-red-400 transition-colors" title="Deletar">🗑️</button>
+          <button onClick={() => window.print()} className="bg-white shadow-sm border border-gray-100 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-50 transition-colors" title="Imprimir">🖨️</button>
+          <button onClick={() => onDeleteMenu(weeklyMenu.id)} className="bg-white shadow-sm border border-gray-100 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-50 text-red-400 transition-colors" title="Deletar">🗑️</button>
         </div>
       </div>
-      
-      <div className="grid grid-cols-2 gap-3 no-print">
-        <button 
-          onClick={() => onNavigate(ViewState.SHOPPING_LIST)} 
-          className="bg-chef-green text-white py-4 rounded-2xl font-bold border border-chef-green shadow-lg hover:bg-green-700 transition-all flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">🛒</span>
-          <span className="text-[10px] uppercase tracking-tighter">Lista de Compras</span>
-        </button>
-        <button 
-          onClick={() => onNavigate(ViewState.FRIDGE)} 
-          className="bg-white text-gray-600 py-4 rounded-2xl font-bold border border-gray-100 shadow-sm hover:bg-gray-50 transition-all flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">🔄</span>
-          <span className="text-[10px] uppercase tracking-tighter">Novo Planejamento</span>
-        </button>
+
+      <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 no-print">
+        <div className="flex items-center justify-between mb-6">
+           <h2 className="text-2xl font-black text-gray-800">Seu Cardápio</h2>
+           <button 
+            onClick={() => onNavigate(ViewState.SHOPPING_LIST)} 
+            className="bg-chef-green text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-green-200"
+          >
+            🛒 Lista de Compras
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          {weeklyMenu.days.map((day, i) => (
+            <div key={i} className="bg-gray-50/50 rounded-3xl p-5 border border-gray-100">
+               <div className="flex items-center justify-between mb-4">
+                  <span className="bg-gray-900 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg">
+                    {day.day}
+                  </span>
+               </div>
+               
+               <div className="grid gap-3">
+                  <div 
+                    onClick={() => onSelectRecipe(day.lunch)}
+                    className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-chef-green transition-all flex items-center gap-3 group"
+                  >
+                    <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-xl">☀️</div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Almoço</p>
+                      <p className="text-gray-800 font-bold truncate group-hover:text-chef-green transition-colors">{day.lunch.title}</p>
+                    </div>
+                  </div>
+
+                  <div 
+                    onClick={() => onSelectRecipe(day.dinner)}
+                    className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-400 transition-all flex items-center gap-3 group"
+                  >
+                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-xl">🌙</div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Jantar</p>
+                      <p className="text-gray-800 font-bold truncate group-hover:text-blue-500 transition-colors">{day.dinner.title}</p>
+                    </div>
+                  </div>
+               </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {!isPremium && <GoogleAdPlaceholder />}
-
-      <div className="space-y-5">
-        {weeklyMenu.days.map((day, i) => (
-          <div key={i} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:border-chef-green/30 transition-colors">
-            <div className="bg-gray-50/50 px-6 py-3 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wide">{day.day}</h3>
-              {isPremium && <span className="text-[9px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">RECOMENDADO</span>}
-            </div>
-            <div className="p-4 space-y-4">
-              <div onClick={() => onSelectRecipe(day.lunch)} className="cursor-pointer hover:bg-green-50/30 p-3 rounded-2xl transition-all group">
-                <div className="flex justify-between items-center">
-                  <p className="text-gray-800 font-bold text-sm">☀️ Almoço: {day.lunch.title}</p>
-                  <span className="text-gray-300 group-hover:text-chef-green transition-colors">→</span>
-                </div>
-                {isPremium && day.lunch.calories && (
-                  <p className="text-[9px] text-gray-400 mt-1 uppercase font-bold tracking-tighter">
-                    {day.lunch.calories} KCAL | P: {day.lunch.macros?.protein} | C: {day.lunch.macros?.carbs}
-                  </p>
-                )}
-              </div>
-
-              <div className="border-t border-gray-50 mx-3" />
-              
-              <div onClick={() => onSelectRecipe(day.dinner)} className="cursor-pointer hover:bg-blue-50/30 p-3 rounded-2xl transition-all group">
-                <div className="flex justify-between items-center">
-                  <p className="text-gray-800 font-bold text-sm">🌙 Jantar: {day.dinner.title}</p>
-                  <span className="text-gray-300 group-hover:text-blue-500 transition-colors">→</span>
-                </div>
-                {isPremium && day.dinner.calories && (
-                  <p className="text-[9px] text-gray-400 mt-1 uppercase font-bold tracking-tighter">
-                    {day.dinner.calories} KCAL | P: {day.dinner.macros?.protein} | C: {day.dinner.macros?.carbs}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
