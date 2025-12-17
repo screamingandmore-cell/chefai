@@ -7,19 +7,14 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 
-const SYSTEM_PROMPT = "Você é o Chef.ai, um assistente culinário profissional. Responda APENAS JSON puro, sem markdown ou textos explicativos fora do JSON.";
-
 serve(async (req) => { 
-  // 1. Resposta obrigatória para Preflight CORS
-  if (req.method === 'OPTIONS') { 
-    return new Response('ok', { headers: corsHeaders }) 
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try { 
     const { action, ingredients, allergies, difficulty, dietGoal, images } = await req.json()
-
-    // 2. Verificação da Chave
-    const apiKey = Deno.env.get('OPENAI_API_KEY')
+    
+    const apiKey = Deno.env.get('OPENAI_API_KEY') || Deno.env.get('API_KEY')
+    
     if (!apiKey) {
       return new Response(JSON.stringify({ 
         error: "CONFIG_ERROR", 
@@ -28,83 +23,88 @@ serve(async (req) => {
     }
 
     let model = "gpt-4o-mini"
-    let messages = []
+    let systemPrompt = "Você é o Chef.ai, um assistente culinário e nutricionista. Responda APENAS JSON puro. Importante: Sempre inclua estimativas de calorias e macros (proteína, carboidratos, gorduras) em todas as receitas."
+    let userPrompt = ""
 
-    // 3. Preparação dos Prompts
     if (action === 'generate-quick-recipe') {
-      messages = [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `Crie uma receita nível ${difficulty} usando apenas ou principalmente: ${ingredients?.join(', ')}. Evite usar: ${allergies?.join(',') || 'Nenhuma'}. 
-        Retorne rigorosamente este formato JSON: { "title": "...", "description": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "..." }` }
-      ]
+      userPrompt = `Crie uma receita nível ${difficulty} com: ${ingredients.join(', ')}. Evite: ${allergies.join(',')}. 
+      Responda neste formato JSON: { 
+        "title": "...", 
+        "description": "...", 
+        "ingredients": [], 
+        "instructions": [], 
+        "prepTime": "...", 
+        "difficulty": "...",
+        "calories": 0,
+        "macros": { "protein": "0g", "carbs": "0g", "fat": "0g" }
+      }`
     } 
     else if (action === 'generate-weekly-menu') {
-      messages = [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `Crie um cardápio semanal (7 dias, almoço e jantar) para o objetivo ${dietGoal}. Baseado em: ${ingredients?.join(',')}. 
-        Retorne rigorosamente este formato JSON: { "shoppingList": [], "days": [ { "day": "Segunda-feira", "lunch": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "..." }, "dinner": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "..." } } ] }` }
-      ]
+      // Prompt otimizado para velocidade: pedimos instruções concisas para evitar timeout
+      userPrompt = `Crie um cardápio de 7 dias (almoço e jantar) para o objetivo ${dietGoal} usando: ${ingredients.join(',')}. 
+      Instruções das receitas devem ser curtas e diretas para velocidade.
+      Responda neste formato JSON: { 
+        "shoppingList": [], 
+        "days": [ { 
+          "day": "Segunda", 
+          "lunch": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "...", "calories": 0, "macros": { "protein": "0g", "carbs": "0g", "fat": "0g" } },
+          "dinner": { "title": "...", "ingredients": [], "instructions": [], "prepTime": "...", "difficulty": "...", "calories": 0, "macros": { "protein": "0g", "carbs": "0g", "fat": "0g" } }
+        } ] 
+      }`
     }
     else if (action === 'analyze-fridge' && images) {
-      model = "gpt-4o" // Modelo com visão computacional
-      const imageParts = images.map((img: string) => ({ 
-        type: "image_url", 
-        image_url: { url: img } 
-      }));
-      
-      messages = [
-        { role: "user", content: [
-          { type: "text", text: "Liste apenas os nomes dos ingredientes comestíveis visíveis nestas fotos. Retorne JSON: { \"ingredients\": [] }" }, 
-          ...imageParts
-        ] }
+      model = "gpt-4o"
+      userPrompt = [
+        { type: "text", text: "Liste apenas os nomes dos ingredientes comestíveis visíveis nestas fotos. Retorne JSON: { \"ingredients\": [] }" },
+        ...images.map(img => ({ type: "image_url", image_url: { url: img } }))
       ]
     }
 
-    // 4. Chamada à API da OpenAI
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: model,
-        messages: messages,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: Array.isArray(userPrompt) ? userPrompt : [{ type: "text", text: userPrompt }] }
+        ],
         response_format: { type: "json_object" },
-        temperature: 0.7
+        temperature: 0.7,
+        max_tokens: 4000 // Aumentado para garantir que o cardápio não seja cortado
       })
     })
 
-    const aiData = await openAIResponse.json()
+    const aiData = await response.json()
     
     if (aiData.error) {
-      throw new Error(`OpenAI API Error: ${aiData.error.message}`)
+      throw new Error(`OpenAI: ${aiData.error.message}`)
     }
 
-    // 5. Tratamento e Enriquecimento para o Frontend
-    const rawContent = aiData.choices[0].message.content
-    let content = JSON.parse(rawContent)
+    let result = JSON.parse(aiData.choices[0].message.content)
 
-    // Injeção de metadados obrigatórios para não quebrar a UI
     if (action === 'generate-weekly-menu') {
-      content = {
-        ...content,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        goal: dietGoal
-      }
+      result.id = crypto.randomUUID()
+      result.createdAt = new Date().toISOString()
+      result.goal = dietGoal
     } else {
-      content.id = content.id || crypto.randomUUID()
+      result.id = result.id || crypto.randomUUID()
     }
 
-    return new Response(JSON.stringify(content), {
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
 
   } catch (error) { 
-    console.error("Erro na Edge Function:", error.message)
-    return new Response(JSON.stringify({ error: "INTERNAL_ERROR", message: error.message }), { 
+    console.error("Erro Crítico OpenAI:", error.message)
+    return new Response(JSON.stringify({ 
+      error: "ERRO_IA", 
+      message: error.message.includes('timeout') ? "O servidor demorou muito. Tente com menos ingredientes ou uma dieta mais simples." : error.message 
+    }), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
       status: 200, 
     }) 
