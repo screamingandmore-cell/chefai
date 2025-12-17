@@ -9,9 +9,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, './')
     }
   },
+  server: {
+    port: 3000
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    emptyOutDir: true
+    emptyOutDir: true,
+    sourcemap: false
   }
 })

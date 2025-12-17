@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ViewState, UserProfile, WeeklyMenu } from '../../types';
 import { AdBanner } from '../Layout';
@@ -24,9 +23,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <button onClick={() => onNavigate(ViewState.QUICK_RECIPE)} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center gap-3 hover:shadow-md transition-shadow">
+        <button onClick={() => onNavigate(ViewState.FRIDGE)} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center gap-3 hover:shadow-md transition-shadow">
           <span className="text-3xl bg-orange-50 p-3 rounded-full">🍳</span>
-          <span className="font-bold text-gray-700 text-sm">Receita Agora</span>
+          <span className="font-bold text-gray-700 text-sm">Receita Rápida</span>
         </button>
         <button onClick={() => onNavigate(ViewState.WEEKLY_PLAN)} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center gap-3 hover:shadow-md transition-shadow">
           <span className="text-3xl bg-blue-50 p-3 rounded-full">📅</span>

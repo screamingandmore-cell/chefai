@@ -46,62 +46,65 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm">
-        <div className="text-center mb-6">
-          <img 
-            src="/favicon.svg" 
-            alt="Logo" 
-            className="w-20 h-20 mx-auto mb-4 object-contain" 
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-          <h1 className="text-2xl font-bold text-gray-800">Chef<span className="text-chef-green">.ai</span></h1>
-          <span className="inline-block mt-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-[10px] font-bold border border-yellow-200">
-            VERSÃO BETA
-          </span>
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50 flex items-center justify-center p-4">
+      <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-white/20">
+        <div className="text-center mb-8">
+          <div className="bg-gray-900 w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+            <img 
+              src="/favicon.svg" 
+              alt="Chef.ai Logo" 
+              className="w-12 h-12 object-contain" 
+            />
+          </div>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Chef<span className="text-chef-green">.ai</span></h1>
+          <div className="mt-2">
+            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest border border-emerald-200">
+              Beta Privado
+            </span>
+          </div>
         </div>
 
         {configMissing && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg text-[10px] mb-4 font-mono">
-            ⚠️ <b>CONFIGURAÇÃO PENDENTE:</b><br/>
-            Verifique as variáveis de ambiente na Vercel.
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-[10px] mb-6 font-mono leading-tight">
+            ⚠️ <b>CONFIGURAÇÃO NECESSÁRIA:</b><br/>
+            Adicione VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nas variáveis de ambiente da Vercel.
           </div>
         )}
 
-        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-200">{error}</div>}
+        {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-xs mb-6 border border-red-100 font-medium animate-shake">{error}</div>}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email-input" className="block text-xs font-bold text-gray-700 uppercase mb-1">Email</label>
+            <label htmlFor="email-input" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Email</label>
             <input 
               id="email-input"
               type="email" 
               required 
               value={email} 
               onChange={e => setEmail(e.target.value)} 
-              className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-chef-green" 
+              placeholder="seu@email.com"
+              className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-chef-green/20 focus:border-chef-green transition-all" 
             />
           </div>
           <div>
-            <label htmlFor="password-input" className="block text-xs font-bold text-gray-700 uppercase mb-1">Senha</label>
+            <label htmlFor="password-input" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Senha</label>
             <input 
               id="password-input"
               type="password" 
               required 
               value={password} 
               onChange={e => setPassword(e.target.value)} 
-              className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-chef-green" 
+              placeholder="••••••••"
+              className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-chef-green/20 focus:border-chef-green transition-all" 
             />
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-chef-green text-white font-bold py-3 rounded-xl shadow-lg hover:bg-green-600 transition-all disabled:opacity-50">
-            {loading ? <LoadingSpinner /> : (isLogin ? 'Entrar' : 'Criar Conta')}
+          <button type="submit" disabled={loading} className="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-black transition-all disabled:opacity-50 active:scale-95">
+            {loading ? <LoadingSpinner /> : (isLogin ? 'Entrar Agora' : 'Criar minha Conta')}
           </button>
         </form>
-        <div className="mt-6 text-center">
-          <button onClick={() => setIsLogin(!isLogin)} className="text-sm text-gray-500 hover:text-chef-green underline">
-            {isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Fazer Login'}
+        <div className="mt-8 text-center">
+          <button onClick={() => setIsLogin(!isLogin)} className="text-xs text-gray-500 hover:text-chef-green font-bold transition-colors">
+            {isLogin ? 'Não possui uma conta? Cadastre-se' : 'Já possui conta? Faça o login'}
           </button>
         </div>
       </div>
