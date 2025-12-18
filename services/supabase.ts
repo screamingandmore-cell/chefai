@@ -38,20 +38,31 @@ export const getUserSession = async () => {
 };
 
 export const getUserProfile = async (userId: string): Promise<UserProfile> => {
-  const { data, error } = await supabase
+  // Tentamos buscar o perfil
+  let { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', userId)
     .single();
 
+  // Se o perfil não existir (ex: erro na trigger ou usuário antigo), criamos um agora
   if (error || !data) {
-    return {
-      id: userId,
-      isPremium: false,
-      allergies: [],
-      favorites: [],
-      usage: { quickRecipes: 0, weeklyMenus: 0 }
-    };
+    const { data: newData, error: insertError } = await supabase
+      .from('profiles')
+      .insert({ id: userId })
+      .select()
+      .single();
+    
+    if (insertError) {
+      return {
+        id: userId,
+        isPremium: false,
+        allergies: [],
+        favorites: [],
+        usage: { quickRecipes: 0, weeklyMenus: 0 }
+      };
+    }
+    data = newData;
   }
 
   return {
@@ -76,11 +87,9 @@ export const updatePreferences = async (userId: string, allergies: string[]): Pr
 };
 
 export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<WeeklyMenu> => {
-  // CRÍTICO: Geramos um UUID no frontend para garantir que a coluna 'id' do banco nunca seja nula
   const menuId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
 
-  // Preparamos o objeto de dados que será guardado no JSONB
   const menuData = {
     days: menu.days,
     shoppingList: menu.shoppingList,
@@ -92,7 +101,7 @@ export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<
   const { data, error } = await supabase
     .from('weekly_menus')
     .insert({
-      id: menuId, // Enviamos explicitamente o ID para o banco
+      id: menuId,
       user_id: userId,
       data: menuData,
       created_at: createdAt
