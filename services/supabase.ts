@@ -5,16 +5,11 @@ import { UserProfile, WeeklyMenu } from "../types";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || supabaseUrl.includes('placeholder') || !supabaseKey || supabaseKey === 'missing-key') {
-  console.error("🚨 ERRO CRÍTICO: Chaves do Supabase não configuradas corretamente.");
-}
-
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co', 
   supabaseKey || 'missing-key'
 );
 
-// Autenticação
 export const signIn = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
@@ -42,7 +37,6 @@ export const getUserSession = async () => {
   return data.session;
 };
 
-// Perfil e Preferências
 export const getUserProfile = async (userId: string): Promise<UserProfile> => {
   const { data, error } = await supabase
     .from('profiles')
@@ -51,7 +45,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
     .single();
 
   if (error || !data) {
-    // Tenta criar um perfil básico se não existir
     return {
       id: userId,
       isPremium: false,
@@ -82,28 +75,36 @@ export const updatePreferences = async (userId: string, allergies: string[]): Pr
   if (error) throw error;
 };
 
-// Gerenciamento de Cardápios
 export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<WeeklyMenu> => {
-  // ELIMINAÇÃO DO ERRO DE ID:
-  // Removemos o campo 'id' e 'createdAt' do objeto de dados antes de enviar.
-  // O banco de dados vai gerar o ID real e o created_at.
-  const { id, createdAt, ...payloadData } = menu;
+  // CRÍTICO: Geramos um UUID no frontend para garantir que a coluna 'id' do banco nunca seja nula
+  const menuId = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+
+  // Preparamos o objeto de dados que será guardado no JSONB
+  const menuData = {
+    days: menu.days,
+    shoppingList: menu.shoppingList,
+    goal: menu.goal,
+    id: menuId,
+    createdAt: createdAt
+  };
 
   const { data, error } = await supabase
     .from('weekly_menus')
     .insert({
+      id: menuId, // Enviamos explicitamente o ID para o banco
       user_id: userId,
-      data: payloadData
+      data: menuData,
+      created_at: createdAt
     })
     .select()
     .single();
     
   if (error) {
-    console.error("Erro ao salvar no banco:", error);
+    console.error("Erro Supabase Insert:", error);
     throw new Error(error.message);
   }
 
-  // Retorna o objeto completo com o ID gerado pelo Postgres
   return {
     ...data.data,
     id: data.id,

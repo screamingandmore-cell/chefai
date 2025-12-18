@@ -1,15 +1,14 @@
 
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type } from "npm:@google/genai";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': '*', // Permite qualquer origem para evitar erros nos múltiplos links da Vercel
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
-// Definição estrita do esquema para garantir que a IA não omita campos essenciais
 const RECIPE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
@@ -34,14 +33,27 @@ const RECIPE_SCHEMA = {
 };
 
 serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  // Responde imediatamente a requisições de pre-flight (OPTIONS)
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 55000);
 
   try {
     const { action, ingredients, allergies, difficulty, dietGoal, images } = await req.json();
-    const ai = new GoogleGenAI({ apiKey: Deno.env.get('API_KEY') });
+    
+    const apiKey = Deno.env.get('API_KEY');
+    if (!apiKey) {
+      console.error("ERRO: API_KEY (Gemini) não encontrada nos Secrets do Supabase.");
+      return new Response(JSON.stringify({ error: "CONFIG_ERROR", message: "API_KEY ausente no servidor." }), { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
 
     if (action === 'generate-quick-recipe') {
       const response = await ai.models.generateContent({
@@ -119,14 +131,23 @@ serve(async (req: Request) => {
       return new Response(response.text, { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    return new Response(JSON.stringify({ error: "ACTION_NOT_FOUND" }), { status: 400, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: "ACTION_NOT_FOUND" }), { 
+      status: 400, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
 
   } catch (error: any) {
     clearTimeout(timeoutId);
-    console.error("ERRO EDGE FUNCTION:", error);
+    console.error("ERRO CRÍTICO NA EDGE FUNCTION:", error);
+    
+    const errorStatus = error.name === 'AbortError' ? "TIMEOUT" : "SERVER_ERROR";
+    
     return new Response(JSON.stringify({ 
-      error: error.name === 'AbortError' ? "TIMEOUT" : "SERVER_ERROR", 
+      error: errorStatus, 
       message: error.message 
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+    }), { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+      status: 200 // Mantemos 200 para o frontend tratar o objeto de erro amigavelmente
+    });
   }
 });
