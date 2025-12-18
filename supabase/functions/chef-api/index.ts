@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenAI, Type } from "@google/genai";
@@ -8,6 +9,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
+// Definição estrita do esquema para garantir que a IA não omita campos essenciais
 const RECIPE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
@@ -39,16 +41,14 @@ serve(async (req: Request) => {
 
   try {
     const { action, ingredients, allergies, difficulty, dietGoal, images } = await req.json();
-    
-    // Initialize Gemini with API Key from process.env as per guidelines
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: Deno.env.get('API_KEY') });
 
     if (action === 'generate-quick-recipe') {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Crie uma receita nível ${difficulty} com: ${ingredients?.join(', ')}. Evite: ${allergies?.join(',')}. Mantenha instruções em no máximo 4 passos curtos.`,
+        contents: `Gere uma receita deliciosa com: ${ingredients?.join(', ')}. Evite: ${allergies?.join(',')}. Dificuldade: ${difficulty}.`,
         config: {
-          systemInstruction: "Você é o Chef.ai. Gere apenas JSON puro. Seja extremamente conciso nas instruções.",
+          systemInstruction: "Você é o Chef.ai. Retorne apenas JSON seguindo o esquema fornecido. Seja criativo mas mantenha as instruções curtas.",
           responseMimeType: "application/json",
           responseSchema: RECIPE_SCHEMA
         }
@@ -61,10 +61,9 @@ serve(async (req: Request) => {
     else if (action === 'generate-weekly-menu') {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Gere cardápio semanal (almoço/jantar) dieta ${dietGoal}. Ingredientes base: ${ingredients?.join(',')}. Restrições: ${allergies?.join(',')}.
-        REGRA: Máximo 3 ou 4 passos por receita.`,
+        contents: `Crie um cardápio semanal completo (almoço e jantar) para o objetivo ${dietGoal}. Baseado em: ${ingredients?.join(',')}. Sem: ${allergies?.join(',')}.`,
         config: {
-          systemInstruction: "Você é um Nutricionista Gourmet. Planeje 14 refeições curtas. Retorne JSON.",
+          systemInstruction: "Você é o Nutricionista-Chefe do Chef.ai. Planeje 7 dias (14 refeições). Retorne JSON.",
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -99,7 +98,7 @@ serve(async (req: Request) => {
           data: img.includes(',') ? img.split(',')[1] : img
         }
       }));
-      parts.push({ text: "Liste apenas os nomes dos ingredientes comestíveis identificados." });
+      parts.push({ text: "Analise a imagem e liste apenas os ingredientes comestíveis encontrados." });
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -120,10 +119,11 @@ serve(async (req: Request) => {
       return new Response(response.text, { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    return new Response(JSON.stringify({ error: "INVALID_ACTION" }), { status: 400, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: "ACTION_NOT_FOUND" }), { status: 400, headers: corsHeaders });
 
   } catch (error: any) {
     clearTimeout(timeoutId);
+    console.error("ERRO EDGE FUNCTION:", error);
     return new Response(JSON.stringify({ 
       error: error.name === 'AbortError' ? "TIMEOUT" : "SERVER_ERROR", 
       message: error.message 

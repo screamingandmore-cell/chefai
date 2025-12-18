@@ -6,14 +6,15 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || supabaseUrl.includes('placeholder') || !supabaseKey || supabaseKey === 'missing-key') {
-  console.error("🚨 ERRO: Chaves do Supabase não configuradas no .env");
+  console.error("🚨 ERRO CRÍTICO: Chaves do Supabase não configuradas corretamente.");
 }
 
 export const supabase = createClient(
-  supabaseUrl || 'https://missing-url.supabase.co', 
+  supabaseUrl || 'https://placeholder.supabase.co', 
   supabaseKey || 'missing-key'
 );
 
+// Autenticação
 export const signIn = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
@@ -27,17 +28,12 @@ export const signUp = async (email: string, password: string) => {
 };
 
 export const signOut = async () => {
-  const session = await supabase.auth.getSession();
-  const userId = session.data.session?.user.id;
-  if (userId) {
-    localStorage.removeItem(`chef_ai_ingredients_${userId}`);
-  }
   await supabase.auth.signOut();
 };
 
 export const deleteAccount = async (): Promise<void> => {
   const { error } = await supabase.rpc('delete_user');
-  if (error) throw new Error(`Erro ao excluir: ${error.message}`);
+  if (error) throw new Error(`Erro ao excluir conta: ${error.message}`);
   await signOut();
 };
 
@@ -46,6 +42,7 @@ export const getUserSession = async () => {
   return data.session;
 };
 
+// Perfil e Preferências
 export const getUserProfile = async (userId: string): Promise<UserProfile> => {
   const { data, error } = await supabase
     .from('profiles')
@@ -54,6 +51,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
     .single();
 
   if (error || !data) {
+    // Tenta criar um perfil básico se não existir
     return {
       id: userId,
       isPremium: false,
@@ -84,45 +82,33 @@ export const updatePreferences = async (userId: string, allergies: string[]): Pr
   if (error) throw error;
 };
 
-/**
- * SALVAR CARDÁPIO SEMANAL
- * Estratégia de Produção: Nunca enviamos o ID no insert. 
- * O PostgreSQL gera o ID via uuid_generate_v4().
- */
+// Gerenciamento de Cardápios
 export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<WeeklyMenu> => {
-  // Removemos o ID do objeto menu para garantir que ele não vá como 'null' no JSON
-  const { id, ...menuWithoutId } = menu;
+  // ELIMINAÇÃO DO ERRO DE ID:
+  // Removemos o campo 'id' e 'createdAt' do objeto de dados antes de enviar.
+  // O banco de dados vai gerar o ID real e o created_at.
+  const { id, createdAt, ...payloadData } = menu;
 
   const { data, error } = await supabase
     .from('weekly_menus')
     .insert({
       user_id: userId,
-      data: menuWithoutId
+      data: payloadData
     })
     .select()
     .single();
     
   if (error) {
-    console.error("Erro Supabase Insert:", error);
-    throw error;
+    console.error("Erro ao salvar no banco:", error);
+    throw new Error(error.message);
   }
 
-  // Retornamos o menu com o ID REAL gerado pelo banco de dados
+  // Retorna o objeto completo com o ID gerado pelo Postgres
   return {
     ...data.data,
     id: data.id,
-    createdAt: data.created_at || new Date().toISOString()
+    createdAt: data.created_at
   };
-};
-
-export const deleteWeeklyMenu = async (menuId: string, userId: string): Promise<void> => {
-  const { error } = await supabase
-    .from('weekly_menus')
-    .delete()
-    .eq('id', menuId)
-    .eq('user_id', userId);
-
-  if (error) throw error;
 };
 
 export const getWeeklyMenus = async (userId: string): Promise<WeeklyMenu[]> => {
@@ -134,10 +120,19 @@ export const getWeeklyMenus = async (userId: string): Promise<WeeklyMenu[]> => {
 
   if (error || !data) return [];
   
-  // Mapeamos os dados fundindo o ID da tabela no objeto de dados
   return data.map(row => ({
     ...row.data,
     id: row.id,
     createdAt: row.created_at
   }));
+};
+
+export const deleteWeeklyMenu = async (menuId: string, userId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('weekly_menus')
+    .delete()
+    .eq('id', menuId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
 };

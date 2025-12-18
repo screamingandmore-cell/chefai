@@ -3,17 +3,8 @@ import { WeeklyMenu, Recipe, Difficulty, DietGoal } from "../types";
 import { supabase } from "./supabase";
 
 /**
- * Gera um ID apenas para objetos locais (Receitas rápidas que não vão pro banco).
+ * Função utilitária para chamar a Edge Function do Chef.ai.
  */
-const generateLocalId = (): string => {
-  try {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-  } catch (e) {}
-  return `local_${Date.now()}`;
-};
-
 async function invokeChefApi(payload: any) {
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
@@ -25,7 +16,7 @@ async function invokeChefApi(payload: any) {
   });
 
   if (error) {
-    console.error("Erro na Edge Function:", error);
+    console.error("Erro na Edge Function Chef.ai:", error);
     throw new Error(error.message || "Erro de conexão com o Chef.ai");
   }
 
@@ -34,7 +25,7 @@ async function invokeChefApi(payload: any) {
   }
   
   if (data?.error) {
-    throw new Error(data.message || "Erro no processamento da receita.");
+    throw new Error(data.message || "Erro no processamento da IA.");
   }
 
   return data;
@@ -52,9 +43,10 @@ export const generateQuickRecipe = async (
     difficulty
   });
   
+  // Receitas rápidas geram um ID local pois não são obrigatoriamente salvas no banco de imediato
   return { 
     ...result, 
-    id: generateLocalId() 
+    id: crypto.randomUUID() 
   };
 };
 
@@ -70,16 +62,14 @@ export const generateWeeklyMenu = async (
     dietGoal
   });
 
-  // Não geramos ID aqui; o saveWeeklyMenu retornará o ID do banco
-  const newMenu: WeeklyMenu = {
+  // Retornamos o objeto puro da IA. O ID será atribuído pelo Supabase ao salvar.
+  return {
     shoppingList: result.shoppingList || [],
     days: result.days || [],
-    id: '', 
+    id: '', // Placeholder, será preenchido pelo saveWeeklyMenu
     createdAt: new Date().toISOString(),
     goal: dietGoal
   };
-
-  return newMenu;
 };
 
 export const analyzeFridgeImage = async (images: string | string[]): Promise<string[]> => {
