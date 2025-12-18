@@ -6,10 +6,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || supabaseUrl.includes('placeholder') || !supabaseKey || supabaseKey === 'missing-key') {
-  console.error(
-    "🚨 ERRO DE CONFIGURAÇÃO NO .ENV:\n" +
-    "As chaves do Supabase não foram encontradas."
-  );
+  console.error("🚨 ERRO: Chaves do Supabase não configuradas no .env");
 }
 
 export const supabase = createClient(
@@ -88,20 +85,24 @@ export const updatePreferences = async (userId: string, allergies: string[]): Pr
 };
 
 export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<void> => {
-  // Validação crítica: Impedir tentativa de salvar sem ID
   if (!menu.id) {
-    throw new Error("Falha interna: O cardápio gerado não possui um identificador válido.");
+    console.error("Tentativa de salvar cardápio sem ID", menu);
+    throw new Error("Erro interno: Cardápio sem identificador.");
   }
 
+  // Explicitamos a inserção de cada coluna
   const { error } = await supabase
     .from('weekly_menus')
-    .insert([{ 
+    .insert({ 
       id: menu.id, 
       user_id: userId, 
       data: menu 
-    }]);
+    });
     
-  if (error) throw error;
+  if (error) {
+    console.error("Erro ao salvar no Supabase:", error);
+    throw error;
+  }
 };
 
 export const deleteWeeklyMenu = async (menuId: string, userId: string): Promise<void> => {
