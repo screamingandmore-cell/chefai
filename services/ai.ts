@@ -1,65 +1,61 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { WeeklyMenu, Recipe, Difficulty, DietGoal } from "../types";
 
-// Inicializa o SDK do Google GenAI
-// A API_KEY é obtida exclusivamente do ambiente conforme diretrizes
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// --- Configuração ---
+// Verifica se a chave existe para evitar erros silenciosos
+if (!process.env.API_KEY) {
+  throw new Error("ERRO CRÍTICO: A variável de ambiente API_KEY não está definida.");
+}
 
-// Esquema para uma Receita Única
-const RECIPE_PROPERTIES = {
-  title: { type: Type.STRING, description: "Nome da receita" },
-  description: { type: Type.STRING, description: "Breve descrição do prato" },
-  ingredients: { 
-    type: Type.ARRAY, 
-    items: { type: Type.STRING },
-    description: "Lista de ingredientes com quantidades"
-  },
-  instructions: { 
-    type: Type.ARRAY, 
-    items: { type: Type.STRING },
-    description: "Passo a passo do preparo"
-  },
-  prepTime: { type: Type.STRING, description: "Tempo total (ex: 30 min)" },
-  difficulty: { type: Type.STRING, description: "Nível de dificuldade" },
-  calories: { type: Type.NUMBER, description: "Calorias estimadas por porção" },
-  macros: {
-    type: Type.OBJECT,
-    properties: {
-      protein: { type: Type.STRING, description: "Proteínas" },
-      carbs: { type: Type.STRING, description: "Carboidratos" },
-      fat: { type: Type.STRING, description: "Gorduras" }
-    },
-    required: ["protein", "carbs", "fat"]
-  }
-};
+// O modelo ideal para tarefas rápidas e JSON
+const MODEL_NAME = 'gemini-1.5-flash'; 
+
+// --- Schemas ---
 
 const RECIPE_SCHEMA = {
   type: Type.OBJECT,
-  properties: RECIPE_PROPERTIES,
+  properties: {
+    title: { type: Type.STRING },
+    description: { type: Type.STRING },
+    ingredients: { type: Type.ARRAY, items: { type: Type.STRING } },
+    instructions: { type: Type.ARRAY, items: { type: Type.STRING } },
+    prepTime: { type: Type.STRING },
+    difficulty: { type: Type.STRING },
+    calories: { type: Type.NUMBER },
+    macros: {
+      type: Type.OBJECT,
+      properties: {
+        protein: { type: Type.STRING },
+        carbs: { type: Type.STRING },
+        fat: { type: Type.STRING }
+      },
+      required: ["protein", "carbs", "fat"]
+    }
+  },
   required: ["title", "description", "ingredients", "instructions", "prepTime", "difficulty"]
 };
 
-/**
- * Analisa imagens da geladeira/despensa para extrair ingredientes.
- */
+// --- Funções ---
+
 export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string[]> => {
+  // O "!" garante ao TypeScript que a chave existe (já validamos no topo do arquivo)
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+  
   try {
-    // FIX: Combine image and text parts in a single array literal to avoid TypeScript inference errors when using .push()
     const parts = [
       ...imagesBase64.map(base64 => ({
         inlineData: {
           mimeType: "image/jpeg",
+          // Garante que o base64 está limpo (sem o prefixo data:image...)
           data: base64.includes(',') ? base64.split(',')[1] : base64
         }
       })),
-      { 
-        text: "Liste todos os ingredientes comestíveis visíveis nestas fotos. Retorne apenas os nomes dos ingredientes em um array JSON." 
-      }
+      { text: "Liste apenas os nomes dos ingredientes visíveis nestas fotos em um array JSON." }
     ];
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: { parts },
+      model: MODEL_NAME,
+      contents: { parts }, // Ajuste conforme a versão exata do SDK, mas 'parts' costuma ir dentro de contents
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -75,99 +71,85 @@ export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string
     const data = JSON.parse(response.text || "{}");
     return data.ingredients || [];
   } catch (error) {
-    console.error("Erro ao analisar imagem:", error);
-    throw new Error("Não foi possível identificar os ingredientes pela foto.");
+    console.error("Erro no analyzeFridgeImage:", error);
+    throw new Error("Erro ao analisar imagem.");
   }
 };
 
-/**
- * Gera uma única receita rápida baseada nos ingredientes disponíveis.
- */
 export const generateQuickRecipe = async (
   ingredients: string[], 
   allergies: string[], 
-  difficulty: Difficulty
+  difficulty: Difficulty,
+  goal: DietGoal
 ): Promise<Recipe> => {
-  try {
-    const prompt = `Crie uma receita criativa usando estes ingredientes: ${ingredients.join(", ")}. 
-                    Restrições (NÃO USE): ${allergies.join(", ")}. 
-                    Dificuldade desejada: ${difficulty}.`;
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+  
+  const prompt = `Crie 1 receita ${goal} usando: ${ingredients.join(", ")}. NÃO USE: ${allergies.join(", ")}. Dificuldade: ${difficulty}.`;
+  
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: { 
+      parts: [{ text: prompt }] // Formato mais seguro para o novo SDK
+    },
+    config: {
+      systemInstruction: "Você é o Chef.ai. Crie receitas práticas. Retorne JSON.",
+      responseMimeType: "application/json",
+      responseSchema: RECIPE_SCHEMA
+    }
+  });
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        systemInstruction: "Você é o Chef.ai. Crie receitas práticas e saborosas. Retorne APENAS o JSON estruturado.",
-        responseMimeType: "application/json",
-        responseSchema: RECIPE_SCHEMA
-      }
-    });
-
-    const recipeData = JSON.parse(response.text || "{}");
-    return {
-      ...recipeData,
-      id: crypto.randomUUID()
-    };
-  } catch (error) {
-    console.error("Erro ao gerar receita rápida:", error);
-    throw new Error("Erro ao criar sua receita. Tente remover alguns ingredientes.");
-  }
+  const parsed = JSON.parse(response.text || "{}");
+  return { ...parsed, id: crypto.randomUUID() };
 };
 
-/**
- * Gera um planejamento semanal completo (7 dias).
- */
 export const generateWeeklyMenu = async (
   ingredients: string[], 
   allergies: string[],
-  dietGoal: DietGoal = 'balanced'
+  dietGoal: DietGoal
 ): Promise<WeeklyMenu> => {
-  try {
-    const prompt = `Crie um cardápio semanal (7 dias, almoço e jantar) focado no objetivo: ${dietGoal}. 
-                    Ingredientes disponíveis: ${ingredients.join(", ")}. 
-                    Alergias/Restrições: ${allergies.join(", ")}.`;
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+  
+  const prompt = `Gere um cardápio semanal completo (7 dias, almoço e jantar) focado no objetivo: ${dietGoal}. 
+                  Ingredientes que eu tenho: ${ingredients.join(", ")}. 
+                  Evite estes ingredientes: ${allergies.join(", ")}.
+                  Use os ingredientes que eu tenho como base, mas pode sugerir outros para completar as receitas.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        systemInstruction: "Você é um Nutricionista e Chef experiente. Planeje refeições variadas. Retorne APENAS o JSON estruturado para 7 dias.",
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            shoppingList: { 
-              type: Type.ARRAY, 
-              items: { type: Type.STRING },
-              description: "Lista de itens extras necessários para comprar"
-            },
-            days: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  day: { type: Type.STRING },
-                  lunch: RECIPE_SCHEMA,
-                  dinner: RECIPE_SCHEMA
-                },
-                required: ["day", "lunch", "dinner"]
-              }
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: {
+      parts: [{ text: prompt }]
+    },
+    config: {
+      systemInstruction: "Você é um Chef e Nutricionista. Gere 14 refeições variadas. Retorne JSON estruturado com shoppingList e days.",
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          shoppingList: { type: Type.ARRAY, items: { type: Type.STRING } },
+          days: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                day: { type: Type.STRING },
+                lunch: RECIPE_SCHEMA,
+                dinner: RECIPE_SCHEMA
+              },
+              required: ["day", "lunch", "dinner"]
             }
-          },
-          required: ["shoppingList", "days"]
-        }
+          }
+        },
+        required: ["shoppingList", "days"]
       }
-    });
+    }
+  });
 
-    const menuData = JSON.parse(response.text || "{}");
-    return {
-      ...menuData,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      goal: dietGoal
-    };
-  } catch (error) {
-    console.error("Erro ao gerar cardápio semanal:", error);
-    throw new Error("Falha ao organizar sua semana. Verifique sua conexão.");
-  }
+  const menuData = JSON.parse(response.text || "{}");
+  
+  return {
+    ...menuData,
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    goal: dietGoal
+  };
 };

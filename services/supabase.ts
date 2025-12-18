@@ -38,18 +38,20 @@ export const getUserSession = async () => {
 };
 
 export const getUserProfile = async (userId: string): Promise<UserProfile> => {
-  // Tentamos buscar o perfil
   let { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', userId)
     .single();
 
-  // Se o perfil não existir (ex: erro na trigger ou usuário antigo), criamos um agora
   if (error || !data) {
+    const { data: sessionData } = await supabase.auth.getSession();
     const { data: newData, error: insertError } = await supabase
       .from('profiles')
-      .insert({ id: userId })
+      .insert({ 
+        id: userId,
+        email: sessionData.session?.user?.email 
+      })
       .select()
       .single();
     
@@ -67,6 +69,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
 
   return {
     id: data.id,
+    email: data.email,
     isPremium: data.is_premium,
     allergies: data.allergies || [],
     favorites: data.favorites || [],
@@ -109,10 +112,9 @@ export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<
     .select()
     .single();
     
-  if (error) {
-    console.error("Erro Supabase Insert:", error);
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
+
+  await supabase.rpc('increment_usage_weekly', { user_id: userId });
 
   return {
     ...data.data,

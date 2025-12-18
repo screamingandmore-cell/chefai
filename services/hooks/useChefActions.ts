@@ -56,23 +56,22 @@ export function useChefActions(user: UserProfile | null, session: any, onProfile
       const detected = await AIService.analyzeFridgeImage(imagesBase64);
       handleAddIngredients(detected);
     } catch (err: any) {
-      setError("Erro ao ler foto. Tente novamente.");
+      setError("Erro ao ler foto.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const generateQuick = async (difficulty: Difficulty): Promise<Recipe | null> => {
+  const generateQuick = async (difficulty: Difficulty, goal: DietGoal): Promise<Recipe | null> => {
     if (!session?.user || ingredients.length === 0) return null;
-    
     setIsLoading(true);
     setError(null);
     try {
-      const recipe = await AIService.generateQuickRecipe(ingredients, user?.allergies || [], difficulty);
+      const recipe = await AIService.generateQuickRecipe(ingredients, user?.allergies || [], difficulty, goal);
       onProfileRefresh();
       return recipe;
     } catch (err: any) {
-      setError(err.message || "Falha ao gerar receita.");
+      setError("Erro ao gerar receita.");
       return null;
     } finally {
       setIsLoading(false);
@@ -81,17 +80,16 @@ export function useChefActions(user: UserProfile | null, session: any, onProfile
 
   const generateWeekly = async (goal: DietGoal): Promise<WeeklyMenu | null> => {
     if (!session?.user || ingredients.length === 0) return null;
-
     setIsLoading(true);
     setError(null);
     try {
       const tempMenu = await AIService.generateWeeklyMenu(ingredients, user?.allergies || [], goal);
-      // O saveWeeklyMenu agora retorna o menu com o ID do banco
       const savedMenu = await SupabaseService.saveWeeklyMenu(session.user.id, tempMenu);
       onProfileRefresh();
       return savedMenu;
     } catch (err: any) {
-      setError(err.message || "Erro ao criar cardápio.");
+      console.error(err);
+      setError("Erro ao criar cardápio. Tente com menos ingredientes.");
       return null;
     } finally {
       setIsLoading(false);
@@ -100,7 +98,6 @@ export function useChefActions(user: UserProfile | null, session: any, onProfile
 
   return {
     ingredients,
-    setIngredients,
     isLoading,
     error,
     setError,

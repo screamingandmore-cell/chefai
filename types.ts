@@ -15,6 +15,15 @@ export const DIET_GOALS: Record<DietGoal, string> = {
   'cheap': '💸 Econômico'
 };
 
+// Define the SubscriptionPlan interface used in stripe services
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  price: number;
+  interval: string;
+  savings?: string;
+}
+
 export interface Recipe {
   id: string;
   title: string;
@@ -47,6 +56,7 @@ export interface WeeklyMenu {
 
 export interface UserProfile {
   id: string;
+  email?: string;
   isPremium: boolean;
   allergies: string[];
   favorites: string[];
@@ -60,20 +70,10 @@ export enum ViewState {
   HOME = 'HOME',
   FRIDGE = 'FRIDGE',
   WEEKLY_PLAN = 'WEEKLY_PLAN',
-  QUICK_RECIPE = 'QUICK_RECIPE',
-  SHOPPING_LIST = 'SHOPPING_LIST',
-  PREMIUM = 'PREMIUM',
-  PROFILE = 'PROFILE',
   RECIPE_DETAILS = 'RECIPE_DETAILS',
-  PRIVACY = 'PRIVACY',
+  SHOPPING_LIST = 'SHOPPING_LIST',
+  PROFILE = 'PROFILE',
+  MENU_HISTORY = 'MENU_HISTORY',
   TERMS = 'TERMS',
-  MENU_HISTORY = 'MENU_HISTORY'
-}
-
-export interface SubscriptionPlan {
-  id: 'monthly' | 'quarterly' | 'annual';
-  name: string;
-  price: number;
-  interval: string;
-  savings?: string;
+  PRIVACY = 'PRIVACY'
 }

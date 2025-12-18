@@ -101,7 +101,7 @@ export default function App() {
   }, [loadUserData]);
 
   const handleGenerateQuick = async () => {
-    const recipe = await generateQuick(difficulty);
+    const recipe = await generateQuick(difficulty, dietGoal);
     if (recipe) {
       setGeneratedRecipe(recipe);
       setView(ViewState.RECIPE_DETAILS);
@@ -141,6 +141,8 @@ export default function App() {
             onImageUpload={handleImageUpload}
             selectedDifficulty={difficulty}
             setSelectedDifficulty={setDifficulty}
+            dietGoal={dietGoal}
+            setDietGoal={setDietGoal}
             onGenerateQuick={handleGenerateQuick}
             onGenerateWeekly={handleGenerateWeekly}
             isLoading={isLoading}
@@ -153,19 +155,9 @@ export default function App() {
         return (
           <WeeklyPlanView 
             weeklyMenu={weeklyMenu}
-            ingredients={ingredients}
-            onAddIngredient={handleAddIngredients}
-            onRemoveIngredient={handleRemoveIngredient}
-            onImageUpload={handleImageUpload}
-            dietGoal={dietGoal}
-            setDietGoal={setDietGoal}
-            onGenerate={handleGenerateWeekly}
             onNavigate={setView}
             onSelectRecipe={(r) => { setGeneratedRecipe(r); setView(ViewState.RECIPE_DETAILS); }}
             onDeleteMenu={handleDeleteMenu}
-            isLoading={isLoading}
-            isPremium={user?.isPremium || false}
-            error={error}
           />
         );
       case ViewState.SHOPPING_LIST:
@@ -209,26 +201,6 @@ export default function App() {
           <h3 className="text-xl font-black text-gray-800 mb-2">Trabalhando nisso...</h3>
           <p className="text-gray-500 font-medium animate-pulse">{loadingMsg}</p>
         </div>
-      )}
-
-      {showLimitModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl">
-            <div className="text-4xl mb-4">💎</div>
-            <h3 className="text-xl font-bold mb-2">Limite Grátis Atingido</h3>
-            <p className="text-gray-500 text-sm mb-6">Para continuar gerando sem limites, escolha uma opção:</p>
-            <button onClick={() => { setView(ViewState.PREMIUM); setShowLimitModal(false); }} className="w-full bg-chef-green text-white font-bold py-4 rounded-2xl mb-3">👑 Ver Planos Premium</button>
-            <button onClick={() => { setShowLimitModal(false); setIsWatchingAd(true); }} className="w-full bg-gray-100 py-4 rounded-2xl text-sm font-bold text-gray-600">📺 Assistir Anúncio (1 uso)</button>
-          </div>
-        </div>
-      )}
-      
-      {isWatchingAd && (
-        <AdInterstitial onFinish={() => {
-          setIsWatchingAd(false);
-          if (pendingAction === 'quick') handleGenerateQuick();
-          if (pendingAction === 'weekly') handleGenerateWeekly();
-        }} />
       )}
     </Layout>
   );
