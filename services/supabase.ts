@@ -85,31 +85,27 @@ export const updatePreferences = async (userId: string, allergies: string[]): Pr
 };
 
 export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<void> => {
-  // Preparamos o payload de inserção
-  const insertPayload: any = {
+  // Criamos uma cópia limpa para não incluir campos nulos
+  const insertData: any = {
     user_id: userId,
     data: menu
   };
 
-  /**
-   * ELIMINAÇÃO DE ERRO:
-   * Se o menu.id existir e parecer um UUID (formato 8-4-4-4-12), nós enviamos.
-   * Se for nulo, vazio ou o fallback 'idx_...', nós NÃO enviamos a chave 'id'.
-   * Isso força o Supabase a usar o 'DEFAULT gen_random_uuid()' que você criou no SQL.
-   */
+  // REGRA DE ELIMINAÇÃO: 
+  // O banco de dados só usa o DEFAULT se a coluna 'id' estiver AUSENTE no insert.
+  // Se o menu.id não for um UUID legítimo (8-4-4-4-12), não enviamos a chave 'id'.
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   
   if (menu.id && uuidRegex.test(menu.id)) {
-    insertPayload.id = menu.id;
+    insertData.id = menu.id;
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('weekly_menus')
-    .insert(insertPayload)
-    .select(); // Selecionamos para caso queiramos o ID gerado pelo banco
+    .insert(insertData);
     
   if (error) {
-    console.error("Erro detalhado do Supabase:", error);
+    console.error("Erro ao salvar menu:", error);
     throw error;
   }
 };

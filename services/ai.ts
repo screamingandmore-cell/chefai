@@ -3,8 +3,9 @@ import { WeeklyMenu, Recipe, Difficulty, DietGoal } from "../types";
 import { supabase } from "./supabase";
 
 /**
- * Tenta gerar um UUID válido. 
- * Se falhar (ambiente inseguro), retorna uma string marcada que o supabase.ts filtrará.
+ * Gera um ID único. Tenta usar randomUUID do navegador.
+ * Se não for possível, retorna uma string que o supabase.ts ignorará, 
+ * forçando o banco a gerar um UUID real.
  */
 const generateId = (): string => {
   try {
@@ -12,13 +13,9 @@ const generateId = (): string => {
       return crypto.randomUUID();
     }
   } catch (e) {}
-  // Retorno que NÃO passa no Regex de UUID para forçar o DEFAULT no banco
-  return 'temp_' + Date.now(); 
+  return `temp_${Date.now()}`;
 };
 
-/**
- * Invoca a Edge Function que utiliza Gemini 3 Flash.
- */
 async function invokeChefApi(payload: any) {
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
