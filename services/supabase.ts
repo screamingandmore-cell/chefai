@@ -84,30 +84,35 @@ export const updatePreferences = async (userId: string, allergies: string[]): Pr
   if (error) throw error;
 };
 
-export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<void> => {
-  // Criamos uma cópia limpa para não incluir campos nulos
-  const insertData: any = {
-    user_id: userId,
-    data: menu
-  };
+/**
+ * SALVAR CARDÁPIO SEMANAL
+ * Estratégia de Produção: Nunca enviamos o ID no insert. 
+ * O PostgreSQL gera o ID via uuid_generate_v4().
+ */
+export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<WeeklyMenu> => {
+  // Removemos o ID do objeto menu para garantir que ele não vá como 'null' no JSON
+  const { id, ...menuWithoutId } = menu;
 
-  // REGRA DE ELIMINAÇÃO: 
-  // O banco de dados só usa o DEFAULT se a coluna 'id' estiver AUSENTE no insert.
-  // Se o menu.id não for um UUID legítimo (8-4-4-4-12), não enviamos a chave 'id'.
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  
-  if (menu.id && uuidRegex.test(menu.id)) {
-    insertData.id = menu.id;
-  }
-
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('weekly_menus')
-    .insert(insertData);
+    .insert({
+      user_id: userId,
+      data: menuWithoutId
+    })
+    .select()
+    .single();
     
   if (error) {
-    console.error("Erro ao salvar menu:", error);
+    console.error("Erro Supabase Insert:", error);
     throw error;
   }
+
+  // Retornamos o menu com o ID REAL gerado pelo banco de dados
+  return {
+    ...data.data,
+    id: data.id,
+    createdAt: data.created_at || new Date().toISOString()
+  };
 };
 
 export const deleteWeeklyMenu = async (menuId: string, userId: string): Promise<void> => {
@@ -123,10 +128,16 @@ export const deleteWeeklyMenu = async (menuId: string, userId: string): Promise<
 export const getWeeklyMenus = async (userId: string): Promise<WeeklyMenu[]> => {
   const { data, error } = await supabase
     .from('weekly_menus')
-    .select('data')
+    .select('id, data, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error || !data) return [];
-  return data.map(row => row.data);
+  
+  // Mapeamos os dados fundindo o ID da tabela no objeto de dados
+  return data.map(row => ({
+    ...row.data,
+    id: row.id,
+    createdAt: row.created_at
+  }));
 };

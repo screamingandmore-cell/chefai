@@ -85,10 +85,11 @@ export function useChefActions(user: UserProfile | null, session: any, onProfile
     setIsLoading(true);
     setError(null);
     try {
-      const menu = await AIService.generateWeeklyMenu(ingredients, user?.allergies || [], goal);
-      await SupabaseService.saveWeeklyMenu(session.user.id, menu);
+      const tempMenu = await AIService.generateWeeklyMenu(ingredients, user?.allergies || [], goal);
+      // O saveWeeklyMenu agora retorna o menu com o ID do banco
+      const savedMenu = await SupabaseService.saveWeeklyMenu(session.user.id, tempMenu);
       onProfileRefresh();
-      return menu;
+      return savedMenu;
     } catch (err: any) {
       setError(err.message || "Erro ao criar cardápio.");
       return null;

@@ -3,17 +3,15 @@ import { WeeklyMenu, Recipe, Difficulty, DietGoal } from "../types";
 import { supabase } from "./supabase";
 
 /**
- * Gera um ID único. Tenta usar randomUUID do navegador.
- * Se não for possível, retorna uma string que o supabase.ts ignorará, 
- * forçando o banco a gerar um UUID real.
+ * Gera um ID apenas para objetos locais (Receitas rápidas que não vão pro banco).
  */
-const generateId = (): string => {
+const generateLocalId = (): string => {
   try {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return crypto.randomUUID();
     }
   } catch (e) {}
-  return `temp_${Date.now()}`;
+  return `local_${Date.now()}`;
 };
 
 async function invokeChefApi(payload: any) {
@@ -56,7 +54,7 @@ export const generateQuickRecipe = async (
   
   return { 
     ...result, 
-    id: generateId() 
+    id: generateLocalId() 
   };
 };
 
@@ -72,10 +70,11 @@ export const generateWeeklyMenu = async (
     dietGoal
   });
 
+  // Não geramos ID aqui; o saveWeeklyMenu retornará o ID do banco
   const newMenu: WeeklyMenu = {
     shoppingList: result.shoppingList || [],
     days: result.days || [],
-    id: generateId(),
+    id: '', 
     createdAt: new Date().toISOString(),
     goal: dietGoal
   };
