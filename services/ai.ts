@@ -3,18 +3,17 @@ import { WeeklyMenu, Recipe, Difficulty, DietGoal } from "../types";
 import { supabase } from "./supabase";
 
 /**
- * Gerador de ID robusto. Tenta usar UUID nativo, senão gera uma string única.
- * Nunca retorna nulo.
+ * Tenta gerar um UUID válido. 
+ * Se falhar (ambiente inseguro), retorna uma string marcada que o supabase.ts filtrará.
  */
 const generateId = (): string => {
   try {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return crypto.randomUUID();
     }
-  } catch (e) {
-    console.warn("crypto.randomUUID não disponível, usando fallback.");
-  }
-  return 'idx_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+  } catch (e) {}
+  // Retorno que NÃO passa no Regex de UUID para forçar o DEFAULT no banco
+  return 'temp_' + Date.now(); 
 };
 
 /**
@@ -76,13 +75,10 @@ export const generateWeeklyMenu = async (
     dietGoal
   });
 
-  // Criamos o objeto garantindo que o ID seja gerado agora se a IA não mandou
-  const menuId = generateId();
-
   const newMenu: WeeklyMenu = {
     shoppingList: result.shoppingList || [],
     days: result.days || [],
-    id: menuId,
+    id: generateId(),
     createdAt: new Date().toISOString(),
     goal: dietGoal
   };

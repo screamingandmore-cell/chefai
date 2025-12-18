@@ -85,22 +85,31 @@ export const updatePreferences = async (userId: string, allergies: string[]): Pr
 };
 
 export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<void> => {
-  if (!menu.id) {
-    console.error("Tentativa de salvar cardápio sem ID", menu);
-    throw new Error("Erro interno: Cardápio sem identificador.");
+  // Preparamos o payload de inserção
+  const insertPayload: any = {
+    user_id: userId,
+    data: menu
+  };
+
+  /**
+   * ELIMINAÇÃO DE ERRO:
+   * Se o menu.id existir e parecer um UUID (formato 8-4-4-4-12), nós enviamos.
+   * Se for nulo, vazio ou o fallback 'idx_...', nós NÃO enviamos a chave 'id'.
+   * Isso força o Supabase a usar o 'DEFAULT gen_random_uuid()' que você criou no SQL.
+   */
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  
+  if (menu.id && uuidRegex.test(menu.id)) {
+    insertPayload.id = menu.id;
   }
 
-  // Explicitamos a inserção de cada coluna
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('weekly_menus')
-    .insert({ 
-      id: menu.id, 
-      user_id: userId, 
-      data: menu 
-    });
+    .insert(insertPayload)
+    .select(); // Selecionamos para caso queiramos o ID gerado pelo banco
     
   if (error) {
-    console.error("Erro ao salvar no Supabase:", error);
+    console.error("Erro detalhado do Supabase:", error);
     throw error;
   }
 };
