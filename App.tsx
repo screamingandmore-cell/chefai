@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout, AdInterstitial } from '@/components/Layout';
 import { ViewState, UserProfile, Recipe, WeeklyMenu, Difficulty, DietGoal } from '@/types';
 import * as SupabaseService from '@/services/supabase';
@@ -15,11 +15,19 @@ import { ProfileView } from '@/components/views/ProfileView';
 import { ShoppingListView } from '@/components/views/ShoppingListView';
 import { HistoryView } from '@/components/views/HistoryView';
 
+const LOADING_MESSAGES = [
+  "Chef está afiando as facas...",
+  "Escolhendo os melhores temperos...",
+  "Consultando o livro secreto de receitas...",
+  "Grelhando as ideias...",
+  "Quase pronto! O cheiro está ótimo...",
+];
+
 export default function App() {
   const [session, setSession] = useState<any>(null);
   const [view, setView] = useState<ViewState>(ViewState.HOME);
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
   
   const [allMenus, setAllMenus] = useState<WeeklyMenu[]>([]); 
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
@@ -33,16 +41,20 @@ export default function App() {
 
   const loadUserData = useCallback(async (userId: string) => {
     try {
-      const profile = await SupabaseService.getUserProfile(userId);
+      const [profile, menus] = await Promise.all([
+        SupabaseService.getUserProfile(userId),
+        SupabaseService.getWeeklyMenus(userId)
+      ]);
       setUser(profile);
-      const menus = await SupabaseService.getWeeklyMenus(userId);
       setAllMenus(menus);
-      if (menus.length > 0 && !weeklyMenu) setWeeklyMenu(menus[0]);
-    } catch (e) { console.error("Sync error", e); }
-  }, [weeklyMenu]);
+      if (menus.length > 0) setWeeklyMenu(menus[0]);
+    } catch (e) {
+      console.error("Erro no Sync inicial", e);
+    }
+  }, []);
 
   const handleProfileRefresh = useCallback(() => {
-    if (session?.user) loadUserData(session.user.id);
+    if (session?.user?.id) loadUserData(session.user.id);
   }, [session, loadUserData]);
 
   const {
@@ -58,75 +70,66 @@ export default function App() {
   } = useChefActions(user, session, handleProfileRefresh);
 
   useEffect(() => {
-    SupabaseService.getUserSession().then(setSession);
-    const { data: { subscription } } = SupabaseService.supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (!session) { setUser(null); setAllMenus([]); setWeeklyMenu(null); }
+    if (isLoading) {
+      const interval = setInterval(() => {
+        setLoadingMsg(LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]);
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    SupabaseService.getUserSession().then(s => {
+      setSession(s);
+      if (s?.user?.id) loadUserData(s.user.id);
     });
 
-    const handleStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', handleStatus);
-    window.addEventListener('offline', handleStatus);
+    const { data: { subscription } } = SupabaseService.supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (!newSession) {
+        setUser(null);
+        setAllMenus([]);
+        setWeeklyMenu(null);
+        setGeneratedRecipe(null);
+        setView(ViewState.HOME);
+      } else {
+        loadUserData(newSession.user.id);
+      }
+    });
 
-    return () => {
-      subscription.unsubscribe();
-      window.removeEventListener('online', handleStatus);
-      window.removeEventListener('offline', handleStatus);
-    };
-  }, []);
-
-  useEffect(() => { if (session?.user) loadUserData(session.user.id); }, [session, loadUserData]);
+    return () => subscription.unsubscribe();
+  }, [loadUserData]);
 
   const handleGenerateQuick = async () => {
-    if (!isOnline) {
-      setError("Sem conexão com a internet.");
-      return;
-    }
-    try {
-      const recipe = await generateQuick(difficulty);
-      if (recipe) {
-        setGeneratedRecipe(recipe);
-        setView(ViewState.RECIPE_DETAILS);
-      }
-    } catch (e: any) {
-      if (e.message === "LIMIT_REACHED") { 
-        setPendingAction('quick'); 
-        setShowLimitModal(true); 
-      }
+    const recipe = await generateQuick(difficulty);
+    if (recipe) {
+      setGeneratedRecipe(recipe);
+      setView(ViewState.RECIPE_DETAILS);
     }
   };
 
   const handleGenerateWeekly = async () => {
-    if (!isOnline) {
-      setError("Sem conexão com a internet.");
-      return;
-    }
-    try {
-      const menu = await generateWeekly(dietGoal);
-      if (menu) {
-        setWeeklyMenu(menu);
-        setAllMenus(prev => [menu, ...prev]);
-        setView(ViewState.WEEKLY_PLAN);
-      }
-    } catch (e: any) {
-      if (e.message === "LIMIT_REACHED") { 
-        setPendingAction('weekly'); 
-        setShowLimitModal(true); 
-      }
+    const menu = await generateWeekly(dietGoal);
+    if (menu) {
+      setWeeklyMenu(menu);
+      setAllMenus(prev => [menu, ...prev]);
+      setView(ViewState.WEEKLY_PLAN);
     }
   };
 
   const handleDeleteMenu = async (menuId: string) => {
-    if (!session?.user || !confirm("Apagar este cardápio?")) return;
+    if (!session?.user || !confirm("Deseja apagar este cardápio?")) return;
     try {
       await SupabaseService.deleteWeeklyMenu(menuId, session.user.id);
       const updated = allMenus.filter(m => m.id !== menuId);
       setAllMenus(updated);
       if (weeklyMenu?.id === menuId) setWeeklyMenu(updated[0] || null);
-    } catch (e: any) { alert("Erro ao excluir."); }
+    } catch (e) {
+      alert("Falha ao remover cardápio.");
+    }
   };
 
-  const renderView = () => {
+  const currentView = useMemo(() => {
     switch(view) {
       case ViewState.HOME: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={setView} />;
       case ViewState.FRIDGE:
@@ -182,28 +185,40 @@ export default function App() {
         return <ProfileView 
           user={user} 
           session={session} 
-          onLogout={() => SupabaseService.signOut()} 
+          onLogout={SupabaseService.signOut} 
           onUpdateUser={setUser} 
           onDeleteAccount={SupabaseService.deleteAccount} 
         />;
       default: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={setView} />;
     }
-  };
+  }, [view, user, weeklyMenu, ingredients, isLoading, error, difficulty, dietGoal, allMenus]);
 
   if (!session) return <AuthScreen onLogin={() => {}} />;
 
   return (
     <Layout activeView={view} onNavigate={setView} isPremium={user?.isPremium || false}>
-      {renderView()}
+      {currentView}
       
+      {isLoading && (
+        <div className="fixed inset-0 z-[300] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+          <div className="w-24 h-24 mb-8 relative">
+            <div className="absolute inset-0 border-4 border-chef-green/20 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-chef-green border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center text-4xl">👨‍🍳</div>
+          </div>
+          <h3 className="text-xl font-black text-gray-800 mb-2">Trabalhando nisso...</h3>
+          <p className="text-gray-500 font-medium animate-pulse">{loadingMsg}</p>
+        </div>
+      )}
+
       {showLimitModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-center">
-            <h3 className="text-xl font-bold mb-4">Limite Atingido</h3>
-            <p className="text-gray-500 mb-6">Assine o Premium ou assista um anúncio para continuar.</p>
-            <button onClick={() => setView(ViewState.PREMIUM)} className="w-full bg-yellow-500 text-white font-bold py-3 rounded-xl mb-3">👑 Ver Premium</button>
-            <button onClick={() => { setShowLimitModal(false); setIsWatchingAd(true); }} className="w-full bg-gray-100 py-3 rounded-xl text-sm">📺 Assistir Vídeo</button>
-            <button onClick={() => setShowLimitModal(false)} className="mt-4 text-xs text-gray-400">Depois</button>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl">
+            <div className="text-4xl mb-4">💎</div>
+            <h3 className="text-xl font-bold mb-2">Limite Grátis Atingido</h3>
+            <p className="text-gray-500 text-sm mb-6">Para continuar gerando sem limites, escolha uma opção:</p>
+            <button onClick={() => { setView(ViewState.PREMIUM); setShowLimitModal(false); }} className="w-full bg-chef-green text-white font-bold py-4 rounded-2xl mb-3">👑 Ver Planos Premium</button>
+            <button onClick={() => { setShowLimitModal(false); setIsWatchingAd(true); }} className="w-full bg-gray-100 py-4 rounded-2xl text-sm font-bold text-gray-600">📺 Assistir Anúncio (1 uso)</button>
           </div>
         </div>
       )}

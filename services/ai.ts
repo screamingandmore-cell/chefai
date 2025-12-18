@@ -2,9 +2,6 @@
 import { WeeklyMenu, Recipe, Difficulty, DietGoal } from "../types";
 import { supabase } from "./supabase";
 
-/**
- * Função utilitária para chamar a Edge Function do Chef.ai.
- */
 async function invokeChefApi(payload: any) {
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
@@ -17,7 +14,7 @@ async function invokeChefApi(payload: any) {
 
   if (error) {
     console.error("Erro na Edge Function Chef.ai:", error);
-    throw new Error(error.message || "Erro de conexão com o Chef.ai");
+    throw new Error("O Chef está ocupado ou sem internet. Tente novamente em instantes.");
   }
 
   if (data?.error === "TIMEOUT") {
@@ -25,7 +22,7 @@ async function invokeChefApi(payload: any) {
   }
   
   if (data?.error) {
-    throw new Error(data.message || "Erro no processamento da IA.");
+    throw new Error(data.message || "Não consegui criar essa receita. Tente mudar os ingredientes.");
   }
 
   return data;
@@ -43,7 +40,6 @@ export const generateQuickRecipe = async (
     difficulty
   });
   
-  // Receitas rápidas geram um ID local pois não são obrigatoriamente salvas no banco de imediato
   return { 
     ...result, 
     id: crypto.randomUUID() 
@@ -62,11 +58,10 @@ export const generateWeeklyMenu = async (
     dietGoal
   });
 
-  // Retornamos o objeto puro da IA. O ID será atribuído pelo Supabase ao salvar.
   return {
     shoppingList: result.shoppingList || [],
     days: result.days || [],
-    id: '', // Placeholder, será preenchido pelo saveWeeklyMenu
+    id: '', 
     createdAt: new Date().toISOString(),
     goal: dietGoal
   };
