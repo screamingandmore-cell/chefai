@@ -1,9 +1,8 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { WeeklyMenu, Recipe, Difficulty, DietGoal, DIET_GOALS } from "../types";
 
-// CORREÇÃO: Usar import.meta.env para Vite
-const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
-
+// Schema definitions
 const RECIPE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
@@ -40,11 +39,21 @@ REGRAS DE QUALIDADE:
 2. Modo de Preparo: Seja detalhado e instrutivo.
 3. Responda APENAS em JSON.`;
 
+/**
+ * Valida a existência da chave de API e retorna a instância do GoogleGenAI
+ */
+const getAIClient = () => {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    const errorMsg = "CRITICAL ERROR: A variável de ambiente VITE_GEMINI_API_KEY não foi encontrada. Verifique seu arquivo .env ou as configurações de ambiente no provedor de hospedagem (Vercel).";
+    console.error(errorMsg);
+    throw new Error("Chave de API do Gemini não configurada.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
+
 export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string[]> => {
-  // CORREÇÃO: Verificação de segurança
-  if (!API_KEY) throw new Error("API Key não encontrada (VITE_GOOGLE_API_KEY)");
-  
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
+  const ai = getAIClient();
   
   try {
     const parts: any[] = imagesBase64.map(base64 => ({
@@ -56,7 +65,7 @@ export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string
     parts.push({ text: "Analise cuidadosamente estas fotos e liste apenas os nomes dos ingredientes comestíveis encontrados em um array JSON chamado 'ingredients'." });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-exp', // Sugestão: Use o modelo mais recente se disponível, ou mantenha o seu
+      model: 'gemini-3-pro-image-preview',
       contents: { parts },
       config: {
         responseMimeType: "application/json",
@@ -84,8 +93,7 @@ export const generateQuickRecipe = async (
   difficulty: Difficulty,
   goal: DietGoal
 ): Promise<Recipe> => {
-  if (!API_KEY) throw new Error("API Key não encontrada");
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
+  const ai = getAIClient();
   
   let goalContext = `Objetivo: ${DIET_GOALS[goal]}.`;
   if (goal === 'chef_choice') {
@@ -96,7 +104,7 @@ export const generateQuickRecipe = async (
                   Evite absolutamente: ${allergies.join(", ")}. Nível de dificuldade: ${difficulty}.`;
   
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp', // Atualizado para flash-exp (mais rápido e barato) ou use o seu atual
+    model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
       systemInstruction: SYSTEM_PROMPT_CHEF,
@@ -115,8 +123,7 @@ export const generateWeeklyMenu = async (
   dietGoal: DietGoal,
   difficulty: Difficulty
 ): Promise<WeeklyMenu> => {
-  if (!API_KEY) throw new Error("API Key não encontrada");
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
+  const ai = getAIClient();
 
   let goalContext = `Focado em ${DIET_GOALS[dietGoal]}.`;
   if (dietGoal === 'chef_choice') {
@@ -127,7 +134,7 @@ export const generateWeeklyMenu = async (
                   Não use: ${allergies.join(", ")}. Nível de dificuldade: ${difficulty}.`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
       systemInstruction: `${SYSTEM_PROMPT_CHEF}\n\nPlaneje 14 refeições (7 dias, almoço e jantar). Responda em JSON com 'shoppingList' e 'days'.`,
