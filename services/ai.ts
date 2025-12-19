@@ -2,16 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { WeeklyMenu, Recipe, Difficulty, DietGoal, DIET_GOALS } from "../types";
 
-// Função para obter a chave de API respeitando as diretrizes do SDK e do ambiente local
-const getApiKey = () => {
-  // process.env.API_KEY é injetado automaticamente pelo ambiente
-  const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
-  if (!apiKey) {
-    console.error("Chave da API Gemini não encontrada no process.env.API_KEY ou .env");
-    return "";
-  }
-  return apiKey;
-};
+// Guidelines: The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+// Always instantiate GoogleGenAI right before making an API call.
 
 const RECIPE_SCHEMA = {
   type: Type.OBJECT,
@@ -50,8 +42,8 @@ REGRAS DE QUALIDADE:
 3. Responda APENAS em JSON.`;
 
 export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string[]> => {
-  const apiKey = getApiKey();
-  const ai = new GoogleGenAI({ apiKey });
+  // Guidelines: Instantiate GoogleGenAI with process.env.API_KEY right before usage.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   try {
     const parts: any[] = imagesBase64.map(base64 => ({
@@ -77,6 +69,7 @@ export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string
       }
     });
 
+    // Guidelines: Access the text output via .text property.
     const data = JSON.parse(response.text || "{}");
     return data.ingredients || [];
   } catch (error) {
@@ -91,8 +84,8 @@ export const generateQuickRecipe = async (
   difficulty: Difficulty,
   goal: DietGoal
 ): Promise<Recipe> => {
-  const apiKey = getApiKey();
-  const ai = new GoogleGenAI({ apiKey });
+  // Guidelines: Instantiate GoogleGenAI with process.env.API_KEY right before usage.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   let goalContext = `Objetivo: ${DIET_GOALS[goal]}.`;
   if (goal === 'chef_choice') {
@@ -112,6 +105,7 @@ export const generateQuickRecipe = async (
     }
   });
 
+  // Guidelines: Access the text output via .text property.
   const data = JSON.parse(response.text || "{}");
   return { ...data, id: crypto.randomUUID() };
 };
@@ -122,8 +116,8 @@ export const generateWeeklyMenu = async (
   dietGoal: DietGoal,
   difficulty: Difficulty
 ): Promise<WeeklyMenu> => {
-  const apiKey = getApiKey();
-  const ai = new GoogleGenAI({ apiKey });
+  // Guidelines: Instantiate GoogleGenAI with process.env.API_KEY right before usage.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   let goalContext = `Focado em ${DIET_GOALS[dietGoal]}.`;
   if (dietGoal === 'chef_choice') {
@@ -161,6 +155,7 @@ export const generateWeeklyMenu = async (
     }
   });
 
+  // Guidelines: Access the text output via .text property.
   const menuData = JSON.parse(response.text || "{}");
   return {
     ...menuData,

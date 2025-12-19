@@ -16,6 +16,7 @@ import { ProfileView } from '@/components/views/ProfileView';
 import { ShoppingListView } from '@/components/views/ShoppingListView';
 import { HistoryView } from '@/components/views/HistoryView';
 import { PremiumView } from '@/components/views/PremiumView';
+import { TermsView } from '@/components/views/TermsView';
 
 const LOADING_MESSAGES = [
   "Chef está afiando as facas...",
@@ -31,7 +32,10 @@ export default function App() {
   const [viewHistory, setViewHistory] = useState<ViewState[]>([ViewState.HOME]);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
-  const [hasApiKey, setHasApiKey] = useState(false);
+  
+  // Guideline: The application must not ask the user for the API key.
+  // Assume process.env.API_KEY is pre-configured and accessible.
+  const hasApiKey = true;
   
   const [allMenus, setAllMenus] = useState<WeeklyMenu[]>([]); 
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
@@ -63,13 +67,6 @@ export default function App() {
         setViewHistory(prev => [...prev, to]);
       }
       setView(to);
-    }
-  }, []);
-
-  // Verificação simples da API Key via variáveis de ambiente
-  useEffect(() => {
-    if ((import.meta as any).env.VITE_GEMINI_API_KEY) {
-      setHasApiKey(true);
     }
   }, []);
 
@@ -133,11 +130,6 @@ export default function App() {
   }, [loadUserData, navigate]);
 
   const handleGenerateQuick = async () => {
-    if (!hasApiKey) {
-      alert("Chave de API não configurada. Verifique seu arquivo .env");
-      return;
-    }
-    
     const recipe = await generateQuick(difficulty, dietGoal);
     if (recipe) {
       setGeneratedRecipe(recipe);
@@ -146,11 +138,6 @@ export default function App() {
   };
 
   const handleGenerateWeekly = async () => {
-    if (!hasApiKey) {
-      alert("Chave de API não configurada. Verifique seu arquivo .env");
-      return;
-    }
-    
     const menu = await generateWeekly(difficulty, dietGoal);
     if (menu) {
       setWeeklyMenu(menu);
@@ -163,6 +150,7 @@ export default function App() {
     switch(view) {
       case ViewState.HOME: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={navigate} />;
       case ViewState.PREMIUM: return <PremiumView user={user} onNavigate={navigate} />;
+      case ViewState.TERMS: return <TermsView onBack={() => navigate(-1)} />;
       case ViewState.FRIDGE:
         return (
           <FridgeView 

@@ -1,33 +1,87 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Política de Privacidade - Chef.ai</title>
+    <title>Termos de Uso e Privacidade - Chef.ai</title>
+    <!-- Google Fonts para Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&display=swap" rel="stylesheet">
+    
+    <!-- Script do Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'chef-green': '#10b981',
+                    },
+                    fontFamily: {
+                        'heading': ['Poppins', 'sans-serif'],
+                    },
+                    animation: {
+                        'slideUp': 'slideUp 0.4s ease-out',
+                    },
+                    keyframes: {
+                        slideUp: {
+                            '0%': { transform: 'translateY(15px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
-        h1 { color: #10b981; }
-        section { margin-bottom: 20px; }
+        body { background-color: #FDFDFD; }
     </style>
 </head>
-<body>
-    <h1>Política de Privacidade do Chef.ai</h1>
-    <p>Última atualização: Dezembro de 2024</p>
+<body class="antialiased text-gray-900">
+    <div class="animate-slideUp bg-white min-h-screen pb-20">
+        <header class="sticky top-0 bg-white/80 backdrop-blur-md z-10 px-6 py-4 border-b border-gray-50 flex items-center gap-4">
+            <a href="/" class="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl text-gray-400 hover:text-gray-900 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                </svg>
+            </a>
+            <h2 class="font-heading font-black text-lg text-gray-900">Termos de Uso</h2>
+        </header>
 
-    <section>
-        <h3>1. Coleta de Informações</h3>
-        <p>Coletamos seu endereço de e-mail para criar sua conta e salvar suas preferências. Não compartilhamos seus dados com terceiros para fins de marketing.</p>
-    </section>
+        <div class="px-8 py-10 max-w-2xl mx-auto space-y-8 text-gray-700">
+            <section class="space-y-4">
+                <h3 class="text-sm font-black text-chef-green uppercase tracking-widest">1. Uso de Inteligência Artificial</h3>
+                <p class="text-sm leading-relaxed font-medium">
+                    O Chef.ai utiliza modelos avançados de Inteligência Artificial para gerar sugestões de receitas e cardápios. Embora nos esforcemos para fornecer informações precisas, a IA pode cometer erros, sugerir combinações incomuns ou omitir detalhes críticos de segurança alimentar.
+                </p>
+            </section>
 
-    <section>
-        <h3>2. Dados do Usuário</h3>
-        <p>Os ingredientes que você insere e as receitas geradas são armazenados de forma segura em nosso banco de dados. Fotos enviadas para análise são processadas por IA e descartadas imediatamente após a identificação dos ingredientes.</p>
-    </section>
+            <section class="space-y-4">
+                <h3 class="text-sm font-black text-red-500 uppercase tracking-widest">2. Alergias e Restrições Alimentares</h3>
+                <p class="text-sm leading-relaxed font-bold bg-red-50 p-4 rounded-2xl border border-red-100">
+                    É de inteira responsabilidade do usuário verificar todos os ingredientes sugeridos pela IA antes do consumo. O Chef.ai não se responsabiliza por reações alérgicas ou problemas de saúde decorrentes do uso das sugestões geradas.
+                </p>
+            </section>
 
-    <section>
-        <h3>3. Exclusão de Conta</h3>
-        <p>Você pode solicitar a exclusão total dos seus dados a qualquer momento entrando em contato pelo suporte na loja de aplicativos.</p>
-    </section>
+            <section class="space-y-4">
+                <h3 class="text-sm font-black text-chef-green uppercase tracking-widest">3. Assinatura Premium</h3>
+                <p class="text-sm leading-relaxed font-medium">
+                    A versão Premium oferece recursos adicionais processados através do Stripe. O cancelamento pode ser feito a qualquer momento através do Portal do Cliente. Reembolsos seguem a política padrão das lojas de aplicativos ou do processador de pagamentos.
+                </p>
+            </section>
+
+            <section class="space-y-4">
+                <h3 class="text-sm font-black text-chef-green uppercase tracking-widest">4. Coleta de Dados</h3>
+                <p class="text-sm leading-relaxed font-medium">
+                    Coletamos seu e-mail para sincronização de conta e preferências. Fotos da geladeira são processadas temporariamente e não são armazenadas permanentemente após a análise dos ingredientes.
+                </p>
+            </section>
+
+            <div class="pt-10 text-center border-t border-gray-50">
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Atualizado em Março de 2025</p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

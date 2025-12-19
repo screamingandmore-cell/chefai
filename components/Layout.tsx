@@ -110,14 +110,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate
 
       <main ref={mainRef} className="flex-1 overflow-y-auto pt-6 scroll-smooth no-scrollbar relative min-h-0">
         {children}
-
-        <div className="mt-24 text-center pb-20 opacity-30 no-print">
-          <div className="flex justify-center gap-8 text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">
-             <button onClick={() => window.location.href = 'https://chefai-zl8v.vercel.app/?action=profile'} className="hover:text-gray-900 transition-colors">Termos / Excluir</button>
-             <button onClick={() => window.open('https://chefai-zl8v.vercel.app/privacy.html', '_blank')} className="hover:text-gray-900 transition-colors">Privacidade</button>
-          </div>
-          <p className="text-[10px] text-gray-400 mt-3 font-semibold">© 2025 Chef.ai Studio • Premium Kitchen IA</p>
-        </div>
       </main>
 
       {/* Menu Flutuante Glass Floating */}
