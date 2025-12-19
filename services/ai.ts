@@ -1,9 +1,8 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { WeeklyMenu, Recipe, Difficulty, DietGoal, DIET_GOALS } from "../types";
 
-// Guidelines: The API key must be obtained exclusively from the environment variable process.env.API_KEY.
-// Always instantiate GoogleGenAI right before making an API call.
+// CORREÇÃO: Usar import.meta.env para Vite
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
 const RECIPE_SCHEMA = {
   type: Type.OBJECT,
@@ -42,8 +41,10 @@ REGRAS DE QUALIDADE:
 3. Responda APENAS em JSON.`;
 
 export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string[]> => {
-  // Guidelines: Instantiate GoogleGenAI with process.env.API_KEY right before usage.
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // CORREÇÃO: Verificação de segurança
+  if (!API_KEY) throw new Error("API Key não encontrada (VITE_GOOGLE_API_KEY)");
+  
+  const ai = new GoogleGenAI({ apiKey: API_KEY });
   
   try {
     const parts: any[] = imagesBase64.map(base64 => ({
@@ -55,7 +56,7 @@ export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string
     parts.push({ text: "Analise cuidadosamente estas fotos e liste apenas os nomes dos ingredientes comestíveis encontrados em um array JSON chamado 'ingredients'." });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview',
+      model: 'gemini-2.0-flash-exp', // Sugestão: Use o modelo mais recente se disponível, ou mantenha o seu
       contents: { parts },
       config: {
         responseMimeType: "application/json",
@@ -69,7 +70,6 @@ export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string
       }
     });
 
-    // Guidelines: Access the text output via .text property.
     const data = JSON.parse(response.text || "{}");
     return data.ingredients || [];
   } catch (error) {
@@ -84,8 +84,8 @@ export const generateQuickRecipe = async (
   difficulty: Difficulty,
   goal: DietGoal
 ): Promise<Recipe> => {
-  // Guidelines: Instantiate GoogleGenAI with process.env.API_KEY right before usage.
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  if (!API_KEY) throw new Error("API Key não encontrada");
+  const ai = new GoogleGenAI({ apiKey: API_KEY });
   
   let goalContext = `Objetivo: ${DIET_GOALS[goal]}.`;
   if (goal === 'chef_choice') {
@@ -96,7 +96,7 @@ export const generateQuickRecipe = async (
                   Evite absolutamente: ${allergies.join(", ")}. Nível de dificuldade: ${difficulty}.`;
   
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.0-flash-exp', // Atualizado para flash-exp (mais rápido e barato) ou use o seu atual
     contents: prompt,
     config: {
       systemInstruction: SYSTEM_PROMPT_CHEF,
@@ -105,7 +105,6 @@ export const generateQuickRecipe = async (
     }
   });
 
-  // Guidelines: Access the text output via .text property.
   const data = JSON.parse(response.text || "{}");
   return { ...data, id: crypto.randomUUID() };
 };
@@ -116,8 +115,8 @@ export const generateWeeklyMenu = async (
   dietGoal: DietGoal,
   difficulty: Difficulty
 ): Promise<WeeklyMenu> => {
-  // Guidelines: Instantiate GoogleGenAI with process.env.API_KEY right before usage.
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  if (!API_KEY) throw new Error("API Key não encontrada");
+  const ai = new GoogleGenAI({ apiKey: API_KEY });
 
   let goalContext = `Focado em ${DIET_GOALS[dietGoal]}.`;
   if (dietGoal === 'chef_choice') {
@@ -128,7 +127,7 @@ export const generateWeeklyMenu = async (
                   Não use: ${allergies.join(", ")}. Nível de dificuldade: ${difficulty}.`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.0-flash-exp',
     contents: prompt,
     config: {
       systemInstruction: `${SYSTEM_PROMPT_CHEF}\n\nPlaneje 14 refeições (7 dias, almoço e jantar). Responda em JSON com 'shoppingList' e 'days'.`,
@@ -155,7 +154,6 @@ export const generateWeeklyMenu = async (
     }
   });
 
-  // Guidelines: Access the text output via .text property.
   const menuData = JSON.parse(response.text || "{}");
   return {
     ...menuData,
