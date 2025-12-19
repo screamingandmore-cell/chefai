@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
-import { UserProfile } from '../../types';
-import * as SupabaseService from '../../services/supabase';
+import React from 'react';
+import { ViewState, UserProfile } from '../../types';
 
 const STRIPE_PORTAL_URL = import.meta.env.VITE_STRIPE_PORTAL_URL || 'https://billing.stripe.com/p/login/SEU_LINK_AQUI';
 
@@ -11,171 +10,114 @@ interface ProfileViewProps {
   onLogout: () => void;
   onUpdateUser: (u: UserProfile | null) => void;
   onDeleteAccount: () => void;
+  onNavigate: (view: ViewState) => void;
 }
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ user, session, onLogout, onUpdateUser, onDeleteAccount }) => {
-  const [allergyInput, setAllergyInput] = useState('');
-
-  const sanitizeInput = (text: string) => {
-    // Remove caracteres especiais que podem ser usados para injeção ou quebrar o layout
-    return text.replace(/[<>{}\[\]\\\/|*&^%$#@!]/g, '').trim();
-  };
-
-  const handleAddAllergy = async () => {
-    if (!allergyInput.trim() || !user || !session?.user) return;
-    
-    // Divide a entrada caso o usuário digite vários itens separados por vírgula ou ponto e vírgula
-    const rawItems = allergyInput.split(/[,;\n]+/);
-    
-    const newSanitizedAllergies = rawItems
-      .map(item => sanitizeInput(item))
-      .filter(item => 
-        item.length > 1 && 
-        item.length <= 30 && 
-        !user.allergies.includes(item)
-      );
-
-    if (newSanitizedAllergies.length === 0) {
-      setAllergyInput('');
-      return;
+export const ProfileView: React.FC<ProfileViewProps> = ({ user, session, onLogout, onDeleteAccount, onNavigate }) => {
+  const menuItems = [
+    { 
+      label: 'Histórico de Planos', 
+      icon: '🕒', 
+      action: () => onNavigate(ViewState.MENU_HISTORY) 
+    },
+    { 
+      label: 'Termos e Privacidade', 
+      icon: '📜', 
+      action: () => window.open('https://chefai-zl8v.vercel.app/privacy.html', '_blank') 
+    },
+    { 
+      label: 'Sair da Conta', 
+      icon: '🚪', 
+      action: onLogout,
+      danger: true 
     }
-
-    const updatedAllergies = [...(user.allergies || []), ...newSanitizedAllergies];
-    const updatedUser = { ...user, allergies: updatedAllergies };
-    
-    // Atualização otimista na UI
-    onUpdateUser(updatedUser);
-    setAllergyInput('');
-    
-    // Sincronização com o banco de dados
-    try {
-      await SupabaseService.updatePreferences(session.user.id, updatedUser.allergies);
-    } catch (error) {
-      console.error("Erro ao salvar preferências:", error);
-      // Aqui poderíamos reverter o estado se necessário, mas para UX simplificada mantemos o log
-    }
-  };
-
-  const handleRemoveAllergy = async (index: number) => {
-    if (!user || !session?.user) return;
-    const updatedAllergies = user.allergies.filter((_, i) => i !== index);
-    const updatedUser = { ...user, allergies: updatedAllergies };
-    
-    onUpdateUser(updatedUser);
-    await SupabaseService.updatePreferences(session.user.id, updatedUser.allergies);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddAllergy();
-    }
-  };
+  ];
 
   return (
-    <div className="space-y-6 animate-slideUp">
-       <div className="flex justify-between items-end">
-         <div>
-           <h2 className="text-2xl font-bold text-gray-800">Meu Perfil</h2>
-           <p className="text-sm text-gray-500">Gerencie sua conta e restrições</p>
+    <div className="space-y-8 animate-slideUp pb-10">
+       {/* Cabeçalho Centralizado */}
+       <div className="flex flex-col items-center pt-6 px-4">
+         <div className="w-24 h-24 bg-gray-50 rounded-[2.5rem] flex items-center justify-center text-4xl shadow-soft border-4 border-white mb-4">
+           👤
          </div>
-         {user?.isPremium && (
-           <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-200">
-             Premium 👑
-           </span>
-         )}
+         <h2 className="font-heading text-xl font-black text-gray-900 truncate max-w-full">
+           {session?.user?.email?.split('@')[0]}
+         </h2>
+         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
+           {session?.user?.email}
+         </p>
        </div>
 
-       <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+       {/* Status Premium Compacto */}
+       <div className="px-2">
+         <div className={`p-6 rounded-[2.5rem] border shadow-soft flex items-center justify-between transition-all ${
+           user?.isPremium ? 'bg-amber-50 border-amber-100' : 'bg-white border-gray-100'
+         }`}>
            <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center text-xl shadow-inner">👤</div>
+             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${
+               user?.isPremium ? 'bg-amber-100' : 'bg-gray-50'
+             }`}>
+               {user?.isPremium ? '👑' : '🔥'}
+             </div>
              <div>
-               <p className="font-bold text-gray-800 break-all">{session?.user?.email}</p>
-               <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Membro desde {new Date(session?.user?.created_at).toLocaleDateString()}</p>
+               <h3 className="font-black text-gray-900 text-sm">
+                 {user?.isPremium ? 'Assinante Premium' : 'Plano Gratuito'}
+               </h3>
+               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                 {user?.isPremium ? 'Acesso total liberado' : 'Funcionalidades limitadas'}
+               </p>
              </div>
            </div>
-       </div>
-       
-       <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-         <h3 className="font-bold mb-1 text-gray-700 flex items-center gap-2">
-           <span className="text-red-500">⚠️</span> Restrições Alimentares
-         </h3>
-         <p className="text-[10px] text-gray-400 mb-4 font-medium leading-tight">
-           A IA evitará estes itens em todas as receitas geradas. Adicione um por um ou separe por vírgula.
-         </p>
-         
-         <div className="flex gap-2 mb-4">
-           <label htmlFor="allergy-input" className="sr-only">Digite uma restrição alimentar</label>
-           <input 
-             id="allergy-input"
-             aria-label="Adicionar restrição alimentar"
-             maxLength={50}
-             value={allergyInput}
-             onChange={(e) => setAllergyInput(e.target.value)}
-             onKeyDown={handleKeyDown}
-             placeholder="Ex: Camarão, Glúten..."
-             className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-200 bg-gray-50/50"
-           />
-           <button 
-             onClick={handleAddAllergy} 
-             className="bg-red-500 text-white font-bold px-4 rounded-xl hover:bg-red-600 transition-all active:scale-95 shadow-sm"
-           >
-             +
-           </button>
-         </div>
-         
-         <div className="flex flex-wrap gap-2 min-h-[40px]">
-           {user?.allergies?.length === 0 && (
-             <p className="text-gray-300 text-[11px] italic py-2">Nenhuma restrição cadastrada.</p>
+           
+           {user?.isPremium ? (
+             <button 
+               onClick={() => window.location.href = STRIPE_PORTAL_URL}
+               className="bg-white border border-amber-200 text-amber-600 p-2.5 rounded-xl shadow-sm hover:bg-amber-50 transition-colors"
+             >
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-9.75 0h9.75" />
+               </svg>
+             </button>
+           ) : (
+             <button 
+               onClick={() => onNavigate(ViewState.PREMIUM)}
+               className="bg-amber-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-100 active:scale-95 transition-all"
+             >
+               Upgrade
+             </button>
            )}
-           {user?.allergies?.map((allergy, i) => (
-             <span key={i} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 border border-red-100 animate-fadeIn">
-               {allergy} 
-               <button 
-                 onClick={() => handleRemoveAllergy(i)}
-                 className="hover:text-red-800 transition-colors px-1"
-                 aria-label={`Remover ${allergy}`}
-               >
-                 ×
-               </button>
-             </span>
-           ))}
          </div>
        </div>
 
-       <div className="space-y-3">
-         {user?.isPremium ? (
-           <button 
-             onClick={() => {
-                if (STRIPE_PORTAL_URL.includes('SEU_LINK_AQUI')) {
-                    alert("Link do portal de faturamento não configurado.");
-                    return;
-                }
-                window.location.href = STRIPE_PORTAL_URL;
-             }}
-             className="w-full bg-white text-gray-700 font-bold py-4 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm"
-           >
-             💳 Gerenciar Assinatura
-           </button>
-         ) : (
-           <div className="bg-chef-green/5 border border-chef-green/10 p-4 rounded-2xl text-center">
-             <p className="text-xs text-chef-green font-bold mb-2">Gostando do Chef.ai?</p>
-             <p className="text-[10px] text-gray-500 mb-3">Remova anúncios e libere análise por câmera e macros detalhados.</p>
-             <button className="text-chef-green font-black text-xs uppercase tracking-widest underline">Ver Planos Premium</button>
-           </div>
-         )}
-         
-         <button onClick={onLogout} className="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-lg">Sair da Conta</button>
-         
-         <div className="pt-6 text-center">
-           <button onClick={() => {
-             if(confirm("Tem certeza? Esta ação apagará permanentemente todos os seus cardápios e dados.")) {
-               onDeleteAccount();
-             }
-           }} className="text-red-400 text-[10px] font-bold uppercase tracking-widest hover:text-red-600 transition-colors">
-             Excluir minha conta permanentemente
-           </button>
+       {/* Menu de Opções Estilo Lista */}
+       <div className="px-2">
+         <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-soft overflow-hidden">
+            {menuItems.map((item, idx) => (
+              <button 
+                key={idx}
+                onClick={item.action}
+                className={`w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-all border-b border-gray-50 last:border-0 ${item.danger ? 'text-red-500' : 'text-gray-700'}`}
+              >
+                <div className="flex items-center gap-4">
+                  <span className="text-xl">{item.icon}</span>
+                  <span className="font-bold text-sm">{item.label}</span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 opacity-30">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+            ))}
          </div>
+       </div>
+
+       <div className="text-center pt-4">
+         <button 
+          onClick={onDeleteAccount} 
+          className="text-[10px] text-gray-300 font-bold uppercase tracking-[0.2em] hover:text-red-400 transition-colors"
+         >
+           Excluir conta permanentemente
+         </button>
+         <p className="text-[9px] text-gray-300 mt-2 font-bold">Chef.ai v1.2.0 • 2025</p>
        </div>
     </div>
   );

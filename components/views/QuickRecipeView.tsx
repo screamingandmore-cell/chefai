@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { ViewState, UserProfile, DietGoal, DIET_GOALS } from '../../types';
+import { Difficulty, DietGoal, DIET_GOALS, ViewState, UserProfile } from '../../types';
 import { IngredientInput } from '../shared/IngredientInput';
 import * as SupabaseService from '../../services/supabase';
 
-interface FridgeViewProps {
+interface QuickRecipeViewProps {
   user: UserProfile | null;
   session: any;
   onUpdateUser: (u: UserProfile | null) => void;
@@ -12,16 +12,17 @@ interface FridgeViewProps {
   onAddIngredient: (items: string[]) => void;
   onRemoveIngredient: (index: number) => void;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  selectedDifficulty: Difficulty;
+  setSelectedDifficulty: (d: Difficulty) => void;
   dietGoal: DietGoal;
   setDietGoal: (g: DietGoal) => void;
+  onGenerateQuick: () => void;
   isLoading: boolean;
   isPremium: boolean;
-  onNavigate: (view: ViewState) => void;
-  onGenerateQuick: () => void;
-  onGenerateWeekly: () => void;
+  onNavigate: (v: ViewState) => void;
 }
 
-export const FridgeView: React.FC<FridgeViewProps> = ({
+export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
   user,
   session,
   onUpdateUser,
@@ -29,24 +30,17 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
   onAddIngredient,
   onRemoveIngredient,
   onImageUpload,
+  selectedDifficulty,
+  setSelectedDifficulty,
   dietGoal,
   setDietGoal,
+  onGenerateQuick,
   isLoading,
   isPremium,
-  onNavigate,
-  onGenerateQuick,
-  onGenerateWeekly
+  onNavigate
 }) => {
   const [allergyInput, setAllergyInput] = useState('');
   const hasIngredients = ingredients.length > 0;
-
-  const handleAction = (action: () => void) => {
-    if (!hasIngredients) {
-      alert("Sua geladeira está vazia! Adicione alguns ingredientes primeiro para o Chef poder trabalhar. 👨‍🍳");
-      return;
-    }
-    action();
-  };
 
   const handleAddAllergy = async () => {
     const input = allergyInput.trim();
@@ -56,7 +50,6 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
     let current = "";
     let depth = 0;
 
-    // Lógica de separação inteligente (idêntica à de ingredientes)
     for (let i = 0; i < input.length; i++) {
       const char = input[i];
       if (char === '(') depth++;
@@ -79,7 +72,7 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
       .map(item => item.trim())
       .filter(item => 
         item.length >= 1 && 
-        item.length <= 500 && // Atualizado para 500
+        item.length <= 500 &&
         !user.allergies.includes(item)
       );
 
@@ -108,7 +101,7 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
   };
 
   return (
-    <div className="space-y-8 relative animate-slideUp pb-20">
+    <div className="space-y-8 relative animate-slideUp pb-40">
       <div className="px-2">
         <button 
           onClick={() => onNavigate(ViewState.HOME)}
@@ -116,13 +109,13 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
         >
           <span>←</span> Início
         </button>
-        <h3 className="text-gray-400 text-[11px] font-bold uppercase tracking-[0.2em] mb-1 font-sans">Estoque de Alimentos</h3>
-        <h2 className="font-heading text-3xl font-black text-gray-900 leading-tight">Minha Geladeira ❄️</h2>
+        <h3 className="text-gray-400 text-[11px] font-bold uppercase tracking-[0.2em] mb-1 font-sans">IA na Cozinha</h3>
+        <h2 className="font-heading text-3xl font-black text-gray-900 leading-tight">Receita Rápida ⚡</h2>
       </div>
 
-      {/* Gerenciador de Ingredientes */}
+      {/* Input de Ingredientes */}
       <div className="bg-white p-7 rounded-[2.5rem] shadow-soft border border-gray-100/50">
-        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6 px-1">O que você tem disponível?</p>
+        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6 px-1">O que temos para hoje?</p>
         <IngredientInput 
           ingredients={ingredients}
           onAdd={onAddIngredient}
@@ -133,12 +126,12 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
         />
       </div>
 
-      {/* Seção de Restrições e Alergias */}
+      {/* Restrições e Alergias */}
       <div className="bg-white p-7 rounded-[2.5rem] shadow-soft border border-gray-100/50">
         <div className="flex items-center gap-2 mb-2 px-1">
           <p className="text-[11px] font-bold text-red-400 uppercase tracking-widest">Restrições e Alergias 🚫</p>
         </div>
-        <p className="text-[10px] text-gray-400 mb-6 px-1 leading-tight">Itens que o Chef nunca deve usar em suas receitas.</p>
+        <p className="text-[10px] text-gray-400 mb-6 px-1 leading-tight">Itens que o Chef nunca deve usar.</p>
         
         <div className="flex gap-2 mb-6">
           <input 
@@ -146,7 +139,7 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
             onChange={(e) => setAllergyInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddAllergy()}
             placeholder="Ex: Camarão, Glúten..."
-            maxLength={500} // Definido exatamente para 500
+            maxLength={500}
             className="flex-1 bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-red-100 outline-none font-medium"
           />
           <button 
@@ -162,7 +155,7 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
             <p className="w-full text-center text-[10px] font-bold text-gray-300 uppercase tracking-widest py-4">Nenhuma restrição</p>
           )}
           {user?.allergies?.map((allergy, i) => (
-            <span key={i} className="bg-red-50 text-red-600 px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center gap-2 border border-red-100 animate-fadeIn">
+            <span key={i} className="bg-red-50 text-red-600 px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center gap-2 border border-red-100 animate-fadeIn shadow-sm">
               <span className="max-w-[150px] truncate">{allergy}</span>
               <button 
                 onClick={() => handleRemoveAllergy(i)} 
@@ -175,72 +168,79 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
         </div>
       </div>
 
-      {/* Seção de Objetivo (Duplicada para Fluxo Direto) */}
-      <div className="bg-white p-7 rounded-[2.5rem] border border-gray-100 shadow-soft">
-        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6 px-1">Seu Objetivo</p>
-        <div className="grid grid-cols-2 gap-3">
-          {(Object.keys(DIET_GOALS) as DietGoal[]).map((goal) => {
-             const isChefChoice = goal === 'chef_choice';
-             const isSelected = dietGoal === goal;
-             
-             let buttonStyle = isSelected 
-               ? 'border-chef-green bg-emerald-50 text-chef-green shadow-md' 
-               : 'border-gray-50 bg-gray-50/50 text-gray-400';
-             
-             if (isChefChoice && isSelected) {
-               buttonStyle = 'border-amber-500 bg-yellow-100 text-amber-800 shadow-lg shadow-amber-100/50 scale-105';
-             }
+      {/* Controles de Estilo e Dificuldade */}
+      <div className="bg-white p-7 rounded-[2.5rem] border border-gray-100 shadow-soft space-y-10">
+        <div>
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6 px-1">Seu Objetivo</p>
+          <div className="grid grid-cols-2 gap-3">
+            {(Object.keys(DIET_GOALS) as DietGoal[]).map((goal) => {
+               const isChefChoice = goal === 'chef_choice';
+               const isSelected = dietGoal === goal;
+               
+               let buttonStyle = isSelected 
+                 ? 'border-chef-green bg-emerald-50 text-chef-green shadow-md' 
+                 : 'border-gray-50 bg-gray-50/50 text-gray-400';
+               
+               if (isChefChoice && isSelected) {
+                 buttonStyle = 'border-amber-500 bg-yellow-100 text-amber-800 shadow-lg shadow-amber-100/50 scale-105';
+               }
 
-             return (
-               <button 
-                 key={goal}
-                 onClick={() => setDietGoal(goal)}
-                 className={`p-4 rounded-[1.5rem] border-2 text-center transition-all relative overflow-hidden active:scale-95 ${buttonStyle}`}
-               >
-                 <span className="font-black text-[10px] uppercase tracking-wider">
-                   {DIET_GOALS[goal]}
-                 </span>
-               </button>
-             );
-          })}
+               return (
+                 <button 
+                   key={goal}
+                   onClick={() => setDietGoal(goal)}
+                   className={`p-4 rounded-[1.5rem] border-2 text-center transition-all relative overflow-hidden active:scale-95 ${buttonStyle}`}
+                 >
+                   <span className="font-black text-[10px] uppercase tracking-wider">
+                     {DIET_GOALS[goal]}
+                   </span>
+                 </button>
+               );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-5 px-1">Dificuldade</p>
+          <div className="flex bg-gray-100/50 rounded-2xl p-1.5 border border-gray-100 shadow-inner">
+            {[Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD].map((diff) => (
+              <button 
+                key={diff} 
+                onClick={() => setSelectedDifficulty(diff)} 
+                className={`flex-1 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                  selectedDifficulty === diff 
+                    ? 'bg-chef-green text-white shadow-lg shadow-emerald-100' 
+                    : 'text-gray-400'
+                }`}
+              >
+                {diff}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Botões de Ação Direta */}
-      <div className="px-2 space-y-3">
-        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ações Rápidas</p>
-        <div className="grid grid-cols-2 gap-3">
-          <button 
-            onClick={() => handleAction(onGenerateQuick)}
-            disabled={isLoading}
-            className={`font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${
-              isLoading 
-                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
-                : 'bg-chef-orange/10 text-chef-orange border-chef-orange/20 hover:bg-chef-orange/20'
-            }`}
-          >
-            {isLoading ? (
-              <><div className="w-3 h-3 border-2 border-chef-orange border-t-transparent rounded-full animate-spin"></div> Gerando...</>
-            ) : (
-              <>⚡ Receita Rápida</>
-            )}
-          </button>
-          <button 
-            onClick={() => handleAction(onGenerateWeekly)}
-            disabled={isLoading}
-            className={`font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${
-              isLoading 
-                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
-                : 'bg-chef-green/10 text-chef-green border-chef-green/20 hover:bg-chef-green/20'
-            }`}
-          >
-            {isLoading ? (
-              <><div className="w-3 h-3 border-2 border-chef-green border-t-transparent rounded-full animate-spin"></div> Planejando...</>
-            ) : (
-              <>📅 Plano Semanal</>
-            )}
-          </button>
-        </div>
+      {/* Botão de Ação */}
+      <div className="px-2">
+        <button 
+          onClick={onGenerateQuick} 
+          disabled={isLoading || !hasIngredients} 
+          className="w-full bg-gradient-to-r from-chef-orange to-rose-500 text-white font-black py-6 rounded-[2rem] shadow-xl shadow-orange-100 hover:brightness-105 disabled:opacity-30 transition-all active:scale-95 text-[12px] uppercase tracking-[0.2em] flex items-center justify-center gap-3"
+        >
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Preparando...</span>
+            </div>
+          ) : (
+            <><span>🍳</span> Gerar Receita Agora</>
+          )}
+        </button>
+        {!hasIngredients && (
+          <p className="text-center text-[10px] text-red-400 font-bold uppercase mt-4 animate-pulse">
+            Adicione ingredientes primeiro!
+          </p>
+        )}
       </div>
     </div>
   );

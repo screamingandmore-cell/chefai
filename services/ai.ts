@@ -1,8 +1,18 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { WeeklyMenu, Recipe, Difficulty, DietGoal } from "../types";
+import { WeeklyMenu, Recipe, Difficulty, DietGoal, DIET_GOALS } from "../types";
 
-// Recipe JSON schema for model constraints
+// Função para obter a chave de API respeitando as diretrizes do SDK e do ambiente local
+const getApiKey = () => {
+  // process.env.API_KEY é injetado automaticamente pelo ambiente
+  const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error("Chave da API Gemini não encontrada no process.env.API_KEY ou .env");
+    return "";
+  }
+  return apiKey;
+};
+
 const RECIPE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
@@ -13,6 +23,8 @@ const RECIPE_SCHEMA = {
     prepTime: { type: Type.STRING },
     difficulty: { type: Type.STRING },
     calories: { type: Type.NUMBER },
+    chefTip: { type: Type.STRING },
+    error: { type: Type.STRING },
     macros: {
       type: Type.OBJECT,
       properties: {
@@ -26,22 +38,32 @@ const RECIPE_SCHEMA = {
   required: ["title", "description", "ingredients", "instructions", "prepTime", "difficulty"]
 };
 
+const SYSTEM_PROMPT_CHEF = `Você é um Chef de Cozinha renomado, amigável e detalhista. 
+Sua missão é criar receitas incríveis usando os ingredientes fornecidos.
+
+REGRAS DE SEGURANÇA:
+- Se os itens forem perigosos, tóxicos ou não comestíveis: NÃO GERE A RECEITA. Retorne o campo "error".
+
+REGRAS DE QUALIDADE:
+1. Quantidades: NUNCA liste apenas o ingrediente. Invente quantidades realistas.
+2. Modo de Preparo: Seja detalhado e instrutivo.
+3. Responda APENAS em JSON.`;
+
 export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string[]> => {
-  // Always use a new instance with a cast to string for the API_KEY to satisfy TypeScript
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+  const apiKey = getApiKey();
+  const ai = new GoogleGenAI({ apiKey });
+  
   try {
-    const parts = [
-      ...imagesBase64.map(base64 => ({
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: base64.includes(',') ? base64.split(',')[1] : base64
-        }
-      })),
-      { text: "Liste apenas os nomes dos ingredientes visíveis nestas fotos em um array JSON." }
-    ];
+    const parts: any[] = imagesBase64.map(base64 => ({
+      inlineData: {
+        mimeType: "image/jpeg",
+        data: base64.includes(',') ? base64.split(',')[1] : base64
+      }
+    }));
+    parts.push({ text: "Analise cuidadosamente estas fotos e liste apenas os nomes dos ingredientes comestíveis encontrados em um array JSON chamado 'ingredients'." });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-image-preview',
       contents: { parts },
       config: {
         responseMimeType: "application/json",
@@ -55,12 +77,11 @@ export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string
       }
     });
 
-    // Fix: provide fallback for string | undefined
     const data = JSON.parse(response.text || "{}");
     return data.ingredients || [];
   } catch (error) {
-    console.error("AI Analysis Error:", error);
-    throw new Error("Erro ao analisar imagem.");
+    console.error("Erro na análise de imagem:", error);
+    throw error;
   }
 };
 
@@ -70,40 +91,53 @@ export const generateQuickRecipe = async (
   difficulty: Difficulty,
   goal: DietGoal
 ): Promise<Recipe> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-  const prompt = `Crie 1 receita ${goal} usando: ${ingredients.join(", ")}. NÃO USE: ${allergies.join(", ")}. Dificuldade: ${difficulty}.`;
+  const apiKey = getApiKey();
+  const ai = new GoogleGenAI({ apiKey });
+  
+  let goalContext = `Objetivo: ${DIET_GOALS[goal]}.`;
+  if (goal === 'chef_choice') {
+    goalContext = "O usuário escolheu 'A Escolha do Chef'. IGNORE restrições de calorias ou dietas específicas (a menos que haja alergias). Seu único objetivo é criar a receita MAIS DELICIOSA, CRIATIVA e SABOROSA possível com esses ingredientes. Use técnicas de alta gastronomia se possível.";
+  }
+
+  const prompt = `${goalContext} Use principalmente: ${ingredients.join(", ")}. 
+                  Evite absolutamente: ${allergies.join(", ")}. Nível de dificuldade: ${difficulty}.`;
   
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
-      systemInstruction: "Você é o Chef.ai. Crie receitas práticas. Retorne JSON.",
+      systemInstruction: SYSTEM_PROMPT_CHEF,
       responseMimeType: "application/json",
       responseSchema: RECIPE_SCHEMA
     }
   });
 
-  // Fix: provide fallback for string | undefined
-  const text = response.text || "{}";
-  return { ...JSON.parse(text), id: crypto.randomUUID() };
+  const data = JSON.parse(response.text || "{}");
+  return { ...data, id: crypto.randomUUID() };
 };
 
 export const generateWeeklyMenu = async (
   ingredients: string[], 
   allergies: string[],
-  dietGoal: DietGoal
+  dietGoal: DietGoal,
+  difficulty: Difficulty
 ): Promise<WeeklyMenu> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-  const prompt = `Gere um cardápio semanal completo (7 dias, almoço e jantar) focado no objetivo: ${dietGoal}. 
-                  Ingredientes que eu tenho: ${ingredients.join(", ")}. 
-                  Evite estes ingredientes: ${allergies.join(", ")}.
-                  Use os ingredientes que eu tenho como base, mas pode sugerir outros para completar as receitas.`;
+  const apiKey = getApiKey();
+  const ai = new GoogleGenAI({ apiKey });
+
+  let goalContext = `Focado em ${DIET_GOALS[dietGoal]}.`;
+  if (dietGoal === 'chef_choice') {
+    goalContext = "O usuário escolheu 'A Escolha do Chef' para a semana. IGNORE restrições de dietas específicas. Seu único objetivo é criar um plano MAIS GASTRONÔMICO, DELICIOSO e CRIATIVO possível com esses ingredientes. Use técnicas de alta gastronomia se possível.";
+  }
+
+  const prompt = `Planeje um cardápio semanal completo ${goalContext} usando: ${ingredients.join(", ")}. 
+                  Não use: ${allergies.join(", ")}. Nível de dificuldade: ${difficulty}.`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
-      systemInstruction: "Você é um Chef e Nutricionista. Gere 14 refeições variadas. Seja extremamente preciso e conciso para não exceder limites. Retorne JSON estruturado com shoppingList e days.",
+      systemInstruction: `${SYSTEM_PROMPT_CHEF}\n\nPlaneje 14 refeições (7 dias, almoço e jantar). Responda em JSON com 'shoppingList' e 'days'.`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -127,14 +161,7 @@ export const generateWeeklyMenu = async (
     }
   });
 
-  // Fix: provide fallback for string | undefined
-  const text = response.text || "{}";
-  const menuData = JSON.parse(text);
-  
-  if (!menuData.days || !Array.isArray(menuData.days)) {
-    throw new Error("Resposta do modelo inválida para o cardápio semanal.");
-  }
-
+  const menuData = JSON.parse(response.text || "{}");
   return {
     ...menuData,
     id: crypto.randomUUID(),

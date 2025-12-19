@@ -1,12 +1,17 @@
 
 import { SubscriptionPlan } from "../types";
 
-// Configuração de Links de Pagamento Direto (Payment Links)
+// Configuração de Chave Pública (caso necessário para loadStripe no futuro)
+export const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+
+// Configuração de Links de Pagamento Direto (Stripe Payment Links)
 const PAYMENT_LINKS = {
-  monthly: process.env.VITE_STRIPE_PRICE_MONTHLY,
-  quarterly: process.env.VITE_STRIPE_PRICE_QUARTERLY,
-  annual: process.env.VITE_STRIPE_PRICE_ANNUAL,
+  monthly: import.meta.env.VITE_STRIPE_PRICE_MONTHLY,
+  quarterly: import.meta.env.VITE_STRIPE_PRICE_QUARTERLY,
+  annual: import.meta.env.VITE_STRIPE_PRICE_ANNUAL,
 };
+
+export const STRIPE_PORTAL_URL = import.meta.env.VITE_STRIPE_PORTAL_URL;
 
 export const PLANS: SubscriptionPlan[] = [
   { id: 'monthly', name: 'Mensal', price: 9.90, interval: 'mês' },
@@ -14,51 +19,14 @@ export const PLANS: SubscriptionPlan[] = [
   { id: 'annual', name: 'Anual', price: 99.90, interval: 'ano', savings: '20%' },
 ];
 
-// Gera apenas a string da URL para usar em tags <a href>
-export const getPaymentLink = (planId: string, userEmail?: string): string => {
-  const paymentUrl = PAYMENT_LINKS[planId as keyof typeof PAYMENT_LINKS];
-
-  // Validações básicas
-  if (!paymentUrl) return '#error-config';
-  if (!paymentUrl.startsWith('http')) return '#error-format';
-
-  try {
-    const finalUrl = new URL(paymentUrl);
-    if (userEmail) {
-      finalUrl.searchParams.append('prefilled_email', userEmail);
-    }
-    return finalUrl.toString();
-  } catch (e) {
-    return '#error-url';
-  }
-};
-
 export const initiateCheckout = async (planId: string, userEmail?: string): Promise<boolean> => {
   try {
     const paymentUrl = PAYMENT_LINKS[planId as keyof typeof PAYMENT_LINKS];
 
-    // 1. Validação: Verifica se a variável existe
     if (!paymentUrl) {
-      alert(`ERRO DE CONFIGURAÇÃO (.env):\n\nNão encontrei o link para o plano '${planId}'.\nVerifique se o arquivo .env tem a variável VITE_STRIPE_PRICE_${planId.toUpperCase()} preenchida.`);
+      alert(`Erro: Link para o plano '${planId}' não configurado no .env (VITE_STRIPE_PRICE_...)`);
       return false;
     }
-
-    // 2. Validação: Garante que é um LINK (https) e não um ID (price_)
-    if (!paymentUrl.startsWith('http')) {
-      alert(
-        `ERRO DE FORMATO NO .ENV:\n\n` +
-        `O valor atual "${paymentUrl.substring(0, 15)}..." parece ser um ID antigo ou inválido.\n` +
-        `Agora o sistema usa LINKS DE PAGAMENTO.\n\n` +
-        `SOLUÇÃO:\n` +
-        `1. Apague esse valor do seu .env\n` +
-        `2. Vá no Stripe > Produtos > Preços > "Criar link de pagamento"\n` +
-        `3. Copie o link (começa com https://buy.stripe.com/)\n` +
-        `4. Cole no .env e REINICIE o servidor.`
-      );
-      return false;
-    }
-
-    console.log(`Redirecionando para pagamento: ${paymentUrl}`);
 
     const finalUrl = new URL(paymentUrl);
     if (userEmail) {

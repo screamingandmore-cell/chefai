@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Layout, AdInterstitial } from '@/components/Layout';
+import { Layout } from '@/components/Layout';
 import { ViewState, UserProfile, Recipe, WeeklyMenu, Difficulty, DietGoal } from '@/types';
 import * as SupabaseService from '@/services/supabase';
 import { useChefActions } from '@/services/hooks/useChefActions';
@@ -9,11 +9,13 @@ import { useChefActions } from '@/services/hooks/useChefActions';
 import { AuthScreen } from '@/components/AuthScreen';
 import { HomeView } from '@/components/views/HomeView';
 import { FridgeView } from '@/components/views/FridgeView';
+import { QuickRecipeView } from '@/components/views/QuickRecipeView';
 import { WeeklyPlanView } from '@/components/views/WeeklyPlanView';
 import { RecipeDetailsView } from '@/components/views/RecipeDetailsView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { ShoppingListView } from '@/components/views/ShoppingListView';
 import { HistoryView } from '@/components/views/HistoryView';
+import { PremiumView } from '@/components/views/PremiumView';
 
 const LOADING_MESSAGES = [
   "Chef está afiando as facas...",
@@ -26,18 +28,50 @@ const LOADING_MESSAGES = [
 export default function App() {
   const [session, setSession] = useState<any>(null);
   const [view, setView] = useState<ViewState>(ViewState.HOME);
+  const [viewHistory, setViewHistory] = useState<ViewState[]>([ViewState.HOME]);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
+  const [hasApiKey, setHasApiKey] = useState(false);
   
   const [allMenus, setAllMenus] = useState<WeeklyMenu[]>([]); 
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
-  const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.EASY);
+  const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.MEDIUM);
   const [dietGoal, setDietGoal] = useState<DietGoal>('balanced');
 
-  const [showLimitModal, setShowLimitModal] = useState(false);
-  const [isWatchingAd, setIsWatchingAd] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'quick' | 'weekly' | null>(null);
+  // Função de navegação simulando behavior do Router
+  const navigate = useCallback((to: ViewState | number) => {
+    if (typeof to === 'number') {
+      if (to === -1) {
+        setViewHistory(prev => {
+          if (prev.length <= 1) {
+            setView(ViewState.HOME);
+            return [ViewState.HOME];
+          }
+          const newHistory = [...prev];
+          newHistory.pop();
+          const prevView = newHistory[newHistory.length - 1];
+          setView(prevView);
+          return newHistory;
+        });
+      }
+    } else {
+      const isMainView = [ViewState.HOME, ViewState.FRIDGE, ViewState.WEEKLY_PLAN, ViewState.PROFILE].includes(to);
+      if (isMainView) {
+        setViewHistory([to]);
+      } else {
+        setViewHistory(prev => [...prev, to]);
+      }
+      setView(to);
+    }
+  }, []);
+
+  // Verificação simples da API Key via variáveis de ambiente
+  useEffect(() => {
+    if ((import.meta as any).env.VITE_GEMINI_API_KEY) {
+      setHasApiKey(true);
+    }
+  }, []);
 
   const loadUserData = useCallback(async (userId: string) => {
     try {
@@ -60,8 +94,6 @@ export default function App() {
   const {
     ingredients,
     isLoading,
-    error,
-    setError,
     handleAddIngredients,
     handleRemoveIngredient,
     handleImageUpload,
@@ -91,50 +123,71 @@ export default function App() {
         setAllMenus([]);
         setWeeklyMenu(null);
         setGeneratedRecipe(null);
-        setView(ViewState.HOME);
+        navigate(ViewState.HOME);
       } else {
         loadUserData(newSession.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [loadUserData]);
+  }, [loadUserData, navigate]);
 
   const handleGenerateQuick = async () => {
+    if (!hasApiKey) {
+      alert("Chave de API não configurada. Verifique seu arquivo .env");
+      return;
+    }
+    
     const recipe = await generateQuick(difficulty, dietGoal);
     if (recipe) {
       setGeneratedRecipe(recipe);
-      setView(ViewState.RECIPE_DETAILS);
+      navigate(ViewState.RECIPE_DETAILS);
     }
   };
 
   const handleGenerateWeekly = async () => {
-    const menu = await generateWeekly(dietGoal);
+    if (!hasApiKey) {
+      alert("Chave de API não configurada. Verifique seu arquivo .env");
+      return;
+    }
+    
+    const menu = await generateWeekly(difficulty, dietGoal);
     if (menu) {
       setWeeklyMenu(menu);
       setAllMenus(prev => [menu, ...prev]);
-      setView(ViewState.WEEKLY_PLAN);
-    }
-  };
-
-  const handleDeleteMenu = async (menuId: string) => {
-    if (!session?.user || !confirm("Deseja apagar este cardápio?")) return;
-    try {
-      await SupabaseService.deleteWeeklyMenu(menuId, session.user.id);
-      const updated = allMenus.filter(m => m.id !== menuId);
-      setAllMenus(updated);
-      if (weeklyMenu?.id === menuId) setWeeklyMenu(updated[0] || null);
-    } catch (e) {
-      alert("Falha ao remover cardápio.");
+      navigate(ViewState.WEEKLY_PLAN);
     }
   };
 
   const currentView = useMemo(() => {
     switch(view) {
-      case ViewState.HOME: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={setView} />;
+      case ViewState.HOME: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={navigate} />;
+      case ViewState.PREMIUM: return <PremiumView user={user} onNavigate={navigate} />;
       case ViewState.FRIDGE:
         return (
           <FridgeView 
+            user={user}
+            session={session}
+            onUpdateUser={setUser}
+            ingredients={ingredients}
+            onAddIngredient={handleAddIngredients}
+            onRemoveIngredient={handleRemoveIngredient}
+            onImageUpload={handleImageUpload}
+            dietGoal={dietGoal}
+            setDietGoal={setDietGoal}
+            isLoading={isLoading}
+            isPremium={user?.isPremium || false}
+            onNavigate={navigate}
+            onGenerateQuick={handleGenerateQuick}
+            onGenerateWeekly={handleGenerateWeekly}
+          />
+        );
+      case ViewState.QUICK_RECIPE:
+        return (
+          <QuickRecipeView 
+            user={user}
+            session={session}
+            onUpdateUser={setUser}
             ingredients={ingredients}
             onAddIngredient={handleAddIngredients}
             onRemoveIngredient={handleRemoveIngredient}
@@ -144,35 +197,30 @@ export default function App() {
             dietGoal={dietGoal}
             setDietGoal={setDietGoal}
             onGenerateQuick={handleGenerateQuick}
-            onGenerateWeekly={handleGenerateWeekly}
             isLoading={isLoading}
             isPremium={user?.isPremium || false}
-            error={error}
-            onErrorDismiss={() => setError(null)}
+            onNavigate={navigate}
           />
         );
       case ViewState.WEEKLY_PLAN:
         return (
           <WeeklyPlanView 
             weeklyMenu={weeklyMenu}
-            onNavigate={setView}
-            onSelectRecipe={(r) => { setGeneratedRecipe(r); setView(ViewState.RECIPE_DETAILS); }}
-            onDeleteMenu={handleDeleteMenu}
+            onNavigate={navigate}
+            onSelectRecipe={(r) => { setGeneratedRecipe(r); navigate(ViewState.RECIPE_DETAILS); }}
+            onDeleteMenu={() => {}} 
+            dietGoal={dietGoal}
+            setDietGoal={setDietGoal}
+            selectedDifficulty={difficulty}
+            setSelectedDifficulty={setDifficulty}
+            onGenerateWeekly={handleGenerateWeekly}
+            isLoading={isLoading}
           />
         );
       case ViewState.SHOPPING_LIST:
-        return <ShoppingListView menu={weeklyMenu} onBack={() => setView(ViewState.WEEKLY_PLAN)} />;
-      case ViewState.MENU_HISTORY:
-        return (
-          <HistoryView 
-            menus={allMenus} 
-            onSelect={(m) => { setWeeklyMenu(m); setView(ViewState.WEEKLY_PLAN); }} 
-            onDelete={handleDeleteMenu}
-            onBack={() => setView(ViewState.WEEKLY_PLAN)}
-          />
-        );
+        return <ShoppingListView menu={weeklyMenu} onBack={() => navigate(-1)} />;
       case ViewState.RECIPE_DETAILS: 
-        return <RecipeDetailsView recipe={generatedRecipe} isPremium={user?.isPremium || false} onBack={() => setView(ViewState.FRIDGE)} />;
+        return <RecipeDetailsView recipe={generatedRecipe} isPremium={user?.isPremium || false} onBack={() => navigate(-1)} />;
       case ViewState.PROFILE: 
         return <ProfileView 
           user={user} 
@@ -180,15 +228,28 @@ export default function App() {
           onLogout={SupabaseService.signOut} 
           onUpdateUser={setUser} 
           onDeleteAccount={SupabaseService.deleteAccount} 
+          onNavigate={navigate}
         />;
-      default: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={setView} />;
+      case ViewState.MENU_HISTORY:
+        return <HistoryView 
+          menus={allMenus} 
+          onSelect={(m) => { setWeeklyMenu(m); navigate(ViewState.WEEKLY_PLAN); }}
+          onDelete={(id) => {
+            if (session?.user?.id) {
+              SupabaseService.deleteWeeklyMenu(id, session.user.id);
+              setAllMenus(prev => prev.filter(m => m.id !== id));
+            }
+          }}
+          onBack={() => navigate(-1)}
+        />;
+      default: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={navigate} />;
     }
-  }, [view, user, weeklyMenu, ingredients, isLoading, error, difficulty, dietGoal, allMenus]);
+  }, [view, user, weeklyMenu, allMenus, ingredients, isLoading, difficulty, dietGoal, session, handleAddIngredients, handleRemoveIngredient, handleImageUpload, handleGenerateQuick, handleGenerateWeekly, navigate]);
 
   if (!session) return <AuthScreen onLogin={() => {}} />;
 
   return (
-    <Layout activeView={view} onNavigate={setView} isPremium={user?.isPremium || false}>
+    <Layout activeView={view} onNavigate={navigate} isPremium={user?.isPremium || false}>
       {currentView}
       
       {isLoading && (

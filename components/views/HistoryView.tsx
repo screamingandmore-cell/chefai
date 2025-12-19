@@ -58,16 +58,19 @@ interface HistoryViewProps {
 export const HistoryView: React.FC<HistoryViewProps> = ({ menus, onSelect, onDelete, onBack }) => {
   return (
     <div className="animate-slideUp space-y-6">
-      <button onClick={onBack} className="text-gray-500 flex items-center gap-1 hover:text-gray-800 transition-all font-medium">
+      <button 
+        onClick={onBack} 
+        className="text-gray-500 flex items-center gap-1 hover:text-gray-800 transition-all font-bold text-sm px-2"
+      >
         <span>←</span> Voltar
       </button>
 
-      <div className="mb-2">
+      <div className="mb-2 px-2">
         <h2 className="text-2xl font-bold text-gray-800">Histórico de Planos</h2>
         <p className="text-sm text-gray-400">Cardápios salvos na sua conta.</p>
       </div>
 
-      <div className="space-y-4 pb-10">
+      <div className="space-y-4 pb-10 px-2">
         {menus.length === 0 ? (
           <div className="bg-white p-16 rounded-3xl border border-dashed border-gray-200 text-center">
             <span className="text-5xl block mb-6">🗓️</span>

@@ -1,6 +1,6 @@
+
 import React from 'react';
 import { ViewState, UserProfile, WeeklyMenu } from '../../types';
-import { AdBanner } from '../Layout';
 
 interface HomeViewProps {
   user: UserProfile | null;
@@ -10,40 +10,83 @@ interface HomeViewProps {
 
 export const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate }) => {
   return (
-    <div className="space-y-6 animate-slideUp">
-      <div className="bg-gradient-to-r from-chef-green to-teal-500 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="relative z-10">
-          <h2 className="text-3xl font-black mb-2">O que vamos cozinhar hoje?</h2>
-          <p className="text-white/80 text-sm mb-6 font-medium">Use o que você tem e evite desperdícios.</p>
-          <button onClick={() => onNavigate(ViewState.FRIDGE)} className="bg-white text-chef-green px-8 py-4 rounded-2xl font-black shadow-lg hover:scale-105 transition-transform active:scale-95">
-            Abrir minha Geladeira
-          </button>
-        </div>
-        <div className="absolute top-0 right-0 p-4 opacity-10 text-8xl">🍳</div>
+    <div className="space-y-8 animate-slideUp">
+      <div className="px-2">
+        <h3 className="text-gray-400 text-[11px] font-bold uppercase tracking-[0.2em] mb-1 font-sans">Bem-vindo ao</h3>
+        <h2 className="font-heading text-4xl font-black text-gray-900 leading-tight">Chef<span className="text-chef-green">.ai</span></h2>
       </div>
 
+      {/* Grid de Ações Principais */}
       <div className="grid grid-cols-2 gap-4">
-        <button onClick={() => onNavigate(ViewState.FRIDGE)} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center gap-3 hover:shadow-md transition-shadow active:scale-95">
-          <span className="text-4xl bg-orange-50 p-4 rounded-2xl">⚡</span>
-          <span className="font-bold text-gray-800 text-sm">Receita Rápida</span>
-        </button>
-        <button onClick={() => onNavigate(ViewState.WEEKLY_PLAN)} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center gap-3 hover:shadow-md transition-shadow active:scale-95">
-          <span className="text-4xl bg-blue-50 p-4 rounded-2xl">📅</span>
-          <span className="font-bold text-gray-800 text-sm">Cardápio Auto</span>
-        </button>
+        {/* Botão Receita Rápida */}
+        <div 
+          onClick={() => onNavigate(ViewState.QUICK_RECIPE)}
+          className="bg-gradient-to-br from-chef-orange to-rose-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-orange-100 relative overflow-hidden cursor-pointer group active:scale-95 transition-all flex flex-col justify-between aspect-square"
+        >
+          <div className="relative z-10">
+            <span className="text-3xl mb-2 block">⚡</span>
+            <h2 className="font-heading text-lg font-black leading-tight">Receita<br/>Rápida</h2>
+          </div>
+          <div className="relative z-10 text-[10px] font-bold uppercase tracking-wider opacity-80">Cozinhe Agora</div>
+          <div className="absolute -bottom-4 -right-4 text-8xl opacity-10 grayscale brightness-200 select-none pointer-events-none group-hover:scale-110 transition-transform">🍳</div>
+        </div>
+
+        {/* Botão Cardápio Semanal - Agora redireciona para a Geladeira */}
+        <div 
+          onClick={() => onNavigate(ViewState.FRIDGE)}
+          className="bg-gradient-to-br from-chef-green to-emerald-700 rounded-[2.5rem] p-6 text-white shadow-xl shadow-emerald-100 relative overflow-hidden cursor-pointer group active:scale-95 transition-all flex flex-col justify-between aspect-square"
+        >
+          <div className="relative z-10">
+            <span className="text-3xl mb-2 block">📅</span>
+            <h2 className="font-heading text-lg font-black leading-tight">Cardápio<br/>Semanal</h2>
+          </div>
+          <div className="relative z-10 text-[10px] font-bold uppercase tracking-wider opacity-80">Planejar Semana</div>
+          <div className="absolute -bottom-4 -right-4 text-8xl opacity-10 grayscale brightness-200 select-none pointer-events-none group-hover:scale-110 transition-transform">🥗</div>
+        </div>
       </div>
 
-      {!user?.isPremium && <AdBanner type="banner" />}
-
-      {weeklyMenu && (
-        <div onClick={() => onNavigate(ViewState.WEEKLY_PLAN)} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm cursor-pointer mt-4 hover:bg-gray-50 transition-colors flex justify-between items-center group">
-          <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Último Planejamento</p>
-            <p className="text-gray-800 font-bold">Criado em {new Date(weeklyMenu.createdAt).toLocaleDateString()}</p>
+      {/* Card de Assinatura Premium */}
+      {!user?.isPremium && (
+        <div 
+          onClick={() => onNavigate(ViewState.PREMIUM)}
+          className="bg-white border-2 border-amber-100 rounded-[2rem] p-6 shadow-premium relative overflow-hidden cursor-pointer active:scale-95 transition-all"
+        >
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">👑</div>
+            <div className="flex-1">
+              <h4 className="font-heading text-lg font-black text-amber-800">Chef Premium</h4>
+              <p className="text-[11px] text-amber-700 font-semibold opacity-80 uppercase tracking-wider">Receitas Ilimitadas & Fotos</p>
+            </div>
           </div>
-          <span className="text-chef-green font-black text-xl group-hover:translate-x-1 transition-transform">→</span>
+          <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-amber-50 rounded-full blur-2xl opacity-50"></div>
         </div>
       )}
+
+      {/* Grid Secundária */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Botão Planejamento Semanal (Antiga Geladeira) */}
+        <div 
+          onClick={() => onNavigate(ViewState.WEEKLY_PLAN)}
+          className="bg-white p-6 rounded-[2.2rem] border border-gray-100 shadow-soft flex flex-col items-center text-center gap-4 active:scale-95 transition-all cursor-pointer hover:border-chef-green/30"
+        >
+          <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl">📋</div>
+          <div>
+            <span className="block font-bold text-gray-800 text-sm">Planejamento Semanal</span>
+            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ver Plano Ativo</span>
+          </div>
+        </div>
+
+        <div 
+          onClick={() => onNavigate(ViewState.PROFILE)}
+          className="bg-white p-6 rounded-[2.2rem] border border-gray-100 shadow-soft flex flex-col items-center text-center gap-4 active:scale-95 transition-all cursor-pointer hover:border-blue-200"
+        >
+          <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl">⚙️</div>
+          <div>
+            <span className="block font-bold text-gray-800 text-sm">Perfil</span>
+            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ajustes</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
