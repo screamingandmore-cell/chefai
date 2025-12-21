@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Recipe } from '../../types';
 import { GoogleAdPlaceholder } from '../Layout';
@@ -32,7 +31,7 @@ export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, is
   const safeInstructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
 
   return (
-    <div className="animate-slideUp space-y-6">
+    <div className="animate-slideUp space-y-6 pb-32 px-4">
       <button onClick={onBack} className="text-gray-500 mb-2 hover:text-gray-800 no-print flex items-center gap-1 font-bold text-sm">
         <span>←</span> Voltar
       </button>
