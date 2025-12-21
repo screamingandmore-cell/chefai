@@ -9,7 +9,7 @@ interface RecipeDetailsViewProps {
 }
 
 export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, isPremium, onBack }) => {
-  // 2. Verificação do Objeto Receita: Guard Clause para evitar erro crítico
+  // Verificação do Objeto Receita: Guard Clause para evitar erro crítico
   if (!recipe) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-8 text-center animate-fadeIn">
@@ -31,7 +31,7 @@ export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, is
   const safeInstructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
 
   return (
-    <div className="animate-slideUp space-y-6 pb-32 px-4">
+    <div className="animate-slideUp space-y-6 px-4">
       <button onClick={onBack} className="text-gray-500 mb-2 hover:text-gray-800 no-print flex items-center gap-1 font-bold text-sm">
         <span>←</span> Voltar
       </button>
@@ -75,7 +75,6 @@ export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, is
           <div>
             <h3 className="font-black text-gray-900 mb-5 text-[11px] uppercase tracking-[0.2em] border-b border-gray-50 pb-2">Ingredientes</h3>
             <ul className="space-y-3">
-                {/* 1. Verificação de Segurança no Map */}
                 {safeIngredients.length > 0 ? (
                   safeIngredients.map((ing, i) => (
                     <li key={i} className="flex gap-4 text-gray-700 items-start group">
@@ -96,7 +95,6 @@ export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, is
           <div>
             <h3 className="font-black text-gray-900 mb-6 text-[11px] uppercase tracking-[0.2em] border-b border-gray-50 pb-2">Modo de Preparo</h3>
             <div className="space-y-6">
-                {/* 1. Verificação de Segurança no Map */}
                 {safeInstructions.length > 0 ? (
                   safeInstructions.map((step, i) => (
                     <div key={i} className="flex gap-5">
@@ -123,6 +121,9 @@ export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, is
           )}
         </div>
       </div>
+      
+      {/* Spacer para evitar que o menu flutuante cubra o conteúdo final */}
+      <div className="w-full h-32 md:h-40 flex-shrink-0" aria-hidden="true"></div>
     </div>
   );
 };
