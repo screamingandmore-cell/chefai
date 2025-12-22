@@ -1,4 +1,3 @@
-
 {
   "compilerOptions": {
     "target": "ESNext",
@@ -25,7 +24,8 @@
   },
   "include": [
     "./**/*.ts",
-    "./**/*.tsx"
+    "./**/*.tsx",
+    "env.d.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

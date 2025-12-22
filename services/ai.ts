@@ -1,175 +1,79 @@
-import { GoogleGenAI, Type } from "@google/genai";
+// --- ATENÇÃO: A IMPORTAÇÃO CORRETA É ESTA ABAIXO ---
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { WeeklyMenu, Recipe, Difficulty, DietGoal, DIET_GOALS } from "../types";
 
-/**
- * Função auxiliar para obter o cliente da IA com a chave correta.
- * Resolve o problema de cota usando chaves distintas para Texto e Imagem.
- */
-const getAiClient = (isMultimodal: boolean) => {
-  // No Vite, usamos import.meta.env para acessar variáveis do .env
-  // VITE_GEMINI_API_KEY -> Usada para Texto (Geração de Receitas e Cardápios)
-  // VITE_GEMINI_API_KEY_IMAGE -> Usada para Imagem (Análise da Geladeira)
-  const key = isMultimodal 
-    ? import.meta.env.VITE_GEMINI_API_KEY_IMAGE 
-    : import.meta.env.VITE_GEMINI_API_KEY;
-    
-  // Prioriza a chave específica do usuário, se não existir, tenta a API_KEY padrão do sistema
-  return new GoogleGenAI({ apiKey: (key || process.env.API_KEY) as string });
-};
+// Configuração do Modelo (O ÚNICO QUE FUNCIONA BEM AGORA)
+const MODEL_NAME = "gemini-1.5-flash";
 
-// Schema definitions para garantir respostas estruturadas
-const RECIPE_SCHEMA = {
-  type: Type.OBJECT,
-  properties: {
-    title: { type: Type.STRING },
-    description: { type: Type.STRING },
-    ingredients: { type: Type.ARRAY, items: { type: Type.STRING } },
-    instructions: { type: Type.ARRAY, items: { type: Type.STRING } },
-    prepTime: { type: Type.STRING },
-    difficulty: { type: Type.STRING },
-    calories: { type: Type.NUMBER },
-    chefTip: { type: Type.STRING },
-    error: { type: Type.STRING },
-    macros: {
-      type: Type.OBJECT,
-      properties: {
-        protein: { type: Type.STRING },
-        carbs: { type: Type.STRING },
-        fat: { type: Type.STRING }
-      },
-      required: ["protein", "carbs", "fat"]
-    }
-  },
-  required: ["title", "description", "ingredients", "instructions", "prepTime", "difficulty"]
-};
+// Chaves do .env
+const apiKeyText = import.meta.env.VITE_GEMINI_API_KEY || "";
+const apiKeyImage = import.meta.env.VITE_GEMINI_API_KEY_IMAGE || "";
 
-const SYSTEM_PROMPT_CHEF = `Você é um Chef de Cozinha renomado, amigável e detalhista. 
-Sua missão é criar receitas incríveis usando os ingredientes fornecidos.
+// Validação de Segurança
+if (!apiKeyText) console.warn("Faltando chave de TEXTO no .env");
+if (!apiKeyImage) console.warn("Faltando chave de IMAGEM no .env");
 
-REGRAS DE SEGURANÇA:
-- Se os itens forem perigosos, tóxicos ou não comestíveis: NÃO GERE A RECEITA. Retorne o campo "error".
+// Instâncias da IA
+const genAI_Text = new GoogleGenerativeAI(apiKeyText);
+const genAI_Image = new GoogleGenerativeAI(apiKeyImage);
 
-REGRAS DE QUALIDADE:
-1. Quantidades: NUNCA liste apenas o ingrediente. Invente quantidades realistas.
-2. Modo de Preparo: Seja detalhado e instrutivo.
-3. Responda APENAS em JSON.`;
+// --- SCHEMAS E FUNÇÕES ---
 
+// 1. Analisar Imagem
 export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string[]> => {
   try {
-    // Inicializa com a chave de IMAGEM (Multimodal)
-    const ai = getAiClient(true);
-    
-    const parts = [
-      ...imagesBase64.map(base64 => ({
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: base64.includes(',') ? base64.split(',')[1] : base64
+    const model = genAI_Image.getGenerativeModel({ 
+        model: MODEL_NAME,
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: SchemaType.OBJECT,
+                properties: {
+                    ingredients: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
+                }
+            }
         }
-      })),
-      { text: "Analise cuidadosamente estas fotos e liste apenas os nomes dos ingredientes comestíveis encontrados em um array JSON chamado 'ingredients'." }
-    ];
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview',
-      contents: { parts },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            ingredients: { type: Type.ARRAY, items: { type: Type.STRING } }
-          },
-          required: ["ingredients"]
-        }
-      }
     });
 
-    const data = JSON.parse(response.text || "{}");
-    return data.ingredients || [];
+    const imageParts = imagesBase64.map(base64 => ({
+      inlineData: {
+        data: base64.includes(',') ? base64.split(',')[1] : base64,
+        mimeType: "image/jpeg"
+      }
+    }));
+
+    const result = await model.generateContent([
+        "Liste APENAS os ingredientes comestíveis visíveis (frutas, legumes, carnes) em português.", 
+        ...imageParts
+    ]);
+    
+    const text = result.response.text().replace(/```json|```/g, "").trim();
+    return JSON.parse(text).ingredients || [];
+
   } catch (error) {
-    console.error("Erro na análise de imagem:", error);
-    throw error;
+    console.error("Erro na imagem:", error);
+    return [];
   }
 };
 
-export const generateQuickRecipe = async (
-  ingredients: string[], 
-  allergies: string[], 
-  difficulty: Difficulty,
-  goal: DietGoal
-): Promise<Recipe> => {
-  // Inicializa com a chave de TEXTO
-  const ai = getAiClient(false);
-
-  let goalContext = `Objetivo: ${DIET_GOALS[goal]}.`;
-  if (goal === 'chef_choice') {
-    goalContext = "O usuário escolheu 'A Escolha do Chef'. Seu único objetivo é criar a receita MAIS DELICIOSA, CRIATIVA e SABOROSA possível.";
-  }
-
-  const prompt = `${goalContext} Use principalmente: ${ingredients.join(", ")}. 
-                  Evite absolutamente: ${allergies.join(", ")}. Nível de dificuldade: ${difficulty}.`;
+// 2. Gerar Receita
+export const generateQuickRecipe = async (ingredients: string[], allergies: string[], difficulty: Difficulty, goal: DietGoal): Promise<Recipe> => {
+  const model = genAI_Text.getGenerativeModel({ model: MODEL_NAME, generationConfig: { responseMimeType: "application/json" } });
   
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-    config: {
-      systemInstruction: SYSTEM_PROMPT_CHEF,
-      responseMimeType: "application/json",
-      responseSchema: RECIPE_SCHEMA
-    }
-  });
-
-  const data = JSON.parse(response.text || "{}");
-  if (data.error) throw new Error(data.error);
+  const prompt = `Crie uma receita com: ${ingredients.join(", ")}. Objetivo: ${goal}. Dificuldade: ${difficulty}. Retorne JSON completo da receita.`;
   
+  const result = await model.generateContent(prompt);
+  const data = JSON.parse(result.response.text().replace(/```json|```/g, "").trim());
   return { ...data, id: crypto.randomUUID() };
 };
 
-export const generateWeeklyMenu = async (
-  ingredients: string[], 
-  allergies: string[],
-  dietGoal: DietGoal,
-  difficulty: Difficulty
-): Promise<WeeklyMenu> => {
-  // Inicializa com a chave de TEXTO
-  const ai = getAiClient(false);
+// 3. Gerar Menu Semanal
+export const generateWeeklyMenu = async (ingredients: string[], allergies: string[], dietGoal: DietGoal, difficulty: Difficulty): Promise<WeeklyMenu> => {
+  const model = genAI_Text.getGenerativeModel({ model: MODEL_NAME, generationConfig: { responseMimeType: "application/json" } });
 
-  const prompt = `Planeje um cardápio semanal completo focado em ${dietGoal} usando: ${ingredients.join(", ")}. 
-                  Não use: ${allergies.join(", ")}. Nível de dificuldade: ${difficulty}.`;
+  const prompt = `Crie um menu semanal JSON { "shoppingList": [], "days": [...] } usando: ${ingredients.join(", ")}.`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-    config: {
-      systemInstruction: `${SYSTEM_PROMPT_CHEF}\n\nPlaneje 14 refeições (7 dias, almoço e jantar). Responda em JSON com 'shoppingList' e 'days'.`,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          shoppingList: { type: Type.ARRAY, items: { type: Type.STRING } },
-          days: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                day: { type: Type.STRING },
-                lunch: RECIPE_SCHEMA,
-                dinner: RECIPE_SCHEMA
-              },
-              required: ["day", "lunch", "dinner"]
-            }
-          }
-        },
-        required: ["shoppingList", "days"]
-      }
-    }
-  });
-
-  const menuData = JSON.parse(response.text || "{}");
-  return {
-    ...menuData,
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-    goal: dietGoal
-  };
+  const result = await model.generateContent(prompt);
+  const data = JSON.parse(result.response.text().replace(/```json|```/g, "").trim());
+  return { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString(), goal: dietGoal };
 };
