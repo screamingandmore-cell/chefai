@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { ViewState, UserProfile, Recipe, WeeklyMenu, Difficulty, DietGoal } from '@/types';
 import * as SupabaseService from '@/services/supabase';
 import { useChefActions } from '@/services/hooks/useChefActions';
+import { Session } from '@supabase/supabase-js';
 
 // Views
 import { AuthScreen } from '@/components/AuthScreen';
@@ -17,6 +17,7 @@ import { ShoppingListView } from '@/components/views/ShoppingListView';
 import { HistoryView } from '@/components/views/HistoryView';
 import { PremiumView } from '@/components/views/PremiumView';
 import { TermsView } from '@/components/views/TermsView';
+import { PrivacyView } from '@/components/views/PrivacyView';
 
 const LOADING_MESSAGES = [
   "Chef está afiando as facas...",
@@ -27,15 +28,11 @@ const LOADING_MESSAGES = [
 ];
 
 export default function App() {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [view, setView] = useState<ViewState>(ViewState.HOME);
   const [viewHistory, setViewHistory] = useState<ViewState[]>([ViewState.HOME]);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
-  
-  // Guideline: The application must not ask the user for the API key.
-  // Assume process.env.API_KEY is pre-configured and accessible.
-  const hasApiKey = true;
   
   const [allMenus, setAllMenus] = useState<WeeklyMenu[]>([]); 
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu | null>(null);
@@ -43,7 +40,6 @@ export default function App() {
   const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.MEDIUM);
   const [dietGoal, setDietGoal] = useState<DietGoal>('balanced');
 
-  // Função de navegação simulando behavior do Router
   const navigate = useCallback((to: ViewState | number) => {
     if (typeof to === 'number') {
       if (to === -1) {
@@ -93,10 +89,12 @@ export default function App() {
     isLoading,
     handleAddIngredients,
     handleRemoveIngredient,
+    handleUpdateAllergies,
+    handleRemoveAllergy,
     handleImageUpload,
     generateQuick,
     generateWeekly
-  } = useChefActions(user, session, handleProfileRefresh);
+  } = useChefActions(user, session, handleProfileRefresh, setUser);
 
   useEffect(() => {
     if (isLoading) {
@@ -151,12 +149,11 @@ export default function App() {
       case ViewState.HOME: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={navigate} />;
       case ViewState.PREMIUM: return <PremiumView user={user} onNavigate={navigate} />;
       case ViewState.TERMS: return <TermsView onBack={() => navigate(-1)} />;
+      case ViewState.PRIVACY: return <PrivacyView onBack={() => navigate(-1)} />;
       case ViewState.FRIDGE:
         return (
           <FridgeView 
             user={user}
-            session={session}
-            onUpdateUser={setUser}
             ingredients={ingredients}
             onAddIngredient={handleAddIngredients}
             onRemoveIngredient={handleRemoveIngredient}
@@ -168,14 +165,14 @@ export default function App() {
             onNavigate={navigate}
             onGenerateQuick={handleGenerateQuick}
             onGenerateWeekly={handleGenerateWeekly}
+            onUpdateAllergies={handleUpdateAllergies}
+            onRemoveAllergy={handleRemoveAllergy}
           />
         );
       case ViewState.QUICK_RECIPE:
         return (
           <QuickRecipeView 
             user={user}
-            session={session}
-            onUpdateUser={setUser}
             ingredients={ingredients}
             onAddIngredient={handleAddIngredients}
             onRemoveIngredient={handleRemoveIngredient}
@@ -188,6 +185,8 @@ export default function App() {
             isLoading={isLoading}
             isPremium={user?.isPremium || false}
             onNavigate={navigate}
+            onUpdateAllergies={handleUpdateAllergies}
+            onRemoveAllergy={handleRemoveAllergy}
           />
         );
       case ViewState.WEEKLY_PLAN:
@@ -195,7 +194,7 @@ export default function App() {
           <WeeklyPlanView 
             weeklyMenu={weeklyMenu}
             onNavigate={navigate}
-            onSelectRecipe={(r) => { setGeneratedRecipe(r); navigate(ViewState.RECIPE_DETAILS); }}
+            onSelectRecipe={(r: Recipe) => { setGeneratedRecipe(r); navigate(ViewState.RECIPE_DETAILS); }}
             onDeleteMenu={() => {}} 
             dietGoal={dietGoal}
             setDietGoal={setDietGoal}
@@ -221,8 +220,8 @@ export default function App() {
       case ViewState.MENU_HISTORY:
         return <HistoryView 
           menus={allMenus} 
-          onSelect={(m) => { setWeeklyMenu(m); navigate(ViewState.WEEKLY_PLAN); }}
-          onDelete={(id) => {
+          onSelect={(m: WeeklyMenu) => { setWeeklyMenu(m); navigate(ViewState.WEEKLY_PLAN); }}
+          onDelete={(id: string) => {
             if (session?.user?.id) {
               SupabaseService.deleteWeeklyMenu(id, session.user.id);
               setAllMenus(prev => prev.filter(m => m.id !== id));
@@ -232,7 +231,7 @@ export default function App() {
         />;
       default: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={navigate} />;
     }
-  }, [view, user, weeklyMenu, allMenus, ingredients, isLoading, difficulty, dietGoal, session, handleAddIngredients, handleRemoveIngredient, handleImageUpload, handleGenerateQuick, handleGenerateWeekly, navigate]);
+  }, [view, user, weeklyMenu, allMenus, ingredients, isLoading, difficulty, dietGoal, session, handleAddIngredients, handleRemoveIngredient, handleImageUpload, handleGenerateQuick, handleGenerateWeekly, handleUpdateAllergies, handleRemoveAllergy, navigate]);
 
   if (!session) return <AuthScreen onLogin={() => {}} />;
 

@@ -1,13 +1,9 @@
-
 import React, { useState } from 'react';
 import { ViewState, UserProfile, DietGoal, DIET_GOALS } from '../../types';
 import { IngredientInput } from '../shared/IngredientInput';
-import * as SupabaseService from '../../services/supabase';
 
 interface FridgeViewProps {
   user: UserProfile | null;
-  session: any;
-  onUpdateUser: (u: UserProfile | null) => void;
   ingredients: string[];
   onAddIngredient: (items: string[]) => void;
   onRemoveIngredient: (index: number) => void;
@@ -19,12 +15,12 @@ interface FridgeViewProps {
   onNavigate: (view: ViewState) => void;
   onGenerateQuick: () => void;
   onGenerateWeekly: () => void;
+  onUpdateAllergies: (input: string) => Promise<void>; // Alias para handleUpdateAllergies
+  onRemoveAllergy: (index: number) => Promise<void>;
 }
 
 export const FridgeView: React.FC<FridgeViewProps> = ({
   user,
-  session,
-  onUpdateUser,
   ingredients,
   onAddIngredient,
   onRemoveIngredient,
@@ -35,76 +31,26 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
   isPremium,
   onNavigate,
   onGenerateQuick,
-  onGenerateWeekly
+  onGenerateWeekly,
+  onUpdateAllergies,
+  onRemoveAllergy
 }) => {
   const [allergyInput, setAllergyInput] = useState('');
   const hasIngredients = ingredients.length > 0;
 
   const handleAction = (action: () => void) => {
     if (!hasIngredients) {
-      alert("Sua geladeira está vazia! Adicione alguns ingredientes primeiro para o Chef poder trabalhar. 👨‍🍳");
+      alert("Sua geladeira está vazia! Adicione alguns ingredientes primeiro.");
       return;
     }
     action();
   };
 
   const handleAddAllergy = async () => {
-    const input = allergyInput.trim();
-    if (!input || !user || !session?.user) return;
-    
-    const items: string[] = [];
-    let current = "";
-    let depth = 0;
-
-    // Lógica de separação inteligente (idêntica à de ingredientes)
-    for (let i = 0; i < input.length; i++) {
-      const char = input[i];
-      if (char === '(') depth++;
-      else if (char === ')') depth--;
-
-      if (char === '\n' || char === ';') {
-        if (current.trim()) items.push(current.trim());
-        current = "";
-        depth = 0;
-      } else if (char === ',' && depth <= 0) {
-        if (current.trim()) items.push(current.trim());
-        current = "";
-      } else {
-        current += char;
-      }
-    }
-    if (current.trim()) items.push(current.trim());
-
-    const newSanitizedAllergies = items
-      .map(item => item.trim())
-      .filter(item => 
-        item.length >= 1 && 
-        item.length <= 500 && // Atualizado para 500
-        !user.allergies.includes(item)
-      );
-
-    if (newSanitizedAllergies.length === 0) {
-      setAllergyInput('');
-      return;
-    }
-
-    const updatedAllergies = [...(user.allergies || []), ...newSanitizedAllergies];
-    const updatedUser = { ...user, allergies: updatedAllergies };
-    onUpdateUser(updatedUser);
+    const val = allergyInput.trim();
+    if (!val) return;
+    await onUpdateAllergies(val);
     setAllergyInput('');
-    try {
-      await SupabaseService.updatePreferences(session.user.id, updatedUser.allergies);
-    } catch (error) {
-      console.error("Erro ao salvar preferências:", error);
-    }
-  };
-
-  const handleRemoveAllergy = async (index: number) => {
-    if (!user || !session?.user) return;
-    const updatedAllergies = user.allergies.filter((_, i) => i !== index);
-    const updatedUser = { ...user, allergies: updatedAllergies };
-    onUpdateUser(updatedUser);
-    await SupabaseService.updatePreferences(session.user.id, updatedUser.allergies);
   };
 
   return (
@@ -120,7 +66,6 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
         <h2 className="font-heading text-3xl font-black text-gray-900 leading-tight">Minha Geladeira ❄️</h2>
       </div>
 
-      {/* Gerenciador de Ingredientes */}
       <div className="bg-white p-7 rounded-[2.5rem] shadow-soft border border-gray-100/50">
         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6 px-1">O que você tem disponível?</p>
         <IngredientInput 
@@ -133,12 +78,11 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
         />
       </div>
 
-      {/* Seção de Restrições e Alergias */}
       <div className="bg-white p-7 rounded-[2.5rem] shadow-soft border border-gray-100/50">
         <div className="flex items-center gap-2 mb-2 px-1">
           <p className="text-[11px] font-bold text-red-400 uppercase tracking-widest">Restrições e Alergias 🚫</p>
         </div>
-        <p className="text-[10px] text-gray-400 mb-6 px-1 leading-tight">Itens que o Chef nunca deve usar em suas receitas.</p>
+        <p className="text-[10px] text-gray-400 mb-6 px-1 leading-tight">Itens que o Chef nunca deve usar.</p>
         
         <div className="flex gap-2 mb-6">
           <input 
@@ -146,7 +90,7 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
             onChange={(e) => setAllergyInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddAllergy()}
             placeholder="Ex: Camarão, Glúten..."
-            maxLength={500} // Definido exatamente para 500
+            maxLength={500}
             className="flex-1 bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-red-100 outline-none font-medium"
           />
           <button 
@@ -165,7 +109,7 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
             <span key={i} className="bg-red-50 text-red-600 px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center gap-2 border border-red-100 animate-fadeIn">
               <span className="max-w-[150px] truncate">{allergy}</span>
               <button 
-                onClick={() => handleRemoveAllergy(i)} 
+                onClick={() => onRemoveAllergy(i)} 
                 className="ml-1 opacity-50 hover:opacity-100 text-lg font-black"
               >
                 ×
@@ -175,7 +119,6 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
         </div>
       </div>
 
-      {/* Seção de Objetivo (Duplicada para Fluxo Direto) */}
       <div className="bg-white p-7 rounded-[2.5rem] border border-gray-100 shadow-soft">
         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6 px-1">Seu Objetivo</p>
         <div className="grid grid-cols-2 gap-3">
@@ -206,7 +149,6 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
         </div>
       </div>
 
-      {/* Botões de Ação Direta */}
       <div className="px-2 space-y-3">
         <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ações Rápidas</p>
         <div className="grid grid-cols-2 gap-3">
@@ -242,6 +184,7 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
           </button>
         </div>
       </div>
+      <div className="w-full h-32 md:h-40 flex-shrink-0" aria-hidden="true"></div>
     </div>
   );
 };

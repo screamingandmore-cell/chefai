@@ -1,94 +1,92 @@
-import React from 'react';
-import { ViewState, UserProfile, WeeklyMenu } from '../../types';
+import React, { memo } from 'react';
+import { WeeklyMenu, DIET_GOALS, DietGoal } from '../../types';
 
-interface HomeViewProps {
-  user: UserProfile | null;
-  weeklyMenu: WeeklyMenu | null;
-  onNavigate: (view: ViewState) => void;
+interface HistoryItemProps {
+  menu: WeeklyMenu;
+  onSelect: (menu: WeeklyMenu) => void;
+  onDelete: (id: string) => void;
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate }) => {
+const HistoryItem = memo(({ menu, onSelect, onDelete }: HistoryItemProps) => (
+  <div 
+    className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
+    onClick={() => onSelect(menu)}
+  >
+    <div className="flex-1">
+      <p className="font-bold text-gray-800 text-lg capitalize">
+        {new Date(menu.createdAt).toLocaleDateString('pt-BR', { weekday: 'long' })}
+      </p>
+      <p className="text-xs text-gray-400">
+        {new Date(menu.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+      </p>
+      <div className="flex gap-2 mt-3">
+        <span className="text-[9px] bg-gray-100 text-gray-500 px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider">
+          {menu.days?.length || 0} Dias
+        </span>
+        {menu.goal && (
+          <span className="text-[9px] bg-green-50 text-chef-green px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider border border-green-100">
+            {DIET_GOALS[menu.goal as DietGoal] || menu.goal}
+          </span>
+        )}
+      </div>
+    </div>
+    <button 
+      onClick={(e) => {
+        e.stopPropagation();
+        onDelete(menu.id);
+      }}
+      className="p-3 text-gray-200 hover:text-red-500 transition-colors rounded-xl hover:bg-red-50"
+      title="Excluir"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+      </svg>
+    </button>
+  </div>
+));
+
+HistoryItem.displayName = 'HistoryItem';
+
+interface HistoryViewProps {
+  menus: WeeklyMenu[];
+  onSelect: (menu: WeeklyMenu) => void;
+  onDelete: (id: string) => void;
+  onBack: () => void;
+}
+
+export const HistoryView: React.FC<HistoryViewProps> = ({ menus, onSelect, onDelete, onBack }) => {
   return (
-    <div className="space-y-8 animate-slideUp">
-      <div className="px-2">
-        <h3 className="text-gray-400 text-[11px] font-bold uppercase tracking-[0.2em] mb-1 font-sans">Bem-vindo ao</h3>
-        <h2 className="font-heading text-4xl font-black text-gray-900 leading-tight">Chef<span className="text-chef-green">.ai</span></h2>
+    <div className="animate-slideUp space-y-6">
+      <button 
+        onClick={onBack} 
+        className="text-gray-500 flex items-center gap-1 hover:text-gray-800 transition-all font-bold text-sm px-2"
+      >
+        <span>←</span> Voltar
+      </button>
+
+      <div className="mb-2 px-2">
+        <h2 className="text-2xl font-bold text-gray-800">Histórico de Planos</h2>
+        <p className="text-sm text-gray-400">Cardápios salvos na sua conta.</p>
       </div>
 
-      {/* Grid de Ações Principais */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Botão Receita Rápida */}
-        <div 
-          onClick={() => onNavigate(ViewState.QUICK_RECIPE)}
-          className="bg-gradient-to-br from-chef-orange to-rose-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-orange-100 relative overflow-hidden cursor-pointer group active:scale-95 transition-all flex flex-col justify-between aspect-square"
-        >
-          <div className="relative z-10">
-            <span className="text-3xl mb-2 block">⚡</span>
-            <h2 className="font-heading text-lg font-black leading-tight">Receita<br/>Rápida</h2>
+      <div className="space-y-4 pb-10 px-2">
+        {menus.length === 0 ? (
+          <div className="bg-white p-16 rounded-3xl border border-dashed border-gray-200 text-center">
+            <span className="text-5xl block mb-6">🗓️</span>
+            <p className="text-gray-400 font-bold">Nenhum cardápio salvo.</p>
+            <p className="text-xs text-gray-300 mt-2">Crie seu primeiro plano na aba Semanal.</p>
           </div>
-          <div className="relative z-10 text-[10px] font-bold uppercase tracking-wider opacity-80">Cozinhe Agora</div>
-          <div className="absolute -bottom-4 -right-4 text-8xl opacity-10 grayscale brightness-200 select-none pointer-events-none group-hover:scale-110 transition-transform">🍳</div>
-        </div>
-
-        {/* Botão Cardápio Semanal - Agora redireciona para a Geladeira */}
-        <div 
-          onClick={() => onNavigate(ViewState.FRIDGE)}
-          className="bg-gradient-to-br from-chef-green to-emerald-700 rounded-[2.5rem] p-6 text-white shadow-xl shadow-emerald-100 relative overflow-hidden cursor-pointer group active:scale-95 transition-all flex flex-col justify-between aspect-square"
-        >
-          <div className="relative z-10">
-            <span className="text-3xl mb-2 block">📅</span>
-            <h2 className="font-heading text-lg font-black leading-tight">Cardápio<br/>Semanal</h2>
-          </div>
-          <div className="relative z-10 text-[10px] font-bold uppercase tracking-wider opacity-80">Planejar Semana</div>
-          <div className="absolute -bottom-4 -right-4 text-8xl opacity-10 grayscale brightness-200 select-none pointer-events-none group-hover:scale-110 transition-transform">🥗</div>
-        </div>
+        ) : (
+          menus.map((menu) => (
+            <HistoryItem 
+              key={menu.id}
+              menu={menu}
+              onSelect={onSelect}
+              onDelete={onDelete}
+            />
+          ))
+        )}
       </div>
-
-      {/* Card de Assinatura Premium */}
-      {!user?.isPremium && (
-        <div 
-          onClick={() => onNavigate(ViewState.PREMIUM)}
-          className="bg-white border-2 border-amber-100 rounded-[2rem] p-6 shadow-premium relative overflow-hidden cursor-pointer active:scale-95 transition-all"
-        >
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">👑</div>
-            <div className="flex-1">
-              <h4 className="font-heading text-lg font-black text-amber-800">Chef Premium</h4>
-              <p className="text-[11px] text-amber-700 font-semibold opacity-80 uppercase tracking-wider">Receitas Ilimitadas & Fotos</p>
-            </div>
-          </div>
-          <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-amber-50 rounded-full blur-2xl opacity-50"></div>
-        </div>
-      )}
-
-      {/* Grid Secundária */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Botão Planejamento Semanal (Antiga Geladeira) */}
-        <div 
-          onClick={() => onNavigate(ViewState.WEEKLY_PLAN)}
-          className="bg-white p-6 rounded-[2.2rem] border border-gray-100 shadow-soft flex flex-col items-center text-center gap-4 active:scale-95 transition-all cursor-pointer hover:border-chef-green/30"
-        >
-          <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl">📋</div>
-          <div>
-            <span className="block font-bold text-gray-800 text-sm">Planejamento Semanal</span>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ver Plano Ativo</span>
-          </div>
-        </div>
-
-        <div 
-          onClick={() => onNavigate(ViewState.PROFILE)}
-          className="bg-white p-6 rounded-[2.2rem] border border-gray-100 shadow-soft flex flex-col items-center text-center gap-4 active:scale-95 transition-all cursor-pointer hover:border-blue-200"
-        >
-          <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl">⚙️</div>
-          <div>
-            <span className="block font-bold text-gray-800 text-sm">Perfil</span>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ajustes</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Spacer para evitar que o menu flutuante cubra o conteúdo final na Home */}
-      <div className="w-full h-32 md:h-40 flex-shrink-0" aria-hidden="true"></div>
     </div>
   );
 };

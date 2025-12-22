@@ -1,13 +1,9 @@
-
 import React, { useState } from 'react';
 import { Difficulty, DietGoal, DIET_GOALS, ViewState, UserProfile } from '../../types';
 import { IngredientInput } from '../shared/IngredientInput';
-import * as SupabaseService from '../../services/supabase';
 
 interface QuickRecipeViewProps {
   user: UserProfile | null;
-  session: any;
-  onUpdateUser: (u: UserProfile | null) => void;
   ingredients: string[];
   onAddIngredient: (items: string[]) => void;
   onRemoveIngredient: (index: number) => void;
@@ -20,12 +16,12 @@ interface QuickRecipeViewProps {
   isLoading: boolean;
   isPremium: boolean;
   onNavigate: (v: ViewState) => void;
+  onUpdateAllergies: (input: string) => Promise<void>;
+  onRemoveAllergy: (index: number) => Promise<void>;
 }
 
 export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
   user,
-  session,
-  onUpdateUser,
   ingredients,
   onAddIngredient,
   onRemoveIngredient,
@@ -37,67 +33,18 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
   onGenerateQuick,
   isLoading,
   isPremium,
-  onNavigate
+  onNavigate,
+  onUpdateAllergies,
+  onRemoveAllergy
 }) => {
   const [allergyInput, setAllergyInput] = useState('');
   const hasIngredients = ingredients.length > 0;
 
   const handleAddAllergy = async () => {
-    const input = allergyInput.trim();
-    if (!input || !user || !session?.user) return;
-    
-    const items: string[] = [];
-    let current = "";
-    let depth = 0;
-
-    for (let i = 0; i < input.length; i++) {
-      const char = input[i];
-      if (char === '(') depth++;
-      else if (char === ')') depth--;
-
-      if (char === '\n' || char === ';') {
-        if (current.trim()) items.push(current.trim());
-        current = "";
-        depth = 0;
-      } else if (char === ',' && depth <= 0) {
-        if (current.trim()) items.push(current.trim());
-        current = "";
-      } else {
-        current += char;
-      }
-    }
-    if (current.trim()) items.push(current.trim());
-
-    const newSanitizedAllergies = items
-      .map(item => item.trim())
-      .filter(item => 
-        item.length >= 1 && 
-        item.length <= 500 &&
-        !user.allergies.includes(item)
-      );
-
-    if (newSanitizedAllergies.length === 0) {
-      setAllergyInput('');
-      return;
-    }
-
-    const updatedAllergies = [...(user.allergies || []), ...newSanitizedAllergies];
-    const updatedUser = { ...user, allergies: updatedAllergies };
-    onUpdateUser(updatedUser);
+    const val = allergyInput.trim();
+    if (!val) return;
+    await onUpdateAllergies(val);
     setAllergyInput('');
-    try {
-      await SupabaseService.updatePreferences(session.user.id, updatedUser.allergies);
-    } catch (error) {
-      console.error("Erro ao salvar preferências:", error);
-    }
-  };
-
-  const handleRemoveAllergy = async (index: number) => {
-    if (!user || !session?.user) return;
-    const updatedAllergies = user.allergies.filter((_, i) => i !== index);
-    const updatedUser = { ...user, allergies: updatedAllergies };
-    onUpdateUser(updatedUser);
-    await SupabaseService.updatePreferences(session.user.id, updatedUser.allergies);
   };
 
   return (
@@ -113,7 +60,6 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
         <h2 className="font-heading text-3xl font-black text-gray-900 leading-tight">Receita Rápida ⚡</h2>
       </div>
 
-      {/* Input de Ingredientes */}
       <div className="bg-white p-7 rounded-[2.5rem] shadow-soft border border-gray-100/50">
         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6 px-1">O que temos para hoje?</p>
         <IngredientInput 
@@ -126,7 +72,6 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
         />
       </div>
 
-      {/* Restrições e Alergias */}
       <div className="bg-white p-7 rounded-[2.5rem] shadow-soft border border-gray-100/50">
         <div className="flex items-center gap-2 mb-2 px-1">
           <p className="text-[11px] font-bold text-red-400 uppercase tracking-widest">Restrições e Alergias 🚫</p>
@@ -158,7 +103,7 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
             <span key={i} className="bg-red-50 text-red-600 px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center gap-2 border border-red-100 animate-fadeIn shadow-sm">
               <span className="max-w-[150px] truncate">{allergy}</span>
               <button 
-                onClick={() => handleRemoveAllergy(i)} 
+                onClick={() => onRemoveAllergy(i)} 
                 className="ml-1 opacity-50 hover:opacity-100 text-lg font-black"
               >
                 ×
@@ -168,7 +113,6 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
         </div>
       </div>
 
-      {/* Controles de Estilo e Dificuldade */}
       <div className="bg-white p-7 rounded-[2.5rem] border border-gray-100 shadow-soft space-y-10">
         <div>
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6 px-1">Seu Objetivo</p>
@@ -220,7 +164,6 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
         </div>
       </div>
 
-      {/* Botão de Ação */}
       <div className="px-2">
         <button 
           onClick={onGenerateQuick} 
@@ -236,12 +179,8 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
             <><span>🍳</span> Gerar Receita Agora</>
           )}
         </button>
-        {!hasIngredients && (
-          <p className="text-center text-[10px] text-red-400 font-bold uppercase mt-4 animate-pulse">
-            Adicione ingredientes primeiro!
-          </p>
-        )}
       </div>
+      <div className="w-full h-32 md:h-40 flex-shrink-0" aria-hidden="true"></div>
     </div>
   );
 };
