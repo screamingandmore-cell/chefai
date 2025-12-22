@@ -39,6 +39,7 @@ export default function App() {
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.MEDIUM);
   const [dietGoal, setDietGoal] = useState<DietGoal>('balanced');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const navigate = useCallback((to: ViewState | number) => {
     if (typeof to === 'number') {
@@ -96,32 +97,39 @@ export default function App() {
     generateWeekly
   } = useChefActions(user, session, handleProfileRefresh, setUser);
 
-  // Função centralizada para apagar cardápios
+  // Função centralizada para apagar cardápios com feedback de carregamento
   const handleDeleteMenu = useCallback(async (menuId: string) => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || isDeleting) return;
     
     const confirmDelete = window.confirm("Deseja realmente apagar este cardápio permanentemente?");
     if (!confirmDelete) return;
 
+    setIsDeleting(true);
     try {
       await SupabaseService.deleteWeeklyMenu(menuId, session.user.id);
       
       setAllMenus(prev => {
         const updated = prev.filter(m => m.id !== menuId);
-        // Se o cardápio apagado era o que estava aberto, troca para o próximo disponível ou limpa
+        // Se apagamos o menu que estava ativo, selecionamos outro ou voltamos ao início
         if (weeklyMenu?.id === menuId) {
-          setWeeklyMenu(updated.length > 0 ? updated[0] : null);
+          if (updated.length > 0) {
+            setWeeklyMenu(updated[0]);
+          } else {
+            setWeeklyMenu(null);
+            // Se não sobrar nenhum menu, voltamos para a Home para evitar tela vazia estranha
+            navigate(ViewState.HOME);
+          }
         }
         return updated;
       });
       
-      // Feedback visual simples via console ou se preferir pode adicionar um toast aqui futuramente
-      console.log("Cardápio removido com sucesso");
     } catch (err) {
       console.error("Erro ao apagar cardápio:", err);
-      alert("Não foi possível apagar o cardápio no momento.");
+      alert("Não foi possível apagar o cardápio. Verifique sua conexão.");
+    } finally {
+      setIsDeleting(false);
     }
-  }, [session, weeklyMenu]);
+  }, [session, weeklyMenu, isDeleting, navigate]);
 
   useEffect(() => {
     if (isLoading) {
@@ -228,7 +236,7 @@ export default function App() {
             selectedDifficulty={difficulty}
             setSelectedDifficulty={setDifficulty}
             onGenerateWeekly={handleGenerateWeekly}
-            isLoading={isLoading}
+            isLoading={isLoading || isDeleting}
           />
         );
       case ViewState.SHOPPING_LIST:
@@ -253,7 +261,7 @@ export default function App() {
         />;
       default: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={navigate} />;
     }
-  }, [view, user, weeklyMenu, allMenus, ingredients, isLoading, difficulty, dietGoal, session, handleAddIngredients, handleRemoveIngredient, handleImageUpload, handleGenerateQuick, handleGenerateWeekly, handleUpdateAllergies, handleRemoveAllergy, handleDeleteMenu, navigate]);
+  }, [view, user, weeklyMenu, allMenus, ingredients, isLoading, difficulty, dietGoal, session, handleAddIngredients, handleRemoveIngredient, handleImageUpload, handleGenerateQuick, handleGenerateWeekly, handleUpdateAllergies, handleRemoveAllergy, handleDeleteMenu, isDeleting, navigate]);
 
   if (!session) return <AuthScreen onLogin={() => {}} />;
 
@@ -270,6 +278,15 @@ export default function App() {
           </div>
           <h3 className="text-xl font-black text-gray-800 mb-2">Trabalhando nisso...</h3>
           <p className="text-gray-500 font-medium animate-pulse">{loadingMsg}</p>
+        </div>
+      )}
+
+      {isDeleting && (
+        <div className="fixed inset-0 z-[301] bg-white/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white p-6 rounded-3xl shadow-xl flex flex-col items-center">
+            <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+            <p className="text-xs font-black text-gray-800 uppercase tracking-widest">Apagando Cardápio...</p>
+          </div>
         </div>
       )}
     </Layout>
