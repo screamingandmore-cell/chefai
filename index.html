@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
@@ -6,40 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Chef.ai - Cardápios Inteligentes</title>
     <meta name="description" content="Seu assistente de cozinha pessoal com Inteligência Artificial." />
+    
+    <!-- Cor do Tema (Barra do Navegador) -->
     <meta name="theme-color" content="#10b981" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <!-- Favicons Padrão -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+
+    <!-- Apple Touch Icon (iOS) -->
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/icon-192.png" />
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Chef.ai - Planejador Inteligente" />
+    <meta property="og:description" content="Crie cardápios semanais e receitas com o que você tem na geladeira usando IA." />
+    <meta property="og:image" content="/icon-512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Chef.ai - Planejador Inteligente" />
+    <meta name="twitter:description" content="Seu assistente de cozinha pessoal com IA." />
+    <meta name="twitter:image" content="/icon-512.png" />
+
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="/manifest.json" />
 
     <!-- Google Fonts: Poppins & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-
     <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@^19.2.3",
-        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-        "react/": "https://esm.sh/react@^19.2.3/",
-        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.88.0",
-        "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-        "vite": "https://esm.sh/vite@^7.3.0",
-        "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-        "path": "https://esm.sh/path@^0.12.7",
-        "fs": "https://esm.sh/fs@^0.0.1-security",
-        "url": "https://esm.sh/url@^0.11.4"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.88.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "path": "https://esm.sh/path@^0.12.7",
+    "fs": "https://esm.sh/fs@^0.0.1-security",
+    "url": "https://esm.sh/url@^0.11.4",
+    "vite-plugin-pwa": "https://esm.sh/vite-plugin-pwa@^1.2.0"
+  }
+}
+</script>
   </head>
   <body class="bg-[#FDFDFD] text-gray-900 antialiased font-sans">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     <script>
-      // Registro seguro do Service Worker. 
-      // Em desenvolvimento local (localhost), erros de registro podem ser ignorados.
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
