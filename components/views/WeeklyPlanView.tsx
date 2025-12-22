@@ -5,7 +5,7 @@ interface WeeklyPlanViewProps {
   weeklyMenu: WeeklyMenu | null;
   onNavigate: (v: ViewState) => void;
   onSelectRecipe: (r: Recipe) => void;
-  onDeleteMenu: (id: string) => void;
+  onClearMenu: (id: string) => void;
   dietGoal: DietGoal;
   setDietGoal: (g: DietGoal) => void;
   selectedDifficulty: Difficulty;
@@ -18,7 +18,7 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
   weeklyMenu,
   onNavigate,
   onSelectRecipe,
-  onDeleteMenu,
+  onClearMenu,
   dietGoal,
   setDietGoal,
   selectedDifficulty,
@@ -26,6 +26,17 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
   onGenerateWeekly,
   isLoading
 }) => {
+  // Função de tratamento do clique na lixeira
+  const handleClearClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!weeklyMenu) return;
+
+    const confirmed = window.confirm("Deseja limpar o cardápio atual?");
+    if (confirmed) {
+      onClearMenu(weeklyMenu.id);
+    }
+  };
+
   if (!weeklyMenu) {
     return (
       <div className="flex flex-col items-center justify-start w-full min-h-screen pt-4 animate-slideUp">
@@ -115,10 +126,7 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
             <button onClick={() => onNavigate(ViewState.MENU_HISTORY)} className="bg-white border border-gray-100 px-3 py-2 rounded-xl flex items-center justify-center text-[9px] font-black uppercase tracking-widest shadow-sm">📜 Histórico</button>
             <button onClick={() => window.print()} className="bg-white border border-gray-100 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm">🖨️</button>
             <button 
-              onClick={(e) => {
-                e.preventDefault();
-                onDeleteMenu(weeklyMenu.id);
-              }} 
+              onClick={handleClearClick} 
               disabled={isLoading}
               className="bg-white border border-gray-100 w-10 h-10 rounded-xl flex items-center justify-center text-red-400 shadow-sm active:scale-90 transition-transform disabled:opacity-50"
               title="Apagar este cardápio"

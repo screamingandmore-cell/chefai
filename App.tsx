@@ -97,12 +97,9 @@ export default function App() {
     generateWeekly
   } = useChefActions(user, session, handleProfileRefresh, setUser);
 
-  // Função centralizada para apagar cardápios com feedback de carregamento
+  // Lógica de exclusão agora assume que a confirmação já foi feita na View
   const handleDeleteMenu = useCallback(async (menuId: string) => {
     if (!session?.user?.id || isDeleting) return;
-    
-    const confirmDelete = window.confirm("Deseja realmente apagar este cardápio permanentemente?");
-    if (!confirmDelete) return;
 
     setIsDeleting(true);
     try {
@@ -110,26 +107,20 @@ export default function App() {
       
       setAllMenus(prev => {
         const updated = prev.filter(m => m.id !== menuId);
-        // Se apagamos o menu que estava ativo, selecionamos outro ou voltamos ao início
+        // Sincroniza o cardápio ativo
         if (weeklyMenu?.id === menuId) {
-          if (updated.length > 0) {
-            setWeeklyMenu(updated[0]);
-          } else {
-            setWeeklyMenu(null);
-            // Se não sobrar nenhum menu, voltamos para a Home para evitar tela vazia estranha
-            navigate(ViewState.HOME);
-          }
+          setWeeklyMenu(updated.length > 0 ? updated[0] : null);
         }
         return updated;
       });
       
     } catch (err) {
       console.error("Erro ao apagar cardápio:", err);
-      alert("Não foi possível apagar o cardápio. Verifique sua conexão.");
+      alert("Erro ao tentar excluir o cardápio do servidor.");
     } finally {
       setIsDeleting(false);
     }
-  }, [session, weeklyMenu, isDeleting, navigate]);
+  }, [session, weeklyMenu, isDeleting]);
 
   useEffect(() => {
     if (isLoading) {
@@ -230,7 +221,7 @@ export default function App() {
             weeklyMenu={weeklyMenu}
             onNavigate={navigate}
             onSelectRecipe={(r: Recipe) => { setGeneratedRecipe(r); navigate(ViewState.RECIPE_DETAILS); }}
-            onDeleteMenu={handleDeleteMenu} 
+            onClearMenu={handleDeleteMenu} 
             dietGoal={dietGoal}
             setDietGoal={setDietGoal}
             selectedDifficulty={difficulty}
