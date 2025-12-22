@@ -48,7 +48,7 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
   };
 
   return (
-    <div className="space-y-8 relative animate-slideUp pb-40">
+    <div className="space-y-8 relative animate-slideUp">
       <div className="px-2">
         <button 
           onClick={() => onNavigate(ViewState.HOME)}
@@ -180,7 +180,6 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
           )}
         </button>
       </div>
-      <div className="w-full h-32 md:h-40 flex-shrink-0" aria-hidden="true"></div>
     </div>
   );
 };

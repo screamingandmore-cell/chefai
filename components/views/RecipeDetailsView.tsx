@@ -121,9 +121,6 @@ export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, is
           )}
         </div>
       </div>
-      
-      {/* Spacer para evitar que o menu flutuante cubra o conteúdo final */}
-      <div className="w-full h-32 md:h-40 flex-shrink-0" aria-hidden="true"></div>
     </div>
   );
 };

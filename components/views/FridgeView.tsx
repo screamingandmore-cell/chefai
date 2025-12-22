@@ -54,7 +54,7 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
   };
 
   return (
-    <div className="space-y-8 relative animate-slideUp pb-20">
+    <div className="space-y-8 relative animate-slideUp">
       <div className="px-2">
         <button 
           onClick={() => onNavigate(ViewState.HOME)}
@@ -184,7 +184,6 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
           </button>
         </div>
       </div>
-      <div className="w-full h-32 md:h-40 flex-shrink-0" aria-hidden="true"></div>
     </div>
   );
 };

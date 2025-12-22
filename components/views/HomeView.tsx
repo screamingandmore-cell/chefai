@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ViewState, UserProfile, WeeklyMenu } from '../../types';
 

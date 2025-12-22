@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { ViewState } from '../types';
 
@@ -108,7 +107,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate
 
       {!isPremium && <AdBanner type="banner" />}
 
-      <main ref={mainRef} className="flex-1 overflow-y-auto pt-6 scroll-smooth no-scrollbar relative min-h-0">
+      {/* pb-40 garante que o conteúdo role para cima do menu flutuante */}
+      <main ref={mainRef} className="flex-1 overflow-y-auto pt-6 pb-40 scroll-smooth no-scrollbar relative min-h-0">
         {children}
       </main>
 
