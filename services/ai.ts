@@ -1,8 +1,23 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { WeeklyMenu, Recipe, Difficulty, DietGoal, DIET_GOALS } from "../types";
 
-// Schema definitions
+/**
+ * Função auxiliar para obter o cliente da IA com a chave correta.
+ * Resolve o problema de cota usando chaves distintas para Texto e Imagem.
+ */
+const getAiClient = (isMultimodal: boolean) => {
+  // No Vite, usamos import.meta.env para acessar variáveis do .env
+  // VITE_GEMINI_API_KEY -> Usada para Texto (Geração de Receitas e Cardápios)
+  // VITE_GEMINI_API_KEY_IMAGE -> Usada para Imagem (Análise da Geladeira)
+  const key = isMultimodal 
+    ? import.meta.env.VITE_GEMINI_API_KEY_IMAGE 
+    : import.meta.env.VITE_GEMINI_API_KEY;
+    
+  // Prioriza a chave específica do usuário, se não existir, tenta a API_KEY padrão do sistema
+  return new GoogleGenAI({ apiKey: (key || process.env.API_KEY) as string });
+};
+
+// Schema definitions para garantir respostas estruturadas
 const RECIPE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
@@ -39,30 +54,20 @@ REGRAS DE QUALIDADE:
 2. Modo de Preparo: Seja detalhado e instrutivo.
 3. Responda APENAS em JSON.`;
 
-/**
- * Valida a existência da chave de API e retorna a instância do GoogleGenAI
- */
-const getAIClient = () => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) {
-    const errorMsg = "CRITICAL ERROR: A variável de ambiente VITE_GEMINI_API_KEY não foi encontrada. Verifique seu arquivo .env ou as configurações de ambiente no provedor de hospedagem (Vercel).";
-    console.error(errorMsg);
-    throw new Error("Chave de API do Gemini não configurada.");
-  }
-  return new GoogleGenAI({ apiKey });
-};
-
 export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string[]> => {
-  const ai = getAIClient();
-  
   try {
-    const parts: any[] = imagesBase64.map(base64 => ({
-      inlineData: {
-        mimeType: "image/jpeg",
-        data: base64.includes(',') ? base64.split(',')[1] : base64
-      }
-    }));
-    parts.push({ text: "Analise cuidadosamente estas fotos e liste apenas os nomes dos ingredientes comestíveis encontrados em um array JSON chamado 'ingredients'." });
+    // Inicializa com a chave de IMAGEM (Multimodal)
+    const ai = getAiClient(true);
+    
+    const parts = [
+      ...imagesBase64.map(base64 => ({
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: base64.includes(',') ? base64.split(',')[1] : base64
+        }
+      })),
+      { text: "Analise cuidadosamente estas fotos e liste apenas os nomes dos ingredientes comestíveis encontrados em um array JSON chamado 'ingredients'." }
+    ];
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-image-preview',
@@ -93,11 +98,12 @@ export const generateQuickRecipe = async (
   difficulty: Difficulty,
   goal: DietGoal
 ): Promise<Recipe> => {
-  const ai = getAIClient();
-  
+  // Inicializa com a chave de TEXTO
+  const ai = getAiClient(false);
+
   let goalContext = `Objetivo: ${DIET_GOALS[goal]}.`;
   if (goal === 'chef_choice') {
-    goalContext = "O usuário escolheu 'A Escolha do Chef'. IGNORE restrições de calorias ou dietas específicas (a menos que haja alergias). Seu único objetivo é criar a receita MAIS DELICIOSA, CRIATIVA e SABOROSA possível com esses ingredientes. Use técnicas de alta gastronomia se possível.";
+    goalContext = "O usuário escolheu 'A Escolha do Chef'. Seu único objetivo é criar a receita MAIS DELICIOSA, CRIATIVA e SABOROSA possível.";
   }
 
   const prompt = `${goalContext} Use principalmente: ${ingredients.join(", ")}. 
@@ -114,6 +120,8 @@ export const generateQuickRecipe = async (
   });
 
   const data = JSON.parse(response.text || "{}");
+  if (data.error) throw new Error(data.error);
+  
   return { ...data, id: crypto.randomUUID() };
 };
 
@@ -123,14 +131,10 @@ export const generateWeeklyMenu = async (
   dietGoal: DietGoal,
   difficulty: Difficulty
 ): Promise<WeeklyMenu> => {
-  const ai = getAIClient();
+  // Inicializa com a chave de TEXTO
+  const ai = getAiClient(false);
 
-  let goalContext = `Focado em ${DIET_GOALS[dietGoal]}.`;
-  if (dietGoal === 'chef_choice') {
-    goalContext = "O usuário escolheu 'A Escolha do Chef' para a semana. IGNORE restrições de dietas específicas. Seu único objetivo é criar um plano MAIS GASTRONÔMICO, DELICIOSO e CRIATIVO possível com esses ingredientes. Use técnicas de alta gastronomia se possível.";
-  }
-
-  const prompt = `Planeje um cardápio semanal completo ${goalContext} usando: ${ingredients.join(", ")}. 
+  const prompt = `Planeje um cardápio semanal completo focado em ${dietGoal} usando: ${ingredients.join(", ")}. 
                   Não use: ${allergies.join(", ")}. Nível de dificuldade: ${difficulty}.`;
 
   const response = await ai.models.generateContent({
