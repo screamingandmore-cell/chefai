@@ -96,6 +96,33 @@ export default function App() {
     generateWeekly
   } = useChefActions(user, session, handleProfileRefresh, setUser);
 
+  // Função centralizada para apagar cardápios
+  const handleDeleteMenu = useCallback(async (menuId: string) => {
+    if (!session?.user?.id) return;
+    
+    const confirmDelete = window.confirm("Deseja realmente apagar este cardápio permanentemente?");
+    if (!confirmDelete) return;
+
+    try {
+      await SupabaseService.deleteWeeklyMenu(menuId, session.user.id);
+      
+      setAllMenus(prev => {
+        const updated = prev.filter(m => m.id !== menuId);
+        // Se o cardápio apagado era o que estava aberto, troca para o próximo disponível ou limpa
+        if (weeklyMenu?.id === menuId) {
+          setWeeklyMenu(updated.length > 0 ? updated[0] : null);
+        }
+        return updated;
+      });
+      
+      // Feedback visual simples via console ou se preferir pode adicionar um toast aqui futuramente
+      console.log("Cardápio removido com sucesso");
+    } catch (err) {
+      console.error("Erro ao apagar cardápio:", err);
+      alert("Não foi possível apagar o cardápio no momento.");
+    }
+  }, [session, weeklyMenu]);
+
   useEffect(() => {
     if (isLoading) {
       const interval = setInterval(() => {
@@ -195,7 +222,7 @@ export default function App() {
             weeklyMenu={weeklyMenu}
             onNavigate={navigate}
             onSelectRecipe={(r: Recipe) => { setGeneratedRecipe(r); navigate(ViewState.RECIPE_DETAILS); }}
-            onDeleteMenu={() => {}} 
+            onDeleteMenu={handleDeleteMenu} 
             dietGoal={dietGoal}
             setDietGoal={setDietGoal}
             selectedDifficulty={difficulty}
@@ -221,17 +248,12 @@ export default function App() {
         return <HistoryView 
           menus={allMenus} 
           onSelect={(m: WeeklyMenu) => { setWeeklyMenu(m); navigate(ViewState.WEEKLY_PLAN); }}
-          onDelete={(id: string) => {
-            if (session?.user?.id) {
-              SupabaseService.deleteWeeklyMenu(id, session.user.id);
-              setAllMenus(prev => prev.filter(m => m.id !== id));
-            }
-          }}
+          onDelete={handleDeleteMenu}
           onBack={() => navigate(-1)}
         />;
       default: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={navigate} />;
     }
-  }, [view, user, weeklyMenu, allMenus, ingredients, isLoading, difficulty, dietGoal, session, handleAddIngredients, handleRemoveIngredient, handleImageUpload, handleGenerateQuick, handleGenerateWeekly, handleUpdateAllergies, handleRemoveAllergy, navigate]);
+  }, [view, user, weeklyMenu, allMenus, ingredients, isLoading, difficulty, dietGoal, session, handleAddIngredients, handleRemoveIngredient, handleImageUpload, handleGenerateQuick, handleGenerateWeekly, handleUpdateAllergies, handleRemoveAllergy, handleDeleteMenu, navigate]);
 
   if (!session) return <AuthScreen onLogin={() => {}} />;
 
