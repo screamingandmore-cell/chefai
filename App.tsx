@@ -239,6 +239,9 @@ export default function App() {
     <Layout activeView={view} onNavigate={navigate} isPremium={user?.isPremium || false}>
       {currentView}
       
+      {/* Safe Area Spacer: Impede que o menu inferior cubra o conteúdo final das telas */}
+      <div className="h-32 no-print" aria-hidden="true" />
+      
       {isLoading && (
         <div className="fixed inset-0 z-[300] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
           <div className="w-24 h-24 mb-8 relative">
