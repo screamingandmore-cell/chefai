@@ -15,7 +15,7 @@ interface FridgeViewProps {
   onNavigate: (view: ViewState) => void;
   onGenerateQuick: () => void;
   onGenerateWeekly: () => void;
-  onUpdateAllergies: (input: string) => Promise<void>; // Alias para handleUpdateAllergies
+  onUpdateAllergies: (input: string) => Promise<void>; 
   onRemoveAllergy: (index: number) => Promise<void>;
 }
 
@@ -49,8 +49,20 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
   const handleAddAllergy = async () => {
     const val = allergyInput.trim();
     if (!val) return;
-    await onUpdateAllergies(val);
+    
+    // Suporte para múltiplos itens separados por vírgula ou ponto e vírgula
+    const items = val.split(/[,;]/).map(i => i.trim()).filter(i => i.length > 0);
+    for (const item of items) {
+      await onUpdateAllergies(item);
+    }
     setAllergyInput('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Previne qualquer comportamento de form
+      handleAddAllergy();
+    }
   };
 
   return (
@@ -88,7 +100,7 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
           <input 
             value={allergyInput}
             onChange={(e) => setAllergyInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddAllergy()}
+            onKeyDown={handleKeyDown}
             placeholder="Ex: Camarão, Glúten..."
             maxLength={500}
             className="flex-1 bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-red-100 outline-none font-medium"

@@ -16,7 +16,6 @@ export const DIET_GOALS: Record<DietGoal, string> = {
   'cheap': '💸 Econômico'
 };
 
-// Define the SubscriptionPlan interface used in stripe services
 export interface SubscriptionPlan {
   id: string;
   name: string;

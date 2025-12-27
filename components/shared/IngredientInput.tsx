@@ -1,5 +1,4 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, memo, useCallback } from 'react';
 
 interface IngredientInputProps {
   ingredients: string[];
@@ -11,34 +10,10 @@ interface IngredientInputProps {
 }
 
 const EMOJI_MAP: Record<string, string> = {
-  frango: '🐔',
-  arroz: '🍚',
-  carne: '🥩',
-  ovo: '🥚',
-  batata: '🥔',
-  cenoura: '🥕',
-  tomate: '🍅',
-  peixe: '🐟',
-  leite: '🥛',
-  pão: '🍞',
-  macarrão: '🍝',
-  queijo: '🧀',
-  cebola: '🧅',
-  alho: '🧄',
-  sal: '🧂',
-  pimenta: '🌶️',
-  feijão: '🫘',
-  alface: '🥬',
-  brócolis: '🥦',
-  milho: '🌽',
-  limão: '🍋',
-  maçã: '🍎',
-  banana: '🍌',
-  azeite: '🫗',
-  açúcar: '🍬',
-  manteiga: '🧈',
-  mel: '🍯',
-  berinjela: '🍆',
+  frango: '🐔', arroz: '🍚', carne: '🥩', ovo: '🥚', batata: '🥔', cenoura: '🥕', tomate: '🍅',
+  peixe: '🐟', leite: '🥛', pão: '🍞', macarrão: '🍝', queijo: '🧀', cebola: '🧅', alho: '🧄',
+  sal: '🧂', pimenta: '🌶️', feijão: '🫘', alface: '🥬', brócolis: '🥦', milho: '🌽', limão: '🍋',
+  maçã: '🍎', banana: '🍌', azeite: '🫗', açúcar: '🍬', manteiga: '🧈', mel: '🍯', berinjela: '🍆',
   cogumelo: '🍄'
 };
 
@@ -58,18 +33,18 @@ const TAG_COLORS = [
   'bg-amber-50 text-amber-700 border-amber-100'
 ];
 
-export const IngredientInput: React.FC<IngredientInputProps> = ({
+export const IngredientInput = memo(({
   ingredients,
   onAdd,
   onRemove,
   onImageUpload,
   isLoading,
   isPremium
-}) => {
+}: IngredientInputProps) => {
   const [currentIngredient, setCurrentIngredient] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const processInput = () => {
+  const processInput = useCallback(() => {
     const input = currentIngredient.trim();
     if (!input) return;
     
@@ -77,8 +52,6 @@ export const IngredientInput: React.FC<IngredientInputProps> = ({
     let current = "";
     let depth = 0;
 
-    // Lógica de separação inteligente: 
-    // Separa por quebra de linha, ponto e vírgula, ou vírgula (desde que não esteja dentro de parênteses)
     for (let i = 0; i < input.length; i++) {
       const char = input[i];
       if (char === '(') depth++;
@@ -87,7 +60,7 @@ export const IngredientInput: React.FC<IngredientInputProps> = ({
       if (char === '\n' || char === ';') {
         if (current.trim()) items.push(current.trim());
         current = "";
-        depth = 0; // Reset depth on hard split
+        depth = 0;
       } else if (char === ',' && depth <= 0) {
         if (current.trim()) items.push(current.trim());
         current = "";
@@ -97,8 +70,6 @@ export const IngredientInput: React.FC<IngredientInputProps> = ({
     }
     if (current.trim()) items.push(current.trim());
 
-    // Filtra itens válidos (permite caracteres especiais, acentos, emojis)
-    // Atualizado para limite de 500 caracteres
     const finalItems = items
       .map(s => s.trim())
       .filter(s => s.length >= 1 && s.length <= 500);
@@ -107,7 +78,7 @@ export const IngredientInput: React.FC<IngredientInputProps> = ({
       onAdd(finalItems);
       setCurrentIngredient('');
     }
-  };
+  }, [currentIngredient, onAdd]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -143,7 +114,7 @@ export const IngredientInput: React.FC<IngredientInputProps> = ({
         <input 
           type="file" 
           accept="image/*" 
-          multiple 
+          capture="environment"
           ref={fileInputRef} 
           className="hidden" 
           onChange={onImageUpload} 
@@ -154,19 +125,19 @@ export const IngredientInput: React.FC<IngredientInputProps> = ({
           disabled={isLoading}
           className={`flex-1 py-3.5 rounded-2xl border flex items-center justify-center gap-2 text-sm font-bold transition-all active:scale-[0.98] ${
             isPremium 
-              ? 'border-chef-green text-chef-green bg-emerald-50/50' 
+              ? 'border-chef-green text-chef-green bg-emerald-50/50 shadow-sm' 
               : 'border-gray-200 text-gray-400 bg-gray-50'
           }`}
         >
           {isLoading ? (
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-chef-green border-t-transparent rounded-full animate-spin"></div>
-              <span>Analisando...</span>
+              <span>Chef analisando...</span>
             </div>
           ) : (
             <>
               <span>{isPremium ? '📸' : '🔒'}</span>
-              <span>{isPremium ? 'Foto (Premium)' : 'Foto (Premium)'}</span>
+              <span>Abrir Câmera</span>
             </>
           )}
         </button>
@@ -176,7 +147,7 @@ export const IngredientInput: React.FC<IngredientInputProps> = ({
         {ingredients.length === 0 && !isLoading && (
           <div className="w-full flex flex-col items-center py-6 opacity-30">
             <span className="text-4xl mb-2">🥗</span>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-center">Digite os itens que você tem</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-center">Digite ou tire foto dos itens</p>
           </div>
         )}
         {ingredients.map((ing, i) => {
@@ -190,11 +161,7 @@ export const IngredientInput: React.FC<IngredientInputProps> = ({
               {emoji && <span className="text-sm grayscale-0">{emoji}</span>}
               <span className="max-w-[200px] truncate">{ing}</span>
               <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onRemove(i);
-                }} 
+                onClick={() => onRemove(i)} 
                 className="ml-1 opacity-50 hover:opacity-100 text-lg font-black w-6 h-6 flex items-center justify-center relative z-10"
                 aria-label={`Remover ${ing}`}
               >
@@ -206,4 +173,6 @@ export const IngredientInput: React.FC<IngredientInputProps> = ({
       </div>
     </div>
   );
-};
+});
+
+IngredientInput.displayName = 'IngredientInput';
