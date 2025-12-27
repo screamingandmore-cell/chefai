@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ViewState, UserProfile, DietGoal, DIET_GOALS } from '../../types';
+import { ViewState, UserProfile, DietGoal, DIET_GOALS, Difficulty, Recipe } from '../../types';
 import { IngredientInput } from '../shared/IngredientInput';
 
 interface FridgeViewProps {
@@ -7,7 +7,7 @@ interface FridgeViewProps {
   ingredients: string[];
   onAddIngredient: (items: string[]) => void;
   onRemoveIngredient: (index: number) => void;
-  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>, autoGenerateParams?: { difficulty: Difficulty, goal: DietGoal }) => Promise<Recipe | null>;
   dietGoal: DietGoal;
   setDietGoal: (g: DietGoal) => void;
   isLoading: boolean;

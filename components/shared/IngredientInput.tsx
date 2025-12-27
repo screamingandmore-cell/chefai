@@ -1,10 +1,11 @@
 import React, { useState, useRef, memo, useCallback } from 'react';
+import { Difficulty, DietGoal, Recipe } from '../../types';
 
 interface IngredientInputProps {
   ingredients: string[];
   onAdd: (newIngredients: string[]) => void;
   onRemove: (index: number) => void;
-  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>, autoGenerateParams?: { difficulty: Difficulty, goal: DietGoal }) => Promise<Recipe | null>;
   isLoading: boolean;
   isPremium: boolean;
 }
@@ -117,7 +118,7 @@ export const IngredientInput = memo(({
           capture="environment"
           ref={fileInputRef} 
           className="hidden" 
-          onChange={onImageUpload} 
+          onChange={(e) => onImageUpload(e)} 
         />
         <button 
           type="button"
