@@ -88,6 +88,12 @@ export const IngredientInput = memo(({
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    await onImageUpload(e);
+    // Limpa o input para permitir subir a mesma foto novamente se necessário
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
     <div className="w-full">
       <div className="flex gap-2 mb-4">
@@ -118,7 +124,7 @@ export const IngredientInput = memo(({
           capture="environment"
           ref={fileInputRef} 
           className="hidden" 
-          onChange={(e) => onImageUpload(e)} 
+          onChange={handleFileChange} 
         />
         <button 
           type="button"

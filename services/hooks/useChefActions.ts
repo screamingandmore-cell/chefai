@@ -14,8 +14,8 @@ export interface ChefActionsReturn {
   handleRemoveIngredient: (index: number) => void;
   handleUpdateAllergies: (rawInput: string) => Promise<void>;
   handleRemoveAllergy: (index: number) => Promise<void>;
-  handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
-  generateQuick: (difficulty: Difficulty, goal: DietGoal) => Promise<Recipe | null>;
+  handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>, autoGenerateParams?: { difficulty: Difficulty, goal: DietGoal }) => Promise<Recipe | null>;
+  generateQuick: (difficulty: Difficulty, goal: DietGoal, customIngredients?: string[]) => Promise<Recipe | null>;
   generateWeekly: (difficulty: Difficulty, goal: DietGoal) => Promise<WeeklyMenu | null>;
 }
 
@@ -90,13 +90,34 @@ export function useChefActions(
     }
   }, [user, session, onUpdateUser]);
 
-  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const generateQuick = useCallback(async (difficulty: Difficulty, goal: DietGoal, customIngredients?: string[]): Promise<Recipe | null> => {
+    const activeIngredients = customIngredients || ingredients;
+    if (activeIngredients.length === 0) {
+      alert("Adicione ingredientes primeiro.");
+      return null;
+    }
+
+    setIsLoading(true);
+    try {
+      const recipe = await AIService.generateQuickRecipe(activeIngredients, user?.allergies || [], difficulty, goal);
+      onProfileRefresh();
+      return recipe;
+    } catch (err) {
+      console.error("Erro IA:", err);
+      alert("Erro ao criar receita. Tente novamente.");
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [ingredients, user, onProfileRefresh]);
+
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, autoGenerateParams?: { difficulty: Difficulty, goal: DietGoal }): Promise<Recipe | null> => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) return null;
     
     if (!user || !user.isPremium) {
       alert("Recurso Premium: Assine para usar a câmera.");
-      return;
+      return null;
     }
 
     setIsLoading(true);
@@ -108,33 +129,22 @@ export function useChefActions(
       }
       const detected = await AIService.analyzeFridgeImage(imagesBase64);
       handleAddIngredients(detected);
+
+      if (autoGenerateParams && detected.length > 0) {
+        const combined = [...new Set([...ingredients, ...detected])];
+        const recipe = await AIService.generateQuickRecipe(combined, user?.allergies || [], autoGenerateParams.difficulty, autoGenerateParams.goal);
+        return recipe;
+      }
+      
+      return null;
     } catch (err) {
       console.error("Erro na imagem:", err);
-      alert("O Chef teve um problema ao analisar as fotos. Tente novamente.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, handleAddIngredients]);
-
-  const generateQuick = useCallback(async (difficulty: Difficulty, goal: DietGoal): Promise<Recipe | null> => {
-    if (ingredients.length === 0) {
-      alert("Adicione ingredientes primeiro.");
-      return null;
-    }
-
-    setIsLoading(true);
-    try {
-      const recipe = await AIService.generateQuickRecipe(ingredients, user?.allergies || [], difficulty, goal);
-      onProfileRefresh();
-      return recipe;
-    } catch (err) {
-      console.error("Erro IA:", err);
-      alert("Erro ao criar receita. Tente ingredientes diferentes.");
+      alert("Erro ao analisar imagem.");
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [ingredients, user, onProfileRefresh]);
+  }, [user, handleAddIngredients, ingredients]);
 
   const generateWeekly = useCallback(async (difficulty: Difficulty, goal: DietGoal): Promise<WeeklyMenu | null> => {
     if (!session?.user?.id) return null;

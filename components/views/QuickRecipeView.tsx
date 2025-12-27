@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Difficulty, DietGoal, DIET_GOALS, ViewState, UserProfile, Recipe } from '../../types';
 import { IngredientInput } from '../shared/IngredientInput';
@@ -62,7 +61,6 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
     }
   };
 
-  // Fix: Return the recipe to match the expected return type Promise<Recipe | null> required by IngredientInput
   const handleCameraCapture = useCallback(async (e: React.ChangeEvent<HTMLInputElement>): Promise<Recipe | null> => {
     const recipe = await onImageUpload(e, { difficulty: selectedDifficulty, goal: dietGoal });
     if (recipe) {
