@@ -1,17 +1,12 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css'; 
 import App from './App';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 
-// Bridge entre Vite env e process.env exigido pela SDK do Google
-if (typeof window !== 'undefined') {
-  (window as any).process = (window as any).process || {};
-  (window as any).process.env = (window as any).process.env || {};
-  
-  // Mapeia a chave do Vite para o padrão esperado pela biblioteca @google/genai
-  (window as any).process.env.API_KEY = import.meta.env.VITE_GEMINI_API_KEY || (window as any).process.env.API_KEY;
-}
+// Fix: Removed prohibited bridge logic that defines process.env.
+// The SDK's access to process.env.API_KEY is handled externally as a hard requirement.
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

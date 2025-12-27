@@ -1,3 +1,4 @@
+
 import React, { memo } from 'react';
 import { WeeklyMenu, DIET_GOALS, DietGoal } from '../../types';
 
@@ -54,7 +55,7 @@ interface HistoryViewProps {
   onBack: () => void;
 }
 
-export const HistoryView: React.FC<HistoryViewProps> = ({ menus, onSelect, onDelete, onBack }) => {
+const HistoryView: React.FC<HistoryViewProps> = ({ menus, onSelect, onDelete, onBack }) => {
   return (
     <div className="animate-slideUp space-y-6">
       <button 
@@ -90,3 +91,5 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ menus, onSelect, onDel
     </div>
   );
 };
+
+export default HistoryView;

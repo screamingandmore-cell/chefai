@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export const PrivacyView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
@@ -29,3 +30,6 @@ export const PrivacyView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     </div>
   );
 };
+
+// Fix: Exporting as default to match import in App.tsx
+export default PrivacyView;

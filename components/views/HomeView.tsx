@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ViewState, UserProfile, WeeklyMenu } from '../../types';
 
@@ -7,7 +8,7 @@ interface HomeViewProps {
   onNavigate: (view: ViewState) => void;
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate }) => {
+const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate }) => {
   return (
     <div className="space-y-8 animate-slideUp">
       <div className="px-2">
@@ -15,9 +16,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate
         <h2 className="font-heading text-4xl font-black text-gray-900 leading-tight">Chef<span className="text-chef-green">.ai</span></h2>
       </div>
 
-      {/* Grid de Ações Principais */}
       <div className="grid grid-cols-2 gap-4">
-        {/* Botão Receita Rápida */}
         <div 
           onClick={() => onNavigate(ViewState.QUICK_RECIPE)}
           className="bg-gradient-to-br from-chef-orange to-rose-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-orange-100 relative overflow-hidden cursor-pointer group active:scale-95 transition-all flex flex-col justify-between aspect-square"
@@ -30,7 +29,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate
           <div className="absolute -bottom-4 -right-4 text-8xl opacity-10 grayscale brightness-200 select-none pointer-events-none group-hover:scale-110 transition-transform">🍳</div>
         </div>
 
-        {/* Botão Cardápio Semanal - Agora redireciona para a Geladeira */}
         <div 
           onClick={() => onNavigate(ViewState.FRIDGE)}
           className="bg-gradient-to-br from-chef-green to-emerald-700 rounded-[2.5rem] p-6 text-white shadow-xl shadow-emerald-100 relative overflow-hidden cursor-pointer group active:scale-95 transition-all flex flex-col justify-between aspect-square"
@@ -44,7 +42,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate
         </div>
       </div>
 
-      {/* Card de Assinatura Premium */}
       {!user?.isPremium && (
         <div 
           onClick={() => onNavigate(ViewState.PREMIUM)}
@@ -61,9 +58,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate
         </div>
       )}
 
-      {/* Grid Secundária */}
       <div className="grid grid-cols-2 gap-4">
-        {/* Botão Planejamento Semanal (Antiga Geladeira) */}
         <div 
           onClick={() => onNavigate(ViewState.WEEKLY_PLAN)}
           className="bg-white p-6 rounded-[2.2rem] border border-gray-100 shadow-soft flex flex-col items-center text-center gap-4 active:scale-95 transition-all cursor-pointer hover:border-chef-green/30"
@@ -89,3 +84,5 @@ export const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate
     </div>
   );
 };
+
+export default HomeView;

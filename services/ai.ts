@@ -1,7 +1,11 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { WeeklyMenu, Recipe, Difficulty, DietGoal, DIET_GOALS } from "../types";
 
-const MODEL_NAME = 'gemini-3-flash-preview';
+// Usando gemini-3-pro-preview para tarefas que exigem raciocínio avançado (receitas e cardápios)
+const MODEL_NAME_REASONING = 'gemini-3-pro-preview';
+// Usando gemini-3-flash-preview para tarefas básicas de processamento de texto e visão
+const MODEL_NAME_BASIC = 'gemini-3-flash-preview';
 
 const RECIPE_SCHEMA = {
   type: Type.OBJECT,
@@ -36,16 +40,9 @@ Sua função não é bater papo, mas garantir a execução perfeita do prato atr
 - O foco total é a precisão do modo de preparo para evitar erros do usuário.
 - Responda estritamente no formato JSON solicitado.`;
 
+// Fix: Creating a new GoogleGenAI instance directly from process.env.API_KEY as per guidelines.
+// Removed complex key selection logic as it is not required for these models.
 async function initializeAI() {
-  if (!process.env.API_KEY && (window as any).aistudio) {
-    const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-    if (!hasKey) {
-      await (window as any).aistudio.openSelectKey();
-    }
-  }
-  if (!process.env.API_KEY) {
-    throw new Error("API_KEY_MISSING");
-  }
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
 }
 
@@ -60,7 +57,7 @@ export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string
     }));
 
     const response = await ai.models.generateContent({
-      model: MODEL_NAME,
+      model: MODEL_NAME_BASIC,
       contents: { 
         parts: [
           ...imageParts,
@@ -101,7 +98,7 @@ export const generateQuickRecipe = async (
                     Foco total na precisão técnica das instruções de preparo.`;
     
     const response = await ai.models.generateContent({
-      model: MODEL_NAME,
+      model: MODEL_NAME_REASONING,
       contents: prompt,
       config: {
         systemInstruction: CHEF_SYSTEM_INSTRUCTION,
@@ -116,9 +113,7 @@ export const generateQuickRecipe = async (
     return { ...JSON.parse(text), id: crypto.randomUUID() };
   } catch (error: any) {
     console.error("Erro ao gerar receita:", error);
-    throw new Error(error.message === "API_KEY_MISSING" 
-      ? "Chave de API não configurada." 
-      : "O Chef encontrou um erro na bancada. Tente novamente.");
+    throw new Error("O Chef encontrou um erro na bancada. Tente novamente.");
   }
 };
 
@@ -137,7 +132,7 @@ export const generateWeeklyMenu = async (
                     Maximize o uso eficiente dos insumos ao longo dos 7 dias.`;
 
     const response = await ai.models.generateContent({
-      model: MODEL_NAME,
+      model: MODEL_NAME_REASONING,
       contents: prompt,
       config: {
         systemInstruction: CHEF_SYSTEM_INSTRUCTION + " Otimize o 'prep-work' (pré-preparo) para que o usuário ganhe tempo.",

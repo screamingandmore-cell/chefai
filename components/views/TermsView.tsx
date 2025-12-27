@@ -18,7 +18,7 @@ export const TermsView: React.FC<TermsViewProps> = ({ onBack }) => {
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
         </button>
-        <h2 className="font-heading font-black text-lg text-gray-900">Termos de Uso e Política de Privacidade</h2>
+        <h2 className="font-heading font-black text-lg text-gray-900">Termos de Uso</h2>
       </header>
 
       <div className="px-8 py-10 max-w-2xl mx-auto space-y-8 text-gray-700">
@@ -57,3 +57,6 @@ export const TermsView: React.FC<TermsViewProps> = ({ onBack }) => {
     </div>
   );
 };
+
+// Fix: Exporting as default to match import in App.tsx
+export default TermsView;

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Recipe } from '../../types';
 import { GoogleAdPlaceholder } from '../Layout';
@@ -8,7 +9,7 @@ interface RecipeDetailsViewProps {
   onBack: () => void;
 }
 
-export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, isPremium, onBack }) => {
+const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, isPremium, onBack }) => {
   if (!recipe) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-8 text-center animate-fadeIn">
@@ -52,7 +53,6 @@ export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, is
         </div>
 
         <div className="p-8 space-y-10">
-          {/* Descrição Técnica */}
           {recipe.description && (
             <p className="text-gray-600 text-sm leading-relaxed font-semibold italic border-l-4 border-chef-orange pl-4 py-1">
               {recipe.description}
@@ -70,7 +70,6 @@ export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, is
 
           {!isPremium && <GoogleAdPlaceholder />}
 
-          {/* Mise en Place (Ingredientes) */}
           <div>
             <h3 className="font-black text-gray-900 mb-5 text-[11px] uppercase tracking-[0.2em] flex items-center gap-2">
                <span className="w-1.5 h-1.5 bg-chef-green rounded-full"></span> Mise en Place
@@ -87,7 +86,6 @@ export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, is
           
           <hr className="border-gray-50" />
           
-          {/* Execução de Mestre */}
           <div>
             <h3 className="font-black text-gray-900 mb-6 text-[11px] uppercase tracking-[0.2em] flex items-center gap-2">
                <span className="w-1.5 h-1.5 bg-chef-orange rounded-full"></span> Execução de Mestre
@@ -109,7 +107,6 @@ export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, is
             </div>
           </div>
 
-          {/* Dica de Bancada */}
           {recipe.chefTip && (
             <div className="bg-emerald-50 border-2 border-emerald-100 p-7 rounded-[2.5rem] flex gap-5 mt-4 shadow-sm relative overflow-hidden">
               <span className="text-4xl filter drop-shadow-sm flex-shrink-0">👨‍🍳</span>
@@ -124,3 +121,5 @@ export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, is
     </div>
   );
 };
+
+export default RecipeDetailsView;

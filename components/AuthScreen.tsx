@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import * as SupabaseService from '../services/supabase';
 
@@ -8,7 +9,7 @@ const LoadingSpinner = () => (
     </svg>
   );
 
-export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
+const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,7 +18,7 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
   const [configMissing, setConfigMissing] = useState(false);
 
   useEffect(() => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
     if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
       setConfigMissing(true);
     }
@@ -26,7 +27,7 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (configMissing) {
-      setError("Configure as chaves VITE_SUPABASE no ambiente.");
+      setError("Configure as chaves VITE_SUPABASE na Vercel.");
       return;
     }
     setLoading(true);
@@ -48,20 +49,19 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
   return (
     <main className="min-h-screen bg-white flex flex-col items-center justify-center p-8">
       <div className="w-full max-w-sm text-center">
-        <div className="mb-10">
-          {/* Logo sem fundo preto conforme solicitado */}
+        <div className="mb-12">
           <img 
             src="/favicon.svg" 
             alt="Chef.ai Logo" 
-            className="w-24 h-24 mx-auto mb-6" 
+            className="w-24 h-24 mx-auto mb-6 drop-shadow-sm" 
           />
           <h1 className="text-4xl font-black text-gray-900 tracking-tighter">Chef<span className="text-chef-green">.ai</span></h1>
-          <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em] mt-2">Inteligência na Cozinha</p>
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.3em] mt-3">Inteligência na Cozinha</p>
         </div>
 
         {configMissing && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-[10px] mb-6 font-mono">
-            ⚠️ <b>ERRO:</b> Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY na Vercel.
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-[10px] mb-6 font-mono leading-tight">
+            ⚠️ <b>CONFIGURAÇÃO:</b> Adicione as chaves VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY na Vercel.
           </div>
         )}
 
@@ -100,3 +100,5 @@ export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
     </main>
   );
 };
+
+export default AuthScreen;

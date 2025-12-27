@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { ViewState, UserProfile, Recipe, WeeklyMenu, Difficulty, DietGoal } from '@/types';
@@ -5,19 +6,19 @@ import * as SupabaseService from '@/services/supabase';
 import { useChefActions } from '@/services/hooks/useChefActions';
 import { Session } from '@supabase/supabase-js';
 
-// Views
-import { AuthScreen } from '@/components/AuthScreen';
-import { HomeView } from '@/components/views/HomeView';
-import { FridgeView } from '@/components/views/FridgeView';
-import { QuickRecipeView } from '@/components/views/QuickRecipeView';
-import { WeeklyPlanView } from '@/components/views/WeeklyPlanView';
-import { RecipeDetailsView } from '@/components/views/RecipeDetailsView';
-import { ProfileView } from '@/components/views/ProfileView';
-import { ShoppingListView } from '@/components/views/ShoppingListView';
-import { HistoryView } from '@/components/views/HistoryView';
-import { PremiumView } from '@/components/views/PremiumView';
-import { TermsView } from '@/components/views/TermsView';
-import { PrivacyView } from '@/components/views/PrivacyView';
+// Views - Usando Default Imports para evitar erros de resolução de membro
+import AuthScreen from '@/components/AuthScreen';
+import HomeView from '@/components/views/HomeView';
+import FridgeView from '@/components/views/FridgeView';
+import QuickRecipeView from '@/components/views/QuickRecipeView';
+import WeeklyPlanView from '@/components/views/WeeklyPlanView';
+import RecipeDetailsView from '@/components/views/RecipeDetailsView';
+import ProfileView from '@/components/views/ProfileView';
+import ShoppingListView from '@/components/views/ShoppingListView';
+import HistoryView from '@/components/views/HistoryView';
+import PremiumView from '@/components/views/PremiumView';
+import TermsView from '@/components/views/TermsView';
+import PrivacyView from '@/components/views/PrivacyView';
 
 const LOADING_MESSAGES = [
   "Chef está afiando as facas...",
@@ -97,7 +98,6 @@ export default function App() {
     generateWeekly
   } = useChefActions(user, session, handleProfileRefresh, setUser);
 
-  // Lógica de exclusão agora assume que a confirmação já foi feita na View
   const handleDeleteMenu = useCallback(async (menuId: string) => {
     if (!session?.user?.id || isDeleting) return;
 
@@ -107,7 +107,6 @@ export default function App() {
       
       setAllMenus(prev => {
         const updated = prev.filter(m => m.id !== menuId);
-        // Sincroniza o cardápio ativo
         if (weeklyMenu?.id === menuId) {
           setWeeklyMenu(updated.length > 0 ? updated[0] : null);
         }
@@ -170,6 +169,11 @@ export default function App() {
     }
   };
 
+  const handleRecipeGenerated = useCallback((r: Recipe) => {
+    setGeneratedRecipe(r);
+    navigate(ViewState.RECIPE_DETAILS);
+  }, [navigate]);
+
   const currentView = useMemo(() => {
     switch(view) {
       case ViewState.HOME: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={navigate} />;
@@ -208,6 +212,7 @@ export default function App() {
             dietGoal={dietGoal}
             setDietGoal={setDietGoal}
             onGenerateQuick={handleGenerateQuick}
+            onRecipeGenerated={handleRecipeGenerated}
             isLoading={isLoading}
             isPremium={user?.isPremium || false}
             onNavigate={navigate}
@@ -252,7 +257,7 @@ export default function App() {
         />;
       default: return <HomeView user={user} weeklyMenu={weeklyMenu} onNavigate={navigate} />;
     }
-  }, [view, user, weeklyMenu, allMenus, ingredients, isLoading, difficulty, dietGoal, session, handleAddIngredients, handleRemoveIngredient, handleImageUpload, handleGenerateQuick, handleGenerateWeekly, handleUpdateAllergies, handleRemoveAllergy, handleDeleteMenu, isDeleting, navigate]);
+  }, [view, user, weeklyMenu, allMenus, ingredients, isLoading, difficulty, dietGoal, session, handleAddIngredients, handleRemoveIngredient, handleImageUpload, handleGenerateQuick, handleGenerateWeekly, handleUpdateAllergies, handleRemoveAllergy, handleDeleteMenu, isDeleting, navigate, handleRecipeGenerated]);
 
   if (!session) return <AuthScreen onLogin={() => {}} />;
 

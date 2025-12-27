@@ -35,7 +35,7 @@ interface ShoppingListViewProps {
   onBack: () => void;
 }
 
-export const ShoppingListView: React.FC<ShoppingListViewProps> = ({ menu, onBack }) => {
+const ShoppingListView: React.FC<ShoppingListViewProps> = ({ menu, onBack }) => {
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
   const toggleItem = useCallback((item: string) => {
@@ -101,3 +101,5 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({ menu, onBack
     </div>
   );
 };
+
+export default ShoppingListView;

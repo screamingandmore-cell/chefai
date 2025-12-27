@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ViewState, UserProfile, DietGoal, DIET_GOALS, Difficulty, Recipe } from '../../types';
 import { IngredientInput } from '../shared/IngredientInput';
@@ -19,7 +20,7 @@ interface FridgeViewProps {
   onRemoveAllergy: (index: number) => Promise<void>;
 }
 
-export const FridgeView: React.FC<FridgeViewProps> = ({
+const FridgeView: React.FC<FridgeViewProps> = ({
   user,
   ingredients,
   onAddIngredient,
@@ -50,7 +51,6 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
     const val = allergyInput.trim();
     if (!val) return;
     
-    // Suporte para múltiplos itens separados por vírgula ou ponto e vírgula
     const items = val.split(/[,;]/).map(i => i.trim()).filter(i => i.length > 0);
     for (const item of items) {
       await onUpdateAllergies(item);
@@ -60,7 +60,7 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      e.preventDefault(); // Previne qualquer comportamento de form
+      e.preventDefault();
       handleAddAllergy();
     }
   };
@@ -199,3 +199,5 @@ export const FridgeView: React.FC<FridgeViewProps> = ({
     </div>
   );
 };
+
+export default FridgeView;

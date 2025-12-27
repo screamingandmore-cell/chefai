@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Difficulty, DietGoal, DIET_GOALS, ViewState, UserProfile, Recipe } from '../../types';
 import { IngredientInput } from '../shared/IngredientInput';
@@ -21,7 +22,7 @@ interface QuickRecipeViewProps {
   onRemoveAllergy: (index: number) => Promise<void>;
 }
 
-export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
+const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
   user,
   ingredients,
   onAddIngredient,
@@ -45,8 +46,6 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
   const handleAddAllergy = async () => {
     const val = allergyInput.trim();
     if (!val) return;
-
-    // Suporte para múltiplos itens via Enter
     const items = val.split(/[,;]/).map(i => i.trim()).filter(i => i.length > 0);
     for (const item of items) {
       await onUpdateAllergies(item);
@@ -61,7 +60,10 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
     }
   };
 
-  const handleCameraCapture = useCallback(async (e: React.ChangeEvent<HTMLInputElement>): Promise<Recipe | null> => {
+  const handleCameraCapture = useCallback(async (
+    e: React.ChangeEvent<HTMLInputElement>, 
+    _unusedParams?: { difficulty: Difficulty, goal: DietGoal }
+  ): Promise<Recipe | null> => {
     const recipe = await onImageUpload(e, { difficulty: selectedDifficulty, goal: dietGoal });
     if (recipe) {
       onRecipeGenerated(recipe);
@@ -205,3 +207,5 @@ export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
     </div>
   );
 };
+
+export default QuickRecipeView;
