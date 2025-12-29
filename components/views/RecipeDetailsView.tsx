@@ -9,7 +9,7 @@ interface RecipeDetailsViewProps {
   onBack: () => void;
 }
 
-const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, isPremium, onBack }) => {
+export const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, isPremium, onBack }) => {
   if (!recipe) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-8 text-center animate-fadeIn">
@@ -121,5 +121,3 @@ const RecipeDetailsView: React.FC<RecipeDetailsViewProps> = ({ recipe, isPremium
     </div>
   );
 };
-
-export default RecipeDetailsView;

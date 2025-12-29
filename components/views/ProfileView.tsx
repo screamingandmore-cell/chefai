@@ -13,7 +13,7 @@ interface ProfileViewProps {
   onNavigate: (view: ViewState) => void;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ user, session, onLogout, onDeleteAccount, onNavigate }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ user, session, onLogout, onDeleteAccount, onNavigate }) => {
   return (
     <div className="flex flex-col min-h-full pb-32 animate-slideUp px-4">
        <div className="flex flex-col items-center pt-6 mb-8">
@@ -58,5 +58,3 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, session, onLogout, onDe
     </div>
   );
 };
-
-export default ProfileView;

@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { Recipe, WeeklyMenu, Difficulty, DietGoal, UserProfile } from '@/types';
 import * as AIService from '@/services/ai'; 
@@ -14,7 +15,7 @@ export interface ChefActionsReturn {
   handleRemoveIngredient: (index: number) => void;
   handleUpdateAllergies: (rawInput: string) => Promise<void>;
   handleRemoveAllergy: (index: number) => Promise<void>;
-  handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>, autoGenerateParams?: { difficulty: Difficulty, goal: DietGoal }) => Promise<Recipe | null>;
+  handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<Recipe | null>;
   generateQuick: (difficulty: Difficulty, goal: DietGoal, customIngredients?: string[]) => Promise<Recipe | null>;
   generateWeekly: (difficulty: Difficulty, goal: DietGoal) => Promise<WeeklyMenu | null>;
 }
@@ -59,17 +60,25 @@ export function useChefActions(
     setIngredients(prev => prev.filter((_, i) => i !== index));
   }, []);
 
+  const handleError = (err: any) => {
+    console.error("Chef AI Technical Error:", err);
+    
+    if (err.message === "API_QUOTA_EXCEEDED") {
+      alert("⚠️ Cota da IA Excedida: O Google limitou suas requisições gratuitas temporariamente. Aguarde 1 minuto e tente novamente.");
+    } else if (err.message === "API_KEY_INVALID_OR_LEAKED") {
+      alert("⚠️ Erro de Permissão: Sua chave de API é inválida ou expirou.");
+    } else {
+      alert("🍳 O Chef teve um problema técnico ao processar sua solicitação. Tente em alguns instantes.");
+    }
+  };
+
   const handleUpdateAllergies = useCallback(async (rawInput: string) => {
     if (!user || !session?.user) return;
-    
     const items = rawInput.split(/,|\n|;/).map(i => i.trim()).filter(i => i.length > 0 && i.length <= 500);
     const uniqueNew = items.filter(i => !user.allergies.includes(i));
-    
     if (uniqueNew.length === 0) return;
-
     const updatedAllergies = [...user.allergies, ...uniqueNew];
     const updatedUser = { ...user, allergies: updatedAllergies };
-    
     onUpdateUser(updatedUser);
     try {
       await SupabaseService.updatePreferences(session.user.id, updatedAllergies);
@@ -96,30 +105,26 @@ export function useChefActions(
       alert("Adicione ingredientes primeiro.");
       return null;
     }
-
     setIsLoading(true);
     try {
       const recipe = await AIService.generateQuickRecipe(activeIngredients, user?.allergies || [], difficulty, goal);
       onProfileRefresh();
       return recipe;
     } catch (err) {
-      console.error("Erro IA:", err);
-      alert("Erro ao criar receita. Tente novamente.");
+      handleError(err);
       return null;
     } finally {
       setIsLoading(false);
     }
   }, [ingredients, user, onProfileRefresh]);
 
-  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, autoGenerateParams?: { difficulty: Difficulty, goal: DietGoal }): Promise<Recipe | null> => {
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>): Promise<Recipe | null> => {
     const files = e.target.files;
     if (!files || files.length === 0) return null;
-    
     if (!user || !user.isPremium) {
       alert("Recurso Premium: Assine para usar a câmera.");
       return null;
     }
-
     setIsLoading(true);
     try {
       const imagesBase64: string[] = [];
@@ -129,22 +134,14 @@ export function useChefActions(
       }
       const detected = await AIService.analyzeFridgeImage(imagesBase64);
       handleAddIngredients(detected);
-
-      if (autoGenerateParams && detected.length > 0) {
-        const combined = [...new Set([...ingredients, ...detected])];
-        const recipe = await AIService.generateQuickRecipe(combined, user?.allergies || [], autoGenerateParams.difficulty, autoGenerateParams.goal);
-        return recipe;
-      }
-      
-      return null;
+      return null; // Sempre retorna null para que a view não mude de tela automaticamente
     } catch (err) {
-      console.error("Erro na imagem:", err);
-      alert("Erro ao analisar imagem.");
+      handleError(err);
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [user, handleAddIngredients, ingredients]);
+  }, [user, handleAddIngredients]);
 
   const generateWeekly = useCallback(async (difficulty: Difficulty, goal: DietGoal): Promise<WeeklyMenu | null> => {
     if (!session?.user?.id) return null;
@@ -152,7 +149,6 @@ export function useChefActions(
       alert("Adicione ingredientes primeiro.");
       return null;
     }
-
     setIsLoading(true);
     try {
       const tempMenu = await AIService.generateWeeklyMenu(ingredients, user?.allergies || [], goal, difficulty);
@@ -160,8 +156,7 @@ export function useChefActions(
       onProfileRefresh();
       return savedMenu;
     } catch (err) {
-      console.error("Erro Cardápio:", err);
-      alert("Não foi possível planejar sua semana.");
+      handleError(err);
       return null;
     } finally {
       setIsLoading(false);

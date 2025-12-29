@@ -20,7 +20,7 @@ interface FridgeViewProps {
   onRemoveAllergy: (index: number) => Promise<void>;
 }
 
-const FridgeView: React.FC<FridgeViewProps> = ({
+export const FridgeView: React.FC<FridgeViewProps> = ({
   user,
   ingredients,
   onAddIngredient,
@@ -199,5 +199,3 @@ const FridgeView: React.FC<FridgeViewProps> = ({
     </div>
   );
 };
-
-export default FridgeView;

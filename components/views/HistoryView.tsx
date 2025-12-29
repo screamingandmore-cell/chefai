@@ -55,7 +55,7 @@ interface HistoryViewProps {
   onBack: () => void;
 }
 
-const HistoryView: React.FC<HistoryViewProps> = ({ menus, onSelect, onDelete, onBack }) => {
+export const HistoryView: React.FC<HistoryViewProps> = ({ menus, onSelect, onDelete, onBack }) => {
   return (
     <div className="animate-slideUp space-y-6">
       <button 
@@ -91,5 +91,3 @@ const HistoryView: React.FC<HistoryViewProps> = ({ menus, onSelect, onDelete, on
     </div>
   );
 };
-
-export default HistoryView;

@@ -8,7 +8,7 @@ interface PremiumViewProps {
   onNavigate: (view: ViewState) => void;
 }
 
-const PremiumView: React.FC<PremiumViewProps> = ({ user, onNavigate }) => {
+export const PremiumView: React.FC<PremiumViewProps> = ({ user, onNavigate }) => {
   const isPremium = user?.isPremium || false;
 
   const handleSubscribe = (planId: string) => {
@@ -90,5 +90,3 @@ const PremiumView: React.FC<PremiumViewProps> = ({ user, onNavigate }) => {
     </div>
   );
 };
-
-export default PremiumView;

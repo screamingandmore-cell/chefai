@@ -8,7 +8,7 @@ interface QuickRecipeViewProps {
   ingredients: string[];
   onAddIngredient: (items: string[]) => void;
   onRemoveIngredient: (index: number) => void;
-  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>, autoGenerateParams?: { difficulty: Difficulty, goal: DietGoal }) => Promise<Recipe | null>;
+  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<Recipe | null>;
   selectedDifficulty: Difficulty;
   setSelectedDifficulty: (d: Difficulty) => void;
   dietGoal: DietGoal;
@@ -22,7 +22,7 @@ interface QuickRecipeViewProps {
   onRemoveAllergy: (index: number) => Promise<void>;
 }
 
-const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
+export const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
   user,
   ingredients,
   onAddIngredient,
@@ -60,16 +60,12 @@ const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
     }
   };
 
+  // Simplificado: Agora apenas adiciona ingredientes, sem gerar receita automaticamente
   const handleCameraCapture = useCallback(async (
-    e: React.ChangeEvent<HTMLInputElement>, 
-    _unusedParams?: { difficulty: Difficulty, goal: DietGoal }
+    e: React.ChangeEvent<HTMLInputElement>
   ): Promise<Recipe | null> => {
-    const recipe = await onImageUpload(e, { difficulty: selectedDifficulty, goal: dietGoal });
-    if (recipe) {
-      onRecipeGenerated(recipe);
-    }
-    return recipe;
-  }, [onImageUpload, selectedDifficulty, dietGoal, onRecipeGenerated]);
+    return await onImageUpload(e);
+  }, [onImageUpload]);
 
   return (
     <div className="space-y-8 relative animate-slideUp">
@@ -207,5 +203,3 @@ const QuickRecipeView: React.FC<QuickRecipeViewProps> = ({
     </div>
   );
 };
-
-export default QuickRecipeView;

@@ -9,7 +9,7 @@ const LoadingSpinner = () => (
     </svg>
   );
 
-const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
+export const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -100,5 +100,3 @@ const AuthScreen = ({ onLogin }: { onLogin: () => void }) => {
     </main>
   );
 };
-
-export default AuthScreen;

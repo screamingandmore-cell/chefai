@@ -15,7 +15,7 @@ interface WeeklyPlanViewProps {
   isLoading: boolean;
 }
 
-const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
+export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
   weeklyMenu,
   onNavigate,
   onSelectRecipe,
@@ -123,5 +123,3 @@ const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
     </div>
   );
 };
-
-export default WeeklyPlanView;

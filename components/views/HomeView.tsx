@@ -8,7 +8,7 @@ interface HomeViewProps {
   onNavigate: (view: ViewState) => void;
 }
 
-const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate }) => {
   return (
     <div className="space-y-8 animate-slideUp">
       <div className="px-2">
@@ -84,5 +84,3 @@ const HomeView: React.FC<HomeViewProps> = ({ user, weeklyMenu, onNavigate }) => 
     </div>
   );
 };
-
-export default HomeView;

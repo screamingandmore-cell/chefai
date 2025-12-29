@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { ViewState } from '../../types';
 
 interface TermsViewProps {
   onBack: () => void;
@@ -57,6 +56,3 @@ export const TermsView: React.FC<TermsViewProps> = ({ onBack }) => {
     </div>
   );
 };
-
-// Fix: Exporting as default to match import in App.tsx
-export default TermsView;
