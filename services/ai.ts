@@ -1,8 +1,20 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { WeeklyMenu, Recipe, Difficulty, DietGoal, DIET_GOALS } from "../types";
 
-// Usando o modelo flash-preview para melhor desempenho
+// Modelo recomendado para performance e custo
 const MODEL_NAME = 'gemini-3-flash-preview';
+
+/**
+ * Padrão de Inicialização Vite:
+ * Em produção, o Vite substitui import.meta.env.VITE_GEMINI_API_KEY pelo valor real.
+ */
+const getAiClient = () => {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("VITE_GEMINI_API_KEY não configurada no ambiente.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 const RECIPE_SCHEMA = {
   type: Type.OBJECT,
@@ -30,7 +42,7 @@ const RECIPE_SCHEMA = {
 
 export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string[]> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = getAiClient();
     
     const imageParts = imagesBase64.map(base64 => ({
       inlineData: {
@@ -44,7 +56,7 @@ export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string
       contents: { 
         parts: [
           ...imageParts,
-          { text: "Analise as imagens e identifique todos os alimentos e ingredientes visíveis. Retorne os nomes dos ingredientes EXCLUSIVAMENTE em Português do Brasil. Responda apenas com um JSON contendo uma lista chamada 'ingredients'." }
+          { text: "Identifique todos os alimentos presentes nestas fotos. Retorne os nomes dos ingredientes EXCLUSIVAMENTE em Português do Brasil. Responda apenas com um JSON contendo uma lista chamada 'ingredients'." }
         ] 
       },
       config: {
@@ -74,14 +86,14 @@ export const generateQuickRecipe = async (
   goal: DietGoal
 ): Promise<Recipe> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `Crie uma receita ${difficulty} para objetivo ${DIET_GOALS[goal]} usando: ${ingredients.join(", ")}. Sem usar: ${allergies.join(", ")}. Tudo deve ser escrito em Português do Brasil.`;
+    const ai = getAiClient();
+    const prompt = `Crie uma receita ${difficulty} para objetivo ${DIET_GOALS[goal]} usando: ${ingredients.join(", ")}. Sem usar: ${allergies.join(", ")}.`;
     
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: prompt,
       config: {
-        systemInstruction: "Você é um Chef Executivo Brasileiro. Responda apenas em JSON. Todos os campos, títulos e instruções devem estar em Português do Brasil.",
+        systemInstruction: "Você é um Chef de Cozinha Brasileiro. Responda apenas em JSON. Todos os campos e textos (título, instruções, etc) devem estar em Português do Brasil.",
         responseMimeType: "application/json",
         responseSchema: RECIPE_SCHEMA
       }
@@ -89,6 +101,7 @@ export const generateQuickRecipe = async (
 
     return { ...JSON.parse(response.text || '{}'), id: crypto.randomUUID() };
   } catch (error: any) {
+    console.error("Erro ao gerar receita rápida:", error);
     throw error;
   }
 };
@@ -100,14 +113,14 @@ export const generateWeeklyMenu = async (
   difficulty: Difficulty
 ): Promise<WeeklyMenu> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `Planeje 7 dias de refeições (${DIET_GOALS[dietGoal]}) focando nos ingredientes: ${ingredients.join(", ")}. Restrições: ${allergies.join(", ")}.`;
+    const ai = getAiClient();
+    const prompt = `Planeje um cardápio de 7 dias (${DIET_GOALS[dietGoal]}) focado nos ingredientes: ${ingredients.join(", ")}. Restrições: ${allergies.join(", ")}.`;
 
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: prompt,
       config: {
-        systemInstruction: "Você é um Planejador Gastronômico Profissional. Responda apenas em JSON. É CRÍTICO que todos os textos (dias da semana, nomes de receitas, listas de compras e instruções) estejam em Português do Brasil.",
+        systemInstruction: "Planejador Gastronômico Profissional. Responda apenas em JSON. É obrigatório que todo o conteúdo (dias, receitas e listas) esteja em Português do Brasil.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -139,6 +152,7 @@ export const generateWeeklyMenu = async (
       goal: dietGoal 
     };
   } catch (error: any) {
+    console.error("Erro ao gerar cardápio semanal:", error);
     throw error;
   }
 };
