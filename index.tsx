@@ -7,14 +7,13 @@ import { ErrorBoundary } from './components/shared/ErrorBoundary';
 /**
  * BRIDGE DE AMBIENTE (CTO FIX):
  * O SDK do Gemini exige 'process.env.API_KEY'. 
- * Mapeamos as chaves do seu .env (incluindo erros de digitação e chaves de imagem).
+ * Em ambientes Vite, o 'process' não existe por padrão no navegador.
  */
 if (typeof (window as any).process === 'undefined') {
   (window as any).process = { 
     env: { 
-      API_KEY: (import.meta as any).env.VITE_GEMINI_API_KEY || 
-               (import.meta as any).env.VITE_GEMINI_API_KE || 
-               (import.meta as any).env.VITE_GEMINI_API_KEY_IMAGE 
+      // Mapeia a chave oficial do seu .env
+      API_KEY: (import.meta as any).env.VITE_GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KE 
     } 
   };
 }

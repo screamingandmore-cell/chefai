@@ -46,7 +46,8 @@ export function useChefActions(
 
   const handleAddIngredients = useCallback((newItems: string[]) => {
     setIngredients(prev => {
-      const combined = [...new Set([...prev, ...newItems.map(i => i.toLowerCase())])];
+      // Normaliza para minúsculas e remove duplicados
+      const combined = [...new Set([...prev, ...newItems.map(i => i.toLowerCase().trim())])];
       return combined.slice(0, 50);
     });
   }, []);
@@ -72,7 +73,7 @@ export function useChefActions(
 
   const generateQuick = useCallback(async (difficulty: Difficulty, goal: DietGoal): Promise<Recipe | null> => {
     if (ingredients.length === 0) {
-      alert("Adicione ingredientes primeiro.");
+      alert("Adicione ou tire foto dos ingredientes primeiro.");
       return null;
     }
     setIsLoading(true);
@@ -81,8 +82,8 @@ export function useChefActions(
       onProfileRefresh();
       return recipe;
     } catch (err) {
-      console.error(err);
-      alert("O Chef teve um problema. Tente novamente.");
+      console.error("Erro ao gerar receita:", err);
+      alert("O Chef teve um problema ao criar a receita. Tente novamente em alguns segundos.");
       return null;
     } finally {
       setIsLoading(false);
@@ -92,10 +93,12 @@ export function useChefActions(
   const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>): Promise<Recipe | null> => {
     const files = e.target.files;
     if (!files || files.length === 0) return null;
+    
     if (!user?.isPremium) {
-      alert("Recurso Premium: Assine para usar a câmera.");
+      alert("Recurso Premium: Assine para usar a análise visual por câmera.");
       return null;
     }
+
     setIsLoading(true);
     try {
       const imagesBase64: string[] = [];
@@ -103,12 +106,19 @@ export function useChefActions(
         const base64 = await compressImage(files[i]);
         imagesBase64.push(base64);
       }
+      
       const detected = await AIService.analyzeFridgeImage(imagesBase64);
-      handleAddIngredients(detected);
-      return null; // Retornamos null para NÃO mudar de tela automaticamente
+      if (detected.length > 0) {
+        handleAddIngredients(detected);
+      } else {
+        alert("O Chef não conseguiu identificar ingredientes nestas fotos. Tente uma imagem mais clara.");
+      }
+      
+      // CRITICAL: Retornamos null para garantir que a UI não tente navegar ou gerar receita sozinha
+      return null; 
     } catch (err) {
-      console.error(err);
-      alert("Erro ao ler imagem.");
+      console.error("Erro no processamento da imagem:", err);
+      alert("Erro ao ler imagem. Verifique sua conexão ou tente outra foto.");
       return null;
     } finally {
       setIsLoading(false);
@@ -116,7 +126,11 @@ export function useChefActions(
   }, [user, handleAddIngredients]);
 
   const generateWeekly = useCallback(async (difficulty: Difficulty, goal: DietGoal): Promise<WeeklyMenu | null> => {
-    if (!session?.user?.id || ingredients.length === 0) return null;
+    if (!session?.user?.id || ingredients.length === 0) {
+      alert("Sua geladeira está vazia! Adicione ingredientes antes de planejar a semana.");
+      return null;
+    }
+    
     setIsLoading(true);
     try {
       const menu = await AIService.generateWeeklyMenu(ingredients, user?.allergies || [], goal, difficulty);
@@ -124,7 +138,8 @@ export function useChefActions(
       onProfileRefresh();
       return saved;
     } catch (err) {
-      console.error(err);
+      console.error("Erro ao gerar cardápio semanal:", err);
+      alert("O Chef teve um problema ao planejar sua semana. Tente novamente.");
       return null;
     } finally {
       setIsLoading(false);
