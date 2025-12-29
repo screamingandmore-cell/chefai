@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Recipe, WeeklyMenu, Difficulty, DietGoal, UserProfile } from '@/types';
 import * as AIService from '@/services/ai'; 
@@ -34,11 +33,7 @@ export function useChefActions(
     if (session?.user?.id) {
       const saved = localStorage.getItem(`chef_ai_ingredients_${session.user.id}`);
       if (saved) {
-        try {
-          setIngredients(JSON.parse(saved));
-        } catch (e) {
-          setIngredients([]);
-        }
+        try { setIngredients(JSON.parse(saved)); } catch (e) { setIngredients([]); }
       }
     }
   }, [session]);
@@ -51,7 +46,7 @@ export function useChefActions(
 
   const handleAddIngredients = useCallback((newItems: string[]) => {
     setIngredients(prev => {
-      const combined = [...new Set([...prev, ...newItems])];
+      const combined = [...new Set([...prev, ...newItems.map(i => i.toLowerCase())])];
       return combined.slice(0, 50);
     });
   }, []);
@@ -60,58 +55,34 @@ export function useChefActions(
     setIngredients(prev => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleError = (err: any) => {
-    console.error("Chef AI Technical Error:", err);
-    
-    if (err.message === "API_QUOTA_EXCEEDED") {
-      alert("⚠️ Cota da IA Excedida: O Google limitou suas requisições gratuitas temporariamente. Aguarde 1 minuto e tente novamente.");
-    } else if (err.message === "API_KEY_INVALID_OR_LEAKED") {
-      alert("⚠️ Erro de Permissão: Sua chave de API é inválida ou expirou.");
-    } else {
-      alert("🍳 O Chef teve um problema técnico ao processar sua solicitação. Tente em alguns instantes.");
-    }
-  };
-
   const handleUpdateAllergies = useCallback(async (rawInput: string) => {
     if (!user || !session?.user) return;
-    const items = rawInput.split(/,|\n|;/).map(i => i.trim()).filter(i => i.length > 0 && i.length <= 500);
-    const uniqueNew = items.filter(i => !user.allergies.includes(i));
-    if (uniqueNew.length === 0) return;
-    const updatedAllergies = [...user.allergies, ...uniqueNew];
-    const updatedUser = { ...user, allergies: updatedAllergies };
-    onUpdateUser(updatedUser);
-    try {
-      await SupabaseService.updatePreferences(session.user.id, updatedAllergies);
-    } catch (err) {
-      console.error("Erro ao salvar preferências:", err);
-    }
+    const items = rawInput.split(/,|\n|;/).map(i => i.trim()).filter(i => i.length > 0);
+    const updatedAllergies = [...new Set([...user.allergies, ...items])];
+    onUpdateUser({ ...user, allergies: updatedAllergies });
+    try { await SupabaseService.updatePreferences(session.user.id, updatedAllergies); } catch (err) { console.error(err); }
   }, [user, session, onUpdateUser]);
 
   const handleRemoveAllergy = useCallback(async (index: number) => {
     if (!user || !session?.user) return;
     const updatedAllergies = user.allergies.filter((_, i) => i !== index);
-    const updatedUser = { ...user, allergies: updatedAllergies };
-    onUpdateUser(updatedUser);
-    try {
-      await SupabaseService.updatePreferences(session.user.id, updatedAllergies);
-    } catch (err) {
-      console.error("Erro ao remover preferência:", err);
-    }
+    onUpdateUser({ ...user, allergies: updatedAllergies });
+    try { await SupabaseService.updatePreferences(session.user.id, updatedAllergies); } catch (err) { console.error(err); }
   }, [user, session, onUpdateUser]);
 
-  const generateQuick = useCallback(async (difficulty: Difficulty, goal: DietGoal, customIngredients?: string[]): Promise<Recipe | null> => {
-    const activeIngredients = customIngredients || ingredients;
-    if (activeIngredients.length === 0) {
+  const generateQuick = useCallback(async (difficulty: Difficulty, goal: DietGoal): Promise<Recipe | null> => {
+    if (ingredients.length === 0) {
       alert("Adicione ingredientes primeiro.");
       return null;
     }
     setIsLoading(true);
     try {
-      const recipe = await AIService.generateQuickRecipe(activeIngredients, user?.allergies || [], difficulty, goal);
+      const recipe = await AIService.generateQuickRecipe(ingredients, user?.allergies || [], difficulty, goal);
       onProfileRefresh();
       return recipe;
     } catch (err) {
-      handleError(err);
+      console.error(err);
+      alert("O Chef teve um problema. Tente novamente.");
       return null;
     } finally {
       setIsLoading(false);
@@ -121,7 +92,7 @@ export function useChefActions(
   const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>): Promise<Recipe | null> => {
     const files = e.target.files;
     if (!files || files.length === 0) return null;
-    if (!user || !user.isPremium) {
+    if (!user?.isPremium) {
       alert("Recurso Premium: Assine para usar a câmera.");
       return null;
     }
@@ -134,9 +105,10 @@ export function useChefActions(
       }
       const detected = await AIService.analyzeFridgeImage(imagesBase64);
       handleAddIngredients(detected);
-      return null; // Sempre retorna null para que a view não mude de tela automaticamente
+      return null; // Retornamos null para NÃO mudar de tela automaticamente
     } catch (err) {
-      handleError(err);
+      console.error(err);
+      alert("Erro ao ler imagem.");
       return null;
     } finally {
       setIsLoading(false);
@@ -144,19 +116,15 @@ export function useChefActions(
   }, [user, handleAddIngredients]);
 
   const generateWeekly = useCallback(async (difficulty: Difficulty, goal: DietGoal): Promise<WeeklyMenu | null> => {
-    if (!session?.user?.id) return null;
-    if (ingredients.length === 0) {
-      alert("Adicione ingredientes primeiro.");
-      return null;
-    }
+    if (!session?.user?.id || ingredients.length === 0) return null;
     setIsLoading(true);
     try {
-      const tempMenu = await AIService.generateWeeklyMenu(ingredients, user?.allergies || [], goal, difficulty);
-      const savedMenu = await SupabaseService.saveWeeklyMenu(session.user.id, tempMenu);
+      const menu = await AIService.generateWeeklyMenu(ingredients, user?.allergies || [], goal, difficulty);
+      const saved = await SupabaseService.saveWeeklyMenu(session.user.id, menu);
       onProfileRefresh();
-      return savedMenu;
+      return saved;
     } catch (err) {
-      handleError(err);
+      console.error(err);
       return null;
     } finally {
       setIsLoading(false);

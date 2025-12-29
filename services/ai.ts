@@ -1,10 +1,8 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { WeeklyMenu, Recipe, Difficulty, DietGoal, DIET_GOALS } from "../types";
 
-// Modelos da série 3 Flash: Mais rápidos, estáveis e com maior limite de cota gratuita
-const MODEL_TEXT = 'gemini-3-flash-preview';
-const MODEL_VISION = 'gemini-3-flash-preview';
+// Usando o modelo flash-preview para melhor desempenho e custos
+const MODEL_NAME = 'gemini-3-flash-preview';
 
 const RECIPE_SCHEMA = {
   type: Type.OBJECT,
@@ -42,11 +40,11 @@ export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string
     }));
 
     const response = await ai.models.generateContent({
-      model: MODEL_VISION,
+      model: MODEL_NAME,
       contents: { 
         parts: [
           ...imageParts,
-          { text: "Analise a imagem e identifique todos os ingredientes e alimentos presentes. Retorne os nomes dos ingredientes EXCLUSIVAMENTE em Português do Brasil (PT-BR). Retorne apenas um JSON com a lista 'ingredients'." }
+          { text: "Identifique todos os alimentos e ingredientes nesta imagem. Retorne os nomes EXCLUSIVAMENTE em Português do Brasil. Responda apenas com um JSON contendo uma lista chamada 'ingredients'." }
         ] 
       },
       config: {
@@ -65,7 +63,6 @@ export const analyzeFridgeImage = async (imagesBase64: string[]): Promise<string
     return data.ingredients || [];
   } catch (error: any) {
     console.error("Erro na análise visual:", error);
-    handleAIError(error);
     throw error;
   }
 };
@@ -78,13 +75,13 @@ export const generateQuickRecipe = async (
 ): Promise<Recipe> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `Crie uma receita ${difficulty} para objetivo ${DIET_GOALS[goal]} usando: ${ingredients.join(", ")}. Sem usar: ${allergies.join(", ")}.`;
+    const prompt = `Crie uma receita ${difficulty} para objetivo ${DIET_GOALS[goal]} usando: ${ingredients.join(", ")}. Sem usar: ${allergies.join(", ")}. Tudo em Português.`;
     
     const response = await ai.models.generateContent({
-      model: MODEL_TEXT,
+      model: MODEL_NAME,
       contents: prompt,
       config: {
-        systemInstruction: "Você é um Chef Executivo. Responda apenas em JSON (PT-BR). Certifique-se de que todos os textos gerados estejam em Português.",
+        systemInstruction: "Você é um Chef Executivo Brasileiro. Responda apenas em JSON. Todos os campos devem estar em Português.",
         responseMimeType: "application/json",
         responseSchema: RECIPE_SCHEMA
       }
@@ -92,7 +89,6 @@ export const generateQuickRecipe = async (
 
     return { ...JSON.parse(response.text || '{}'), id: crypto.randomUUID() };
   } catch (error: any) {
-    handleAIError(error);
     throw error;
   }
 };
@@ -105,13 +101,13 @@ export const generateWeeklyMenu = async (
 ): Promise<WeeklyMenu> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `Planeje 7 dias de refeições (${DIET_GOALS[dietGoal]}) usando: ${ingredients.join(", ")}.`;
+    const prompt = `Planeje 7 dias de refeições (${DIET_GOALS[dietGoal]}) usando principalmente: ${ingredients.join(", ")}. Restrições: ${allergies.join(", ")}.`;
 
     const response = await ai.models.generateContent({
-      model: MODEL_TEXT,
+      model: MODEL_NAME,
       contents: prompt,
       config: {
-        systemInstruction: "Planejador Gastronômico Profissional. Responda apenas em JSON. Todos os campos de texto devem estar em Português do Brasil.",
+        systemInstruction: "Planejador Gastronômico. Responda apenas em JSON. Todos os textos em Português do Brasil.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -143,20 +139,6 @@ export const generateWeeklyMenu = async (
       goal: dietGoal 
     };
   } catch (error: any) {
-    handleAIError(error);
     throw error;
-  }
-};
-
-const handleAIError = (error: any) => {
-  const msg = error.message || "";
-  if (msg.includes("429") || msg.includes("QUOTA_EXCEEDED")) {
-    throw new Error("API_QUOTA_EXCEEDED");
-  }
-  if (msg.includes("403") || msg.includes("PERMISSION_DENIED")) {
-    throw new Error("API_KEY_INVALID_OR_LEAKED");
-  }
-  if (msg.includes("404")) {
-    throw new Error("API_MODEL_NOT_FOUND");
   }
 };
