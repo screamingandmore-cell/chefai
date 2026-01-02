@@ -4,10 +4,10 @@ import { Layout } from './components/Layout';
 import { ViewState, UserProfile, Recipe, WeeklyMenu, Difficulty, DietGoal } from './types';
 import * as SupabaseService from './services/supabase';
 import { useChefActions } from './services/hooks/useChefActions';
-import { Session } from '@supabase/supabase-js';
 
-// Views - Importadas como Named Imports conforme solicitado
+// Views
 import { AuthScreen } from './components/AuthScreen';
+import { ResetPassword } from './components/ResetPassword';
 import { HomeView } from './components/views/HomeView';
 import { FridgeView } from './components/views/FridgeView';
 import { QuickRecipeView } from './components/views/QuickRecipeView';
@@ -27,7 +27,8 @@ const LOADING_MESSAGES = [
 ];
 
 export default function App() {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<any>(null);
+  const [isResetting, setIsResetting] = useState(false);
   const [view, setView] = useState<ViewState>(ViewState.HOME);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
@@ -86,18 +87,55 @@ export default function App() {
   }, [isLoading]);
 
   useEffect(() => {
-    SupabaseService.getUserSession().then(s => {
+    const checkSession = async () => {
+      const s = await SupabaseService.getUserSession();
       setSession(s);
-      if (s?.user?.id) loadUserData(s.user.id);
-    });
 
-    const { data: { subscription } } = SupabaseService.supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      if (newSession) loadUserData(newSession.user.id);
-    });
+      const isRecovery =
+        window.location.hash.includes('type=recovery') ||
+        window.location.hash.includes('access_token');
+
+      if (isRecovery) {
+        setIsResetting(true);
+        return;
+      }
+
+      if (s?.user?.id) {
+        loadUserData(s.user.id);
+      }
+    };
+
+    checkSession();
+
+    const { data: { subscription } } =
+      (SupabaseService.supabase.auth as any).onAuthStateChange((event: string, newSession: any) => {
+
+        if (event === 'PASSWORD_RECOVERY') {
+          setIsResetting(true);
+          setSession(newSession);
+          return;
+        }
+
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setIsResetting(false);
+          setView(ViewState.HOME);
+          return;
+        }
+
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          setSession(newSession);
+
+          // 🚨 REGRA DE OURO
+          if (!isResetting && newSession?.user?.id) {
+            loadUserData(newSession.user.id);
+          }
+        }
+      });
 
     return () => subscription.unsubscribe();
-  }, [loadUserData]);
+  }, [loadUserData, isResetting]);
 
   const handleGenerateQuick = async () => {
     const recipe = await generateQuick(difficulty, dietGoal);
@@ -208,7 +246,23 @@ export default function App() {
     }
   }, [view, user, weeklyMenu, allMenus, ingredients, isLoading, difficulty, dietGoal, session, handleAddIngredients, handleRemoveIngredient, handleImageUpload, handleGenerateQuick, handleGenerateWeekly, handleUpdateAllergies, handleRemoveAllergy, handleProfileRefresh, navigate, handleRecipeGenerated]);
 
-  if (!session) return <AuthScreen onLogin={() => {}} />;
+  // 🔒 FORÇA TELA DE RESET SE FOR RECOVERY
+  if (isResetting) {
+    return (
+      <ResetPassword 
+        onComplete={() => {
+          setIsResetting(false);
+          window.history.replaceState(null, '', window.location.pathname);
+          // O listener onAuthStateChange agora carregará os dados
+        }} 
+      />
+    );
+  }
+
+  // Login normal
+  if (!session) {
+    return <AuthScreen onLogin={() => {}} />;
+  }
 
   return (
     <Layout activeView={view} onNavigate={navigate} isPremium={user?.isPremium || false}>

@@ -2,8 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { UserProfile, WeeklyMenu } from "../types";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
+const supabaseKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co', 
@@ -11,19 +11,37 @@ export const supabase = createClient(
 );
 
 export const signIn = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await (supabase.auth as any).signInWithPassword({ email, password });
   if (error) throw error;
   return data;
 };
 
 export const signUp = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await (supabase.auth as any).signUp({ email, password });
   if (error) throw error;
   return data;
 };
 
 export const signOut = async () => {
-  await supabase.auth.signOut();
+  await (supabase.auth as any).signOut();
+};
+
+export const sendPasswordResetEmail = async (email: string) => {
+  // Captura a URL base atual (ex: https://meu-app.vercel.app/)
+  // O Supabase exige que esta URL esteja EXATAMENTE igual no campo "Site URL" do painel.
+  const redirectTo = window.location.origin.endsWith('/') 
+    ? window.location.origin 
+    : `${window.location.origin}/`;
+
+  const { error } = await (supabase.auth as any).resetPasswordForEmail(email, {
+    redirectTo: redirectTo
+  });
+  if (error) throw error;
+};
+
+export const updatePassword = async (newPassword: string) => {
+  const { error } = await (supabase.auth as any).updateUser({ password: newPassword });
+  if (error) throw error;
 };
 
 export const deleteAccount = async (): Promise<void> => {
@@ -33,7 +51,7 @@ export const deleteAccount = async (): Promise<void> => {
 };
 
 export const getUserSession = async () => {
-  const { data } = await supabase.auth.getSession();
+  const { data } = await (supabase.auth as any).getSession();
   return data.session;
 };
 
@@ -45,10 +63,10 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
     .single();
 
   if (error || !data) {
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData } = await (supabase.auth as any).getSession();
     const { data: newData, error: insertError } = await supabase
       .from('profiles')
-      .insert({ 
+      .upsert({ 
         id: userId,
         email: sessionData.session?.user?.email 
       })
@@ -92,7 +110,6 @@ export const updatePreferences = async (userId: string, allergies: string[]): Pr
 export const saveWeeklyMenu = async (userId: string, menu: WeeklyMenu): Promise<WeeklyMenu> => {
   const createdAt = new Date().toISOString();
 
-  // Omitimos o 'id' para que o Supabase use gen_random_uuid() automaticamente
   const menuDataForJson = {
     days: menu.days,
     shoppingList: menu.shoppingList,
