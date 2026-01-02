@@ -130,7 +130,7 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
 
         {isForgotPassword && (
           <div className="mt-6 p-4 bg-gray-50 rounded-2xl border border-gray-100 text-[10px] text-gray-400 font-medium leading-relaxed text-center">
-            💡 Verifique se o link no e-mail direciona para a URL correta do app.
+            
           </div>
         )}
         
